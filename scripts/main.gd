@@ -3,8 +3,8 @@ extends Node2D
 
 const MAP_SCALE := 1.0
 const CAM_SPEED := 900.0
-const ZOOM_MIN := 0.25
-const ZOOM_MAX := 6.0
+var zoom_min := 0.25
+const ZOOM_MAX := 8.0
 
 var map: MapView
 var clock := GameClock.new()
@@ -31,7 +31,11 @@ func _ready() -> void:
 	camera = Camera2D.new()
 	add_child(camera)
 	camera.position = Vector2(map.map_w, map.map_h) * MAP_SCALE * 0.5
-	camera.zoom = Vector2(0.3, 0.3)
+	# Zoom que enquadra o mapa inteiro na janela (serve para qualquer tamanho de mapa)
+	var vp := get_viewport_rect().size
+	var fit: float = minf(vp.x / (map.map_w * MAP_SCALE), vp.y / (map.map_h * MAP_SCALE))
+	zoom_min = fit * 0.9
+	camera.zoom = Vector2(fit, fit)
 	camera.make_current()
 
 	_build_ui()
@@ -214,9 +218,9 @@ func _unhandled_input(event: InputEvent) -> void:
 					map.select(pid)
 					_show_province(pid)
 			MOUSE_BUTTON_WHEEL_UP:
-				camera.zoom = (camera.zoom * 1.12).clamp(Vector2(ZOOM_MIN, ZOOM_MIN), Vector2(ZOOM_MAX, ZOOM_MAX))
+				camera.zoom = (camera.zoom * 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 			MOUSE_BUTTON_WHEEL_DOWN:
-				camera.zoom = (camera.zoom / 1.12).clamp(Vector2(ZOOM_MIN, ZOOM_MIN), Vector2(ZOOM_MAX, ZOOM_MAX))
+				camera.zoom = (camera.zoom / 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 	elif event is InputEventMouseMotion:
 		if event.button_mask & (MOUSE_BUTTON_MASK_RIGHT | MOUSE_BUTTON_MASK_MIDDLE):
 			camera.position -= event.relative / camera.zoom

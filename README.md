@@ -29,9 +29,25 @@ e **113 países de 1444** (Otomanos, França, Castela, Polônia, Lituânia, Mame
 - `data/map.json` — províncias, países, centros e vizinhanças.
 - `assets/province_ids.png` — id de cada província (R = byte baixo, G = byte alto). É o que o jogo lê.
 - `assets/provinces.png` — a mesma divisão com uma cor única por província, para ver e editar.
-- `tools/gen_map.py` — gera o mapa a partir dos dados abaixo.
+- `tools/import_eu4.py` — importa mapa e donos de 1444 da sua instalação do EU4 (dados exatos).
+- `tools/gen_map.py` — gera o mapa de exemplo a partir dos dados abaixo.
 - `tools/data/nations_1444.txt` — países de 1444 e cidades-âncora (lat/lon).
 - `tools/data/ne_50m_land.geojson` — contorno real da terra (Natural Earth, domínio público).
+
+## Fronteiras exatas de 1444 (importar do seu EU4)
+O mapa de exemplo é aproximado. Se você tem o **Europa Universalis IV** instalado, importe o mapa,
+as províncias e os donos de 1444 direto da sua instalação:
+```
+pip install pillow numpy
+python3 tools/import_eu4.py                                    # tenta achar o jogo sozinho
+python3 tools/import_eu4.py "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Europa Universalis IV"
+```
+O script lê `map/` (provinces.bmp, definition.csv, default.map), `history/` e `common/` do jogo e gera
+`data/eu4/map.json` + `assets/eu4/province_ids.png` (~5000 províncias, mundo todo, ~190 países).
+O Godot passa a usar essa pasta automaticamente; para voltar ao mapa de exemplo, apague `data/eu4` e `assets/eu4`.
+- Esses arquivos são derivados de dados da Paradox: já estão no `.gitignore`. **Não publique no GitHub nem distribua.**
+- Nomes de países e províncias vêm da localização em inglês; terreno aparece como "—" (ainda não importado).
+- Testado só com uma árvore de arquivos de exemplo no formato do EU4; se algo não bater na sua versão do jogo, me diga a mensagem de erro.
 
 ## Regenerar o mapa
 ```

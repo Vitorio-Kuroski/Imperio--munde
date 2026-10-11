@@ -20,7 +20,14 @@ var selected_id := -1
 
 
 func load_map(map_scale: float) -> void:
-	var data = JSON.parse_string(FileAccess.get_file_as_string("res://data/map.json"))
+	# Se existir um mapa importado do EU4 (tools/import_eu4.py), ele tem prioridade.
+	var json_path := "res://data/map.json"
+	var ids_path := "res://assets/province_ids.png"
+	if FileAccess.file_exists("res://data/eu4/map.json") and ResourceLoader.exists("res://assets/eu4/province_ids.png"):
+		json_path = "res://data/eu4/map.json"
+		ids_path = "res://assets/eu4/province_ids.png"
+	print("Mapa carregado de: ", json_path)
+	var data = JSON.parse_string(FileAccess.get_file_as_string(json_path))
 	map_w = int(data["width"])
 	map_h = int(data["height"])
 	provinces = data["provinces"]
@@ -30,7 +37,7 @@ func load_map(map_scale: float) -> void:
 		country_index[c["tag"]] = n
 		n += 1
 
-	var ids_tex := load("res://assets/province_ids.png") as Texture2D
+	var ids_tex := load(ids_path) as Texture2D
 	id_image = ids_tex.get_image()
 
 	palette_image = Image.create(provinces.size(), 2, false, Image.FORMAT_RGBA8)

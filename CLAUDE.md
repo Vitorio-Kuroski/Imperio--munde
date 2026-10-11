@@ -15,6 +15,7 @@ Idioma do jogo e dos comentários: português do Brasil.
 - `shaders/map.gdshader`: pinta províncias e bordas na GPU. Linha 0 da paleta = cor; linha 1 = R índice do país dono (0 = nenhum, máx. 255 países), A = 1.0 se for mar.
 - `scripts/game_clock.gd`: data, pausa, velocidade; sinais `day_passed`, `month_passed`, `year_passed`, `changed`.
 - `data/map.json`: províncias (id, name, sea, owner, terrain, development, center [px], neighbors), países (tag, name, color, capital).
+- `tools/import_eu4.py`: importa mapa/donos de 1444 da instalação do EU4 do usuário para `data/eu4/` e `assets/eu4/` (no .gitignore; dados da Paradox, nunca commitar). `MapView` prefere essa pasta quando existe. Aceita até 255 países.
 - `tools/gen_map.py`: gera o mapa (`python3 tools/gen_map.py 1956` gera ~2000 províncias; o argumento é o alvo de províncias de terra). Requer pillow, numpy, scipy.
 - `tools/data/nations_1444.txt`: países e cidades-âncora (lat/lon). `tools/data/ne_50m_land.geojson`: contorno da terra (Natural Earth).
 - `tools/colors_to_ids.py`: converte um `provinces.png` de cores únicas em `province_ids.png` (para mapas desenhados à mão).
