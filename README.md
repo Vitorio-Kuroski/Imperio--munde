@@ -1,1 +1,79 @@
-# Imperio--munde
+# Imperium Mundi
+
+Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
+**Mapa-múndi** com **5337 províncias** (4602 de terra, 735 zonas marítimas), dividido a partir de uma imagem de províncias
+(estilo mapchart.net, 6000x3150 px), e **197 países de 1444** (Europa, Oriente Médio, África, Ásia e Américas).
+
+> **Aviso de fidelidade:** os países, capitais e cidades são reais, mas as fronteiras de 1444 são uma
+> **aproximação** (cada província vai para o país com a cidade-âncora mais próxima). Não são os dados
+> exatos do EU4. Para ajustar, edite `tools/data/nations_1444.txt` e rode o gerador.
+
+## Como abrir
+1. Abra o Godot 4.3 ou mais novo, clique em **Importar** e escolha `project.godot`.
+2. Aperte **F5**. Na primeira abertura o Godot importa as imagens do mapa.
+
+## Controles
+| Ação | Tecla / mouse |
+|---|---|
+| Selecionar província | Botão esquerdo |
+| Mover câmera | WASD, setas ou arrastar com botão direito/do meio |
+| Zoom | Roda do mouse |
+| Pausar / continuar | Espaço |
+| Velocidade | `+` e `-` (1 a 5) |
+
+## Estrutura
+- `scripts/main.gd` — câmera, interface, escolha de país e entrada.
+- `scripts/map_view.gd` — carrega o mapa, gerencia a paleta e a seleção.
+- `shaders/map.gdshader` — pinta províncias e bordas na GPU (costa e fronteiras fortes, divisas internas leves).
+- `scripts/game_clock.gd` — data (11 nov 1444), pausa, velocidades e sinais de dia/mês/ano.
+- `data/map.json` — províncias, países, centros e vizinhanças.
+- `assets/province_ids.png` — id de cada província (R = byte baixo, G = byte alto). É o que o jogo lê.
+- `assets/provinces.png` — a mesma divisão com uma cor única por província, para ver e editar.
+- `tools/import_eu4.py` — importa mapa e donos de 1444 da sua instalação do EU4 (dados exatos).
+- `tools/gen_map.py` — gera o mapa de exemplo a partir dos dados abaixo.
+- `tools/data/nations_1444.txt` — países de 1444 e cidades-âncora (lat/lon).
+- `tools/data/ne_50m_land.geojson` — contorno real da terra (Natural Earth, domínio público).
+
+## Fronteiras exatas de 1444 (importar do seu EU4)
+O mapa de exemplo é aproximado. Se você tem o **Europa Universalis IV** instalado, importe o mapa,
+as províncias e os donos de 1444 direto da sua instalação:
+```
+pip install pillow numpy
+python3 tools/import_eu4.py                                    # tenta achar o jogo sozinho
+python3 tools/import_eu4.py "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Europa Universalis IV"
+```
+O script lê `map/` (provinces.bmp, definition.csv, default.map), `history/` e `common/` do jogo e gera
+`data/eu4/map.json` + `assets/eu4/province_ids.png` (~5000 províncias, mundo todo, ~190 países).
+O Godot passa a usar essa pasta automaticamente; para voltar ao mapa de exemplo, apague `data/eu4` e `assets/eu4`.
+- Esses arquivos são derivados de dados da Paradox: já estão no `.gitignore`. **Não publique no GitHub nem distribua.**
+- Nomes de países e províncias vêm da localização em inglês; terreno aparece como "—" (ainda não importado).
+- Testado só com uma árvore de arquivos de exemplo no formato do EU4; se algo não bater na sua versão do jogo, me diga a mensagem de erro.
+
+## Regenerar o mapa-múndi
+```
+pip install pillow numpy scipy
+python3 tools/gen_world.py caminho/da/imagem.png preview.png
+```
+A imagem original não está no repositório. O mapa antigo só da Europa (`tools/gen_map.py`) continua em `data/map.json`.
+
+## Regenerar o mapa antigo da Europa
+```
+pip install pillow numpy scipy
+python3 tools/gen_map.py 1956     # ~2000 províncias no total (44 de mar)
+python3 tools/gen_map.py 940      # alvo diferente (ex.: ~1000 no total) (as cidades-âncora são sempre mantidas)
+```
+O gerador usa as cidades do arquivo de nações como províncias nomeadas e completa o resto do mapa com
+províncias extras (nomeadas pela cidade mais próxima, ex.: "Paris Norte"). Cidades isoladas ou
+muito próximas de outra (< ~30 km) são descartadas.
+
+## Editar países
+Cada linha de `tools/data/nations_1444.txt`:
+```
+TAG|Nome|r,g,b|Capital,lat,lon;Cidade,lat,lon,alcance_km;...
+```
+A primeira cidade é a capital. O alcance (padrão 75 km) amplia ou reduz a área de influência da cidade.
+Terra a mais de 200 km de qualquer âncora fica sem dono (Saara, Arábia, estepes).
+
+## Próximos passos
+Economia (tesouro, renda mensal em `_on_month_passed`), exércitos e movimento,
+declaração de guerra e cerco, diplomacia, IA, eventos e salvamento de jogo.
