@@ -1,0 +1,5 @@
+.godot/
+*.translation
+/android/
+.DS_Store
+__pycache__/
