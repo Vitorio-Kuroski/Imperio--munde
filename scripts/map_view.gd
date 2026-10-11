@@ -6,6 +6,23 @@ extends Sprite2D
 
 const SEA_COLOR := Color(0.16, 0.30, 0.46)
 const UNOWNED_COLOR := Color(0.45, 0.43, 0.38)
+## Cores do modo de mapa "terreno" (rótulos gerados por tools/refine_world.py).
+const TERRAIN_COLORS := {
+	"geleira": Color8(235, 240, 245),
+	"tundra": Color8(160, 170, 150),
+	"montanhas": Color8(120, 105, 95),
+	"colinas": Color8(150, 140, 100),
+	"planalto": Color8(170, 150, 110),
+	"deserto": Color8(225, 200, 140),
+	"estepe": Color8(195, 190, 120),
+	"savana": Color8(190, 175, 90),
+	"selva": Color8(40, 110, 50),
+	"floresta": Color8(60, 120, 70),
+	"planície": Color8(140, 180, 90),
+	"pântano": Color8(90, 120, 100),
+}
+
+enum MapMode { POLITICO, TERRENO }
 
 var map_w: int
 var map_h: int
@@ -17,6 +34,7 @@ var palette_image: Image
 var palette_tex: ImageTexture
 var mat: ShaderMaterial
 var selected_id := -1
+var map_mode := MapMode.POLITICO
 
 
 func load_map(map_scale: float) -> void:
@@ -65,6 +83,8 @@ func province_color(pid: int) -> Color:
 	var p: Dictionary = provinces[pid]
 	if p["sea"]:
 		return SEA_COLOR
+	if map_mode == MapMode.TERRENO:
+		return TERRAIN_COLORS.get(p["terrain"], UNOWNED_COLOR)
 	var tag: String = p["owner"]
 	if tag == "" or not countries.has(tag):
 		return UNOWNED_COLOR
@@ -84,6 +104,16 @@ func _write_palette(pid: int) -> void:
 func set_owner_of(pid: int, tag: String) -> void:
 	provinces[pid]["owner"] = tag
 	_write_palette(pid)
+	palette_tex.update(palette_image)
+
+
+## Troca o modo de mapa (reescreve a paleta inteira uma vez; as bordas de país continuam).
+func set_map_mode(mode: MapMode) -> void:
+	if mode == map_mode:
+		return
+	map_mode = mode
+	for p in provinces:
+		_write_palette(int(p["id"]))
 	palette_tex.update(palette_image)
 
 

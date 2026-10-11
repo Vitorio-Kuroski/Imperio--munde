@@ -20,6 +20,7 @@ Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
 | Zoom | Roda do mouse |
 | Pausar / continuar | Espaço |
 | Velocidade | `+` e `-` (1 a 5) |
+| Modo de mapa (político / terreno) | `T` ou botão na barra superior |
 
 ## Estrutura
 - `scripts/main.gd` — câmera, interface, escolha de país e entrada.
@@ -49,12 +50,31 @@ O Godot passa a usar essa pasta automaticamente; para voltar ao mapa de exemplo,
 - Nomes de países e províncias vêm da localização em inglês; terreno aparece como "—" (ainda não importado).
 - Testado só com uma árvore de arquivos de exemplo no formato do EU4; se algo não bater na sua versão do jogo, me diga a mensagem de erro.
 
+## Refinar o mapa-múndi (sem mudar os ids)
+```
+pip install pillow numpy scipy
+python3 tools/refine_world.py                       # donos de 1444, costa e nomes
+python3 tools/refine_world.py --terreno             # também recalcula o terreno (baixa ~60 MB na 1ª vez)
+python3 tools/refine_world.py --previa previa.png [--modo terreno]
+```
+Trabalha direto sobre `data/world/map.json` e `assets/world/province_ids.png`, então funciona sem a imagem original.
+- **Donos:** cada cidade-âncora cresce pelas províncias vizinhas; os países ficam contíguos e só cruzam o mar
+  quando a âncora está do outro lado. A capital é a província da maior cidade real perto da âncora.
+- **Terreno:** 12 tipos (planície, floresta, colinas, montanhas, planalto, deserto, estepe, savana, selva,
+  pântano, tundra, geleira) a partir do relevo (ETOPO5, NOAA) e do clima (WorldClim 2.1, Fick & Hijmans 2017).
+  Os dados brutos ficam em `tools/data/raw/` (fora do git; o WorldClim não pode ser redistribuído).
+  O desenvolvimento passa a ser ajustado pelo terreno (o valor original fica em `base_development`).
+- **Nomes:** cidades de litoral que caíam no mar voltam para a província certa (ex.: Lisboa); províncias
+  remotas recebem o nome da região geográfica (`tools/data/ne_50m_geography_regions.geojson`, Natural Earth);
+  em nomes repetidos a cidade mais populosa fica sem numeral (London × London de Ontário).
+- Depois de editar `tools/data/nations_*.txt`, rode `refine_world.py` (não precisa do `--terreno`).
+
 ## Regenerar o mapa-múndi
 ```
 pip install pillow numpy scipy
 python3 tools/gen_world.py caminho/da/imagem.png preview.png
 ```
-A imagem original não está no repositório. O mapa antigo só da Europa (`tools/gen_map.py`) continua em `data/map.json`.
+A imagem original não está no repositório. Regenerar muda os ids; rode `tools/refine_world.py --terreno` depois. O mapa antigo só da Europa (`tools/gen_map.py`) continua em `data/map.json`.
 
 ## Regenerar o mapa antigo da Europa
 ```

@@ -18,6 +18,7 @@ var country_label: Label
 var date_label: Label
 var speed_label: Label
 var pause_button: Button
+var mode_button: Button
 var side_panel: PanelContainer
 var info_label: Label
 var start_panel: CenterContainer
@@ -64,6 +65,11 @@ func _build_ui() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hb.add_child(spacer)
+
+	mode_button = Button.new()
+	mode_button.tooltip_text = "Modo de mapa (T)"
+	mode_button.pressed.connect(_toggle_map_mode)
+	hb.add_child(mode_button)
 
 	date_label = Label.new()
 	date_label.custom_minimum_size.x = 130
@@ -162,6 +168,15 @@ func _refresh_top_bar() -> void:
 	date_label.text = clock.date_text()
 	pause_button.text = "▶" if clock.paused else "⏸"
 	speed_label.text = "Vel. %d/5" % clock.speed
+	mode_button.text = "Mapa: terreno" if map.map_mode == MapView.MapMode.TERRENO else "Mapa: político"
+
+
+func _toggle_map_mode() -> void:
+	if map.map_mode == MapView.MapMode.POLITICO:
+		map.set_map_mode(MapView.MapMode.TERRENO)
+	else:
+		map.set_map_mode(MapView.MapMode.POLITICO)
+	_refresh_top_bar()
 
 
 func _show_province(pid: int) -> void:
@@ -177,6 +192,8 @@ func _show_province(pid: int) -> void:
 		if p["owner"] != "":
 			owner_name = map.countries[p["owner"]]["name"]
 		txt += "Dono: %s\nTerreno: %s\nDesenvolvimento: %d" % [owner_name, p["terrain"], p["development"]]
+		if p.get("coastal", false):
+			txt += "\nCosteira"
 	info_label.text = txt
 	side_panel.show()
 
@@ -227,6 +244,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_clamp_camera()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
+			KEY_T:
+				_toggle_map_mode()
 			KEY_SPACE:
 				if player_tag != "":
 					clock.toggle_pause()
