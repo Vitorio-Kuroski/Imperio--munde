@@ -7,7 +7,7 @@ shader_type canvas_item;
 
 uniform sampler2D ids : filter_nearest, repeat_disable;
 uniform sampler2D palette : filter_nearest, repeat_disable;
-uniform vec2 map_size = vec2(2048.0, 1024.0);
+uniform vec2 map_size = vec2(2048.0, 2411.0);
 uniform int selected_id = -1;
 
 int id_at(ivec2 p) {

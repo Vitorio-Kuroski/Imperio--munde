@@ -1,7 +1,12 @@
 # Imperium Mundi
 
 Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
-Mapa de exemplo com **1006 províncias** (939 de terra, 67 de mar) e 24 países.
+Mapa real da **Europa, Oriente Médio e Norte da África** com **978 províncias** (934 de terra, 44 de mar)
+e **107 países de 1444** (Otomanos, França, Castela, Polônia, Lituânia, Mamelucos, Timúridas, estados do Sacro Império etc.).
+
+> **Aviso de fidelidade:** os países, capitais e cidades são reais, mas as fronteiras de 1444 são uma
+> **aproximação** (cada província vai para o país com a cidade-âncora mais próxima). Não são os dados
+> exatos do EU4. Para ajustar, edite `tools/data/nations_1444.txt` e rode o gerador.
 
 ## Como abrir
 1. Abra o Godot 4.3 ou mais novo, clique em **Importar** e escolha `project.godot`.
@@ -19,26 +24,32 @@ Mapa de exemplo com **1006 províncias** (939 de terra, 67 de mar) e 24 países.
 ## Estrutura
 - `scripts/main.gd` — câmera, interface, escolha de país e entrada.
 - `scripts/map_view.gd` — carrega o mapa, gerencia a paleta e a seleção.
-- `shaders/map.gdshader` — pinta o mapa e as bordas na GPU (costa e fronteiras fortes, divisas internas leves).
-- `scripts/game_clock.gd` — data, pausa, velocidades e sinais de dia/mês/ano.
+- `shaders/map.gdshader` — pinta províncias e bordas na GPU (costa e fronteiras fortes, divisas internas leves).
+- `scripts/game_clock.gd` — data (11 nov 1444), pausa, velocidades e sinais de dia/mês/ano.
 - `data/map.json` — províncias, países, centros e vizinhanças.
 - `assets/province_ids.png` — id de cada província (R = byte baixo, G = byte alto). É o que o jogo lê.
 - `assets/provinces.png` — a mesma divisão com uma cor única por província, para ver e editar.
-- `tools/gen_map.py` — gera um mapa novo.
+- `tools/gen_map.py` — gera o mapa a partir dos dados abaixo.
+- `tools/data/nations_1444.txt` — países de 1444 e cidades-âncora (lat/lon).
+- `tools/data/ne_50m_land.geojson` — contorno real da terra (Natural Earth, domínio público).
 
-## Gerar outro mapa
+## Regenerar o mapa
 ```
 pip install pillow numpy scipy
-python3 tools/gen_map.py 35     # 35 = espaçamento; menor = mais províncias
+python3 tools/gen_map.py          # ~940 províncias de terra
+python3 tools/gen_map.py 1400     # alvo diferente (as cidades-âncora são sempre mantidas)
 ```
-Para mais de ~1000 províncias, use um valor menor (ex.: `python3 tools/gen_map.py 25`
-dá cerca de 2000). Mudar `W, H` no script muda o tamanho do mapa; ajuste também o
-`map_size` padrão em `shaders/map.gdshader` se quiser (o jogo já passa o tamanho certo).
+O gerador usa as cidades do arquivo de nações como províncias nomeadas e completa o resto do mapa com
+províncias extras (nomeadas pela cidade mais próxima, ex.: "Paris Norte"). Cidades isoladas ou
+muito próximas de outra (< ~30 km) são descartadas.
 
-## Usar seu próprio mapa
-1. Desenhe `assets/provinces.png` com uma cor sólida única por província.
-2. Registre cada província em `data/map.json` (`id` sequencial 0..N-1, `color`, `name`, `sea`, `owner`, `terrain`, `development`, `center`, `neighbors`).
-3. Rode `python3 tools/colors_to_ids.py` para gerar `assets/province_ids.png`.
+## Editar países
+Cada linha de `tools/data/nations_1444.txt`:
+```
+TAG|Nome|r,g,b|Capital,lat,lon;Cidade,lat,lon,alcance_km;...
+```
+A primeira cidade é a capital. O alcance (padrão 75 km) amplia ou reduz a área de influência da cidade.
+Terra a mais de 200 km de qualquer âncora fica sem dono (Saara, Arábia, estepes).
 
 ## Próximos passos
 Economia (tesouro, renda mensal em `_on_month_passed`), exércitos e movimento,

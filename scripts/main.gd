@@ -3,7 +3,7 @@ extends Node2D
 
 const MAP_SCALE := 1.0
 const CAM_SPEED := 900.0
-const ZOOM_MIN := 0.3
+const ZOOM_MIN := 0.25
 const ZOOM_MAX := 6.0
 
 var map: MapView
@@ -31,7 +31,7 @@ func _ready() -> void:
 	camera = Camera2D.new()
 	add_child(camera)
 	camera.position = Vector2(map.map_w, map.map_h) * MAP_SCALE * 0.5
-	camera.zoom = Vector2(0.55, 0.55)
+	camera.zoom = Vector2(0.3, 0.3)
 	camera.make_current()
 
 	_build_ui()
@@ -119,10 +119,17 @@ func _build_ui() -> void:
 	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vb.add_theme_constant_override("separation", 4)
 	scroll.add_child(vb)
-	for tag in map.countries:
+	# Países ordenados do maior para o menor número de províncias
+	var counts := {}
+	for p in map.provinces:
+		if p["owner"] != "":
+			counts[p["owner"]] = int(counts.get(p["owner"], 0)) + 1
+	var tags: Array = map.countries.keys()
+	tags.sort_custom(func(a, b): return int(counts.get(a, 0)) > int(counts.get(b, 0)))
+	for tag in tags:
 		var c: Dictionary = map.countries[tag]
 		var b := Button.new()
-		b.text = "%s  (%d províncias)" % [c["name"], map.provinces_of(tag).size()]
+		b.text = "%s  (%d prov.)" % [c["name"], int(counts.get(tag, 0))]
 		b.custom_minimum_size = Vector2(340, 32)
 		b.pressed.connect(_start_game.bind(tag))
 		vb.add_child(b)
