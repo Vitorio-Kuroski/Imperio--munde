@@ -26,6 +26,9 @@ func load_map(map_scale: float) -> void:
 	if FileAccess.file_exists("res://data/eu4/map.json") and ResourceLoader.exists("res://assets/eu4/province_ids.png"):
 		json_path = "res://data/eu4/map.json"
 		ids_path = "res://assets/eu4/province_ids.png"
+	elif FileAccess.file_exists("res://data/world/map.json") and ResourceLoader.exists("res://assets/world/province_ids.png"):
+		json_path = "res://data/world/map.json"
+		ids_path = "res://assets/world/province_ids.png"
 	print("Mapa carregado de: ", json_path)
 	var data = JSON.parse_string(FileAccess.get_file_as_string(json_path))
 	map_w = int(data["width"])

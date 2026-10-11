@@ -1,0 +1,98 @@
+# Nações de 1444 fora da Europa/Oriente Médio (aproximação histórica; NÃO são os dados do EU4).
+# Mesmo formato de nations_1444.txt: TAG|Nome|r,g,b|Capital,lat,lon[,alcance_km];Cidade,lat,lon;...
+# Aqui as cidades só servem de âncora de posse (as províncias vêm da imagem do mapa-múndi).
+
+# ---------------------------------------------------------------- Leste da Ásia
+MNG|Ming|205,170,40|Nanquim,32.06,118.8,120;Pequim,39.9,116.4,130;Chengdu,30.66,104.06,130;Cantão,23.13,113.26,120;Xi'an,34.3,108.9,130;Wuhan,30.6,114.3,120;Fuzhou,26.07,119.3,100;Taiyuan,37.9,112.5,130;Jinan,36.7,117.0,100;Guiyang,26.6,106.7,130;Kunming,25.04,102.7,130;Lanzhou,36.06,103.8,130;Changsha,28.2,112.97,100;Nanchang,28.68,115.86,100;Hangzhou,30.27,120.15,80;Kaifeng,34.8,114.3,100;Datong,40.1,113.3,120;Liaoyang,41.27,123.17,150;Nanning,22.8,108.3,110;Hohhot,40.8,111.7,120
+OIR|Oirates|120,150,95|Urumqi,43.8,87.6,200;Hami,42.8,93.5,150;Kobdo,48.0,91.6,200
+KHA|Mongóis Khalkha|150,120,70|Caracórum,47.2,102.8,300;Ulaanbaatar,47.9,106.9,300;Kherlen,48.6,114.0,250;Hulun,49.2,119.7,250
+TIB|Tibete|190,110,60|Lhasa,29.65,91.1,250;Shigatse,29.27,88.88,200;Chamdo,31.1,97.2,200;Gyantse,28.9,89.6,100
+JIA|Jurchens|110,140,170|Jilin,43.9,126.5,200;Harbin,45.8,126.6,200;Vladivostok,43.1,131.9,200;Qiqihar,47.3,123.9,200
+KOR|Coreia|230,230,235|Hanyang,37.57,126.98,100;Pusan,35.18,129.07,100;Pyongyang,39.02,125.75,120;Gwangju,35.16,126.85,90;Hamhung,39.9,127.5,120
+ASH|Ashikaga|200,60,60|Quioto,35.01,135.77,100;Osaka,34.69,135.5,80;Nagoia,35.18,136.9,80;Kanazawa,36.56,136.65,80;Okayama,34.66,133.92,90
+OUC|Ouchi|120,60,150|Yamaguchi,34.18,131.47,100;Hiroshima,34.4,132.46,70;Fukuoka,33.59,130.4,80
+SMZ|Shimazu|220,130,60|Kagoshima,31.6,130.56,100;Kumamoto,32.8,130.7,70
+CSK|Chosokabe|80,150,120|Kochi,33.56,133.53,100;Matsuyama,33.84,132.77,70
+UES|Uesugi|70,110,180|Echigo,37.15,138.23,90;Toyama,36.7,137.2,70
+TKD|Takeda|160,50,50|Kofu,35.66,138.57,90;Matsumoto,36.24,137.97,70
+HJO|Hojo|90,160,90|Odawara,35.26,139.15,100;Edo,35.68,139.77,90;Utsunomiya,36.56,139.88,80
+DTE|Date|60,100,60|Sendai,38.27,140.87,100;Aizu,37.5,139.9,80
+NAM|Nanbu|140,140,80|Morioka,39.7,141.15,120;Aomori,40.82,140.74,100
+AIN|Ainu|180,180,160|Matsumae,41.43,140.1,120;Sapporo,43.06,141.35,250
+# ---------------------------------------------------------------- Sudeste da Ásia
+DAI|Đại Việt|215,70,70|Hanói,21.03,105.85,100;Thanh Hóa,19.8,105.77,90;Vinh,18.67,105.68,90
+CHA|Champa|230,150,210|Vijaya,13.9,109.0,120;Nha Trang,12.24,109.2,90
+KHM|Khmer|150,100,180|Angkor,13.4,103.87,130;Phnom Penh,11.56,104.92,100
+AYU|Ayutthaya|110,70,160|Ayutthaya,14.35,100.57,120;Sukhothai,17.0,99.8,120;Nakhon Si Thammarat,8.43,99.96,120
+LNA|Lan Na|200,100,130|Chiang Mai,18.79,98.98,120
+LXA|Lan Xang|230,190,120|Luang Prabang,19.89,102.13,130;Vientiane,17.97,102.6,100
+AVA|Ava|90,140,200|Ava,21.86,95.99,130;Taungoo,18.94,96.43,100
+PEG|Hanthawaddy|120,190,170|Pegu,17.34,96.48,100;Martaban,16.5,97.6,100
+ARK|Arakan|180,90,150|Mrauk-U,20.6,93.2,120
+MAL|Malaca|190,170,60|Malaca,2.2,102.25,110;Johor,1.5,103.7,80
+MJP|Majapahit|170,70,30|Majapahit,-7.55,112.4,150;Surabaia,-7.25,112.75,80;Denpasar,-8.65,115.2,80
+SUN|Sunda|90,180,110|Pakuan,-6.6,106.8,120;Banten,-6.03,106.15,70
+PAG|Pagaruyung|120,100,60|Pagaruyung,-0.45,100.6,150;Palembang,-2.98,104.76,130;Jambi,-1.6,103.6,110
+BRN|Brunei|210,190,40|Brunei,4.9,114.9,150
+SUL|Sultanato de Sulu|60,160,150|Jolo,6.05,121.0,120;Manila,14.6,120.98,100
+# ---------------------------------------------------------------- Sul da Ásia
+DLH|Délhi|180,160,90|Délhi,28.61,77.2,130;Lahore,31.55,74.35,110;Agra,27.18,78.02,100;Bayana,26.9,77.3,80
+BNG|Bengala|60,150,100|Gaur,24.87,88.13,120;Dacca,23.8,90.4,100;Chittagong,22.35,91.8,100
+JNP|Jaunpur|100,150,200|Jaunpur,25.75,82.7,100;Patna,25.6,85.1,100;Allahabad,25.43,81.85,90
+MLW|Malwa|170,120,190|Mandu,22.3,75.4,110;Ujjain,23.18,75.78,90
+GUJ|Guzerate|220,120,40|Ahmedabad,23.0,72.6,100;Surate,21.17,72.83,80;Junagadh,21.5,70.46,90
+BAH|Bahmani|60,170,180|Bidar,17.9,77.5,140;Daulatabad,19.9,75.3,100;Golconda,17.38,78.4,110
+VIJ|Vijayanagar|200,70,120|Vijayanagara,15.33,76.46,160;Madurai,9.92,78.12,130;Chandragiri,13.58,79.32,110;Mysore,12.3,76.65,110
+ORI|Orissa|190,190,100|Cuttack,20.46,85.88,130
+KSH|Caxemira|110,190,140|Srinagar,34.08,74.8,120
+SND|Sindh|200,160,110|Thatta,24.75,67.9,130
+MUL|Multan|150,190,70|Multan,30.2,71.47,110
+MEW|Mewar|230,200,150|Chittor,24.88,74.63,100
+MAR|Marwar|180,110,90|Jodhpur,26.3,73.0,130
+KOZ|Calicute|90,130,70|Calicute,11.25,75.78,100
+GON|Gondwana|100,90,130|Garha,23.2,80.0,150;Nagpur,21.15,79.09,110
+AHO|Ahom|150,70,70|Sibsagar,26.9,94.2,130
+KOT|Kotte|220,200,70|Kotte,6.9,79.9,100;Kandy,7.29,80.63,80
+JAF|Jafna|160,100,50|Jafna,9.67,80.0,80
+# ---------------------------------------------------------------- Sibéria
+SIB|Canato de Sibir|130,150,110|Isker,58.2,68.4,200;Tiumen,57.15,65.53,200;Tobolsk,58.2,68.25,200
+# ---------------------------------------------------------------- África subsaariana
+ETH|Etiópia|60,140,70|Debre Berhan,9.68,39.53,130;Gondar,12.6,37.47,130;Axum,14.13,38.72,100;Lalibela,12.03,39.04,100
+ADA|Adal|90,170,150|Harar,9.31,42.12,130;Zeila,11.35,43.47,100
+MLI|Mali|220,190,40|Niani,11.4,-9.2,200;Tombuctu,16.77,-3.0,170;Kayes,14.45,-11.44,150
+SON|Songai|190,150,60|Gao,16.27,-0.04,180
+JOL|Jolof|210,100,60|Linguere,15.4,-15.1,170;Kaolack,14.15,-16.07,100
+MSI|Mossi|170,60,50|Uagadugu,12.37,-1.52,170
+KAN|Hauçá|120,160,60|Kano,12.0,8.5,140;Katsina,12.99,7.6,120;Zaria,11.07,7.7,120
+BOR|Bornu|200,110,150|Ngazargamu,13.0,13.0,220;Maiduguri,11.83,13.15,150
+BEN|Benim|170,80,40|Benim,6.34,5.63,130
+OYO|Oyo|120,80,160|Oyo,8.1,3.9,140
+KON|Congo|60,120,170|Mbanza Congo,-6.27,14.24,200;Luanda,-8.84,13.23,130
+ZIM|Zimbábue|140,170,90|Grande Zimbábue,-20.27,30.93,230
+KIL|Quíloa|230,160,80|Quíloa,-8.96,39.51,120;Zanzibar,-6.16,39.2,100
+MGD|Mogadíscio|180,200,90|Mogadíscio,2.04,45.34,160
+MLN|Melinde|90,110,90|Melinde,-3.2,40.1,130;Mombaça,-4.04,39.67,100
+BUG|Buganda|110,70,110|Mengo,0.3,32.55,150
+DAR|Darfur|180,120,160|El Fasher,13.63,25.35,200
+KAM|Kanem-Bornu Norte|190,170,130|Kuka,12.9,14.0,100
+# ---------------------------------------------------------------- Américas
+AZT|Aliança Asteca|200,110,50|Tenochtitlán,19.43,-99.13,130;Texcoco,19.5,-98.88,80;Tlacopan,19.46,-99.21,60;Cuernavaca,18.92,-99.23,80;Veracruz,19.2,-96.13,120
+TLA|Tlaxcala|170,50,50|Tlaxcala,19.31,-98.2,70
+TAR|Tarascos|90,170,170|Tzintzuntzan,19.63,-101.58,120
+MAY|Maias|70,150,90|Mayapán,20.63,-89.46,130;Chetumal,18.5,-88.3,100;Cobá,20.5,-87.7,100
+QUI|Quiche|150,100,50|Q'umarkaj,15.0,-91.2,130
+ZAP|Zapotecas|160,80,150|Mitla,16.92,-96.36,130;Oaxaca,17.06,-96.72,90
+INC|Império Inca|220,80,80|Cusco,-13.5,-71.97,250;Quito,-0.2,-78.5,170;Arequipa,-16.4,-71.5,150;La Paz,-16.5,-68.15,150;Tucumán,-26.8,-65.2,200;Santiago,-33.45,-70.67,200
+CHM|Chimor|200,160,90|Chan Chan,-8.1,-79.07,200
+MUI|Muíscas|60,150,110|Bogotá,4.6,-74.08,150;Tunja,5.53,-73.36,100
+MAP|Mapuche|90,90,170|Temuco,-38.7,-72.6,200
+TAI|Taínos|120,190,100|Hispaniola,19.0,-70.7,150;Cuba,21.5,-78.9,170;Porto Rico,18.3,-66.5,100;Jamaica,18.1,-77.3,80
+TUP|Tupinambás|90,150,60|Salvador,-12.97,-38.5,200;Rio,-22.9,-43.2,200
+GUA|Guaranis|190,90,70|Assunção,-25.3,-57.6,250
+IRO|Iroqueses|140,110,60|Onondaga,43.0,-76.1,200
+ALG|Algonquinos|90,120,110|Montreal,45.5,-73.6,250
+CHE|Cherokees|170,130,60|Chota,35.5,-84.1,200
+CRE|Creeks|110,90,50|Ocmulgee,32.8,-83.6,230
+SIO|Sioux|160,90,100|Black Hills,44.0,-103.5,300
+CRR|Crees|120,140,70|Lake Winnipeg,53.0,-98.0,350
+PUE|Pueblos|200,120,80|Taos,36.4,-105.6,200

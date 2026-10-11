@@ -1,8 +1,8 @@
 # Imperium Mundi
 
 Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
-Mapa real da **Europa, Oriente Médio e Norte da África** com **1989 províncias** (1945 de terra, 44 de mar)
-e **113 países de 1444** (Otomanos, França, Castela, Polônia, Lituânia, Mamelucos, Timúridas, estados do Sacro Império etc.).
+**Mapa-múndi** com **5337 províncias** (4602 de terra, 735 zonas marítimas), dividido a partir de uma imagem de províncias
+(estilo mapchart.net, 6000x3150 px), e **197 países de 1444** (Europa, Oriente Médio, África, Ásia e Américas).
 
 > **Aviso de fidelidade:** os países, capitais e cidades são reais, mas as fronteiras de 1444 são uma
 > **aproximação** (cada província vai para o país com a cidade-âncora mais próxima). Não são os dados
@@ -49,7 +49,14 @@ O Godot passa a usar essa pasta automaticamente; para voltar ao mapa de exemplo,
 - Nomes de países e províncias vêm da localização em inglês; terreno aparece como "—" (ainda não importado).
 - Testado só com uma árvore de arquivos de exemplo no formato do EU4; se algo não bater na sua versão do jogo, me diga a mensagem de erro.
 
-## Regenerar o mapa
+## Regenerar o mapa-múndi
+```
+pip install pillow numpy scipy
+python3 tools/gen_world.py caminho/da/imagem.png preview.png
+```
+A imagem original não está no repositório. O mapa antigo só da Europa (`tools/gen_map.py`) continua em `data/map.json`.
+
+## Regenerar o mapa antigo da Europa
 ```
 pip install pillow numpy scipy
 python3 tools/gen_map.py 1956     # ~2000 províncias no total (44 de mar)
