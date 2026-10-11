@@ -184,6 +184,11 @@ cand_idx = rng.permutation(len(xs_land))[:200000]
 cand = np.stack([xs_land[cand_idx], ys_land[cand_idx]], axis=1).astype(np.float64)
 cand_lat, cand_lon = to_ll(cand[:, 0], cand[:, 1])
 cand_r = np.array([spacing_km(a, b) / km_per_px(a) for a, b in zip(cand_lat, cand_lon)])
+_comp_area = np.bincount(lab.ravel(), minlength=ncomp + 1)
+_anchor_comp0 = {int(lab[int(a["y"]), int(a["x"])]) for a in anchors}
+_cc = lab[cand[:, 1].astype(int), cand[:, 0].astype(int)]
+_ok = np.array([not (c in _anchor_comp0 and _comp_area[c] < 4000) for c in _cc])
+cand, cand_r = cand[_ok], cand_r[_ok]
 
 
 def build_fill(mult):
@@ -302,7 +307,7 @@ yw = yy + 7 * np.sin(xx / 43.0 + 0.4) + 5 * np.sin(xx / 14.0 + yy / 47.0) + 2.5 
 
 objs = ndimage.find_objects(lab)
 ids = None
-for attempt in range(4):
+for attempt in range(6):
     ids = np.full((H, W), -1, dtype=np.int32)
     ls_xy = np.array([[s_["x"], s_["y"]] for s_ in lseeds])
     lseed_comp = np.array([lab[int(s_["y"]), int(s_["x"])] for s_ in lseeds])
@@ -329,6 +334,18 @@ for attempt in range(4):
     print(f"  podadas {len(bad)} sementes minusculas", flush=True)
 L = len(lseeds)
 N = L + S
+
+# ancoras (cidades nomeadas) precisam ter area minima: reivindica um disco ao redor
+for i, s_ in enumerate(lseeds):
+    if s_["anchor"] is None or areas_l[i] >= 80:
+        continue
+    x0, y0 = int(s_["x"]), int(s_["y"])
+    r = 7
+    ya, yb = max(y0 - r, 0), min(y0 + r + 1, H)
+    xa, xb = max(x0 - r, 0), min(x0 + r + 1, W)
+    gy2, gx2 = np.mgrid[ya:yb, xa:xb]
+    disk = ((gx2 - x0) ** 2 + (gy2 - y0) ** 2 <= r * r) & land[ya:yb, xa:xb] & (lab[ya:yb, xa:xb] == lseed_comp[i])
+    ids[ya:yb, xa:xb][disk] = i
 
 ss_xy = np.array([[s["x"], s["y"]] for s in sea_seeds])
 wy, wx = np.nonzero(~land)
@@ -424,16 +441,16 @@ for j, s in enumerate(sea_seeds):
         d = [math.hypot(s["x"] - t["x"], s["y"] - t["y"]) if t["name"] else 1e9 for t in sea_seeds]
         base = sea_seeds[int(np.argmin(d))]["name"]
         names[L + j] = f"Águas de {base}"
-# unicidade
-seen = defaultdict(int)
+# unicidade (nomes repetidos ganham numeral romano)
+ROMAN = ["", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
+used_names = set()
 for i in range(N):
-    seen[names[i]] += 1
-dup = defaultdict(int)
-for i in range(N):
-    if seen[names[i]] > 1:
-        dup[names[i]] += 1
-        if dup[names[i]] > 1:
-            names[i] = f"{names[i]} {['', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'][min(dup[names[i]] - 1, 7)]}"
+    base = names[i]
+    k = 0
+    while names[i] in used_names:
+        k += 1
+        names[i] = f"{base} {ROMAN[k]}" if k < len(ROMAN) else f"{base} {k + 1}"
+    used_names.add(names[i])
 
 # ------------------------------------------------------------ terreno e desenvolvimento
 def box(lat, lon, la0, la1, lo0, lo1):

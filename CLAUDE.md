@@ -4,7 +4,7 @@ Jogo de grand strategy em Godot 4.x (GDScript), inspirado em Europa Universalis 
 Idioma do jogo e dos comentários: português do Brasil.
 
 ## Estado atual
-- Mapa real (Europa + Oriente Médio + N. África), projeção Mercator, 2048x2411 px, 984 províncias (940 terra, 44 mar).
+- Mapa real (Europa + Oriente Médio + N. África), projeção Mercator, 2048x2411 px, 1989 províncias (1945 terra, 44 mar).
 - 113 países de 1444 com capitais e cidades reais. Fronteiras APROXIMADAS (ver `tools/data/nations_1444.txt`); não são os dados do EU4.
 - Escolha de país (lista ordenada por tamanho), câmera (WASD/setas/arrastar, zoom), seleção de província, relógio com pausa e 5 velocidades.
 - Ainda NÃO existem: economia, exércitos, guerra, diplomacia, IA, eventos, salvamento.
@@ -15,7 +15,7 @@ Idioma do jogo e dos comentários: português do Brasil.
 - `shaders/map.gdshader`: pinta províncias e bordas na GPU. Linha 0 da paleta = cor; linha 1 = R índice do país dono (0 = nenhum, máx. 255 países), A = 1.0 se for mar.
 - `scripts/game_clock.gd`: data, pausa, velocidade; sinais `day_passed`, `month_passed`, `year_passed`, `changed`.
 - `data/map.json`: províncias (id, name, sea, owner, terrain, development, center [px], neighbors), países (tag, name, color, capital).
-- `tools/gen_map.py`: gera o mapa (`python3 tools/gen_map.py [alvo_terra]`). Requer pillow, numpy, scipy.
+- `tools/gen_map.py`: gera o mapa (`python3 tools/gen_map.py 1956` gera ~2000 províncias; o argumento é o alvo de províncias de terra). Requer pillow, numpy, scipy.
 - `tools/data/nations_1444.txt`: países e cidades-âncora (lat/lon). `tools/data/ne_50m_land.geojson`: contorno da terra (Natural Earth).
 - `tools/colors_to_ids.py`: converte um `provinces.png` de cores únicas em `province_ids.png` (para mapas desenhados à mão).
 
