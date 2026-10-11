@@ -7,15 +7,16 @@ Idioma do jogo e dos comentários: português do Brasil.
 - Mapa-múndi gerado por `tools/gen_world.py` a partir de uma imagem de províncias do usuário (6000x3150 px, projeção Miller georreferenciada em `tools/data/world_georef.json`): 5337 províncias (4602 terra, 735 mar). Saída em `data/world/` e `assets/world/`. `MapView` prefere eu4 > world > `data/map.json` (mapa antigo só da Europa, `tools/gen_map.py`).
 - 201 países de 1444 (`tools/data/nations_1444.txt` + `nations_world_1444.txt`). Fronteiras APROXIMADAS (crescimento contíguo a partir das cidades-âncora); não são os dados do EU4. Nomes de províncias vêm das cidades do Natural Earth (`ne_10m_populated_places_simple.geojson`) ou, em áreas remotas, das regiões geográficas (`ne_50m_geography_regions.geojson`).
 - `tools/refine_world.py` refina `data/world/` sem mudar ids: donos, capitais, costa (`coastal`), nomes e, com `--terreno`, terreno (12 tipos, ETOPO5 + WorldClim baixados em `tools/data/raw/`, fora do git) e `development` ajustado pelo terreno (`base_development` guarda o original).
-- Modos de mapa político e terreno (`MapView.set_map_mode`, tecla T). Escolha de país (lista ordenada por tamanho), câmera (WASD/setas/arrastar, zoom), seleção de província, relógio com pausa e 5 velocidades.
+- Culturas de 1444 (`tools/data/cultures_1444.txt`, `@Grupo|cor` + `id|Nome|âncoras`): todas as províncias de terra têm `culture`; `map.json` tem a lista `cultures` (id, name, group, color).
+- Modos de mapa político, terreno e cultura (`MapView.set_map_mode`, tecla T alterna); dica ao passar o mouse (`scripts/map_tooltip.gd`). Escolha de país (lista ordenada por tamanho), câmera (WASD/setas/arrastar, zoom), seleção de província, relógio com pausa e 5 velocidades.
 - Ainda NÃO existem: economia, exércitos, guerra, diplomacia, IA, eventos, salvamento.
 
 ## Estrutura
 - `main.tscn` + `scripts/main.gd`: câmera, interface (criada em código), escolha de país, entrada.
 - `scripts/map_view.gd`: carrega `data/map.json` e `assets/province_ids.png`; mantém a paleta (textura N×2) usada pelo shader.
-- `shaders/map.gdshader`: pinta províncias e bordas na GPU. Linha 0 da paleta = cor; linha 1 = R índice do país dono (0 = nenhum, máx. 255 países), A = 1.0 se for mar.
+- `shaders/map.gdshader`: pinta províncias e bordas na GPU. Linha 0 da paleta = cor; linha 1 = R índice do país dono (0 = nenhum, máx. 255 países), G+B índice da cultura (16 bits), A = 1.0 se for mar. `border_mode` = 1 faz as bordas fortes separarem culturas.
 - `scripts/game_clock.gd`: data, pausa, velocidade; sinais `day_passed`, `month_passed`, `year_passed`, `changed`.
-- `data/map.json`: províncias (id, name, sea, owner, terrain, development, center [px], neighbors), países (tag, name, color, capital).
+- `data/map.json`: províncias (id, name, sea, owner, terrain, development, center [px], neighbors; no mundo também culture, coastal, base_development), países (tag, name, color, capital), culturas (id, name, group, color).
 - `tools/import_eu4.py`: importa mapa/donos de 1444 da instalação do EU4 do usuário para `data/eu4/` e `assets/eu4/` (no .gitignore; dados da Paradox, nunca commitar). `MapView` prefere essa pasta quando existe. Aceita até 255 países.
 - `tools/gen_map.py`: gera o mapa (`python3 tools/gen_map.py 1956` gera ~2000 províncias; o argumento é o alvo de províncias de terra). Requer pillow, numpy, scipy.
 - `tools/data/nations_1444.txt`: países e cidades-âncora (lat/lon). `tools/data/ne_50m_land.geojson`: contorno da terra (Natural Earth).
@@ -25,7 +26,7 @@ Idioma do jogo e dos comentários: português do Brasil.
 - Dono de província muda por `MapView.set_owner_of(pid, tag)` (atualiza 2 pixels da paleta); nunca pinte pixels em loop.
 - Lógica mensal (economia, eventos, IA) entra em `_on_month_passed` ou conectada a `clock.month_passed`.
 - Prefira novos sistemas em scripts separados em `scripts/` (ex.: `economy.gd`, `army.gd`) em vez de crescer o `main.gd`.
-- Não edite `province_ids.png`/`map.json` na mão; ajuste `nations_*.txt` e rode `tools/refine_world.py` (mantém os ids). Só `gen_world.py`/`gen_map.py` mudam os ids.
+- Não edite `province_ids.png`/`map.json` na mão; ajuste `nations_*.txt`/`cultures_1444.txt` e rode `tools/refine_world.py` (mantém os ids). Só `gen_world.py`/`gen_map.py` mudam os ids.
 - Nunca commite os dados brutos do WorldClim/ETOPO (`tools/data/raw/`).
 
 ## Como rodar

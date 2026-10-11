@@ -21,6 +21,7 @@ var pause_button: Button
 var mode_button: Button
 var side_panel: PanelContainer
 var info_label: Label
+var tooltip: MapTooltip
 var start_panel: CenterContainer
 
 
@@ -67,7 +68,7 @@ func _build_ui() -> void:
 	hb.add_child(spacer)
 
 	mode_button = Button.new()
-	mode_button.tooltip_text = "Modo de mapa (T)"
+	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura (T)"
 	mode_button.pressed.connect(_toggle_map_mode)
 	hb.add_child(mode_button)
 
@@ -144,6 +145,10 @@ func _build_ui() -> void:
 		b.pressed.connect(_start_game.bind(tag))
 		vb.add_child(b)
 
+	# Dica do mapa (criada por último para ficar por cima)
+	tooltip = MapTooltip.new()
+	ui.add_child(tooltip)
+
 
 func _start_game(tag: String) -> void:
 	player_tag = tag
@@ -168,15 +173,15 @@ func _refresh_top_bar() -> void:
 	date_label.text = clock.date_text()
 	pause_button.text = "▶" if clock.paused else "⏸"
 	speed_label.text = "Vel. %d/5" % clock.speed
-	mode_button.text = "Mapa: terreno" if map.map_mode == MapView.MapMode.TERRENO else "Mapa: político"
+	mode_button.text = "Mapa: %s" % MapView.MAP_MODE_NAMES[map.map_mode]
 
 
+## Alterna político -> terreno -> cultura -> político.
 func _toggle_map_mode() -> void:
-	if map.map_mode == MapView.MapMode.POLITICO:
-		map.set_map_mode(MapView.MapMode.TERRENO)
-	else:
-		map.set_map_mode(MapView.MapMode.POLITICO)
+	map.set_map_mode(((map.map_mode + 1) % MapView.MAP_MODE_NAMES.size()) as MapView.MapMode)
 	_refresh_top_bar()
+	if map.selected_id >= 0:
+		_show_province(map.selected_id)
 
 
 func _show_province(pid: int) -> void:
@@ -192,6 +197,9 @@ func _show_province(pid: int) -> void:
 		if p["owner"] != "":
 			owner_name = map.countries[p["owner"]]["name"]
 		txt += "Dono: %s\nTerreno: %s\nDesenvolvimento: %d" % [owner_name, p["terrain"], p["development"]]
+		var cid: String = p.get("culture", "")
+		if map.cultures.has(cid):
+			txt += "\nCultura: %s (%s)" % [map.cultures[cid]["name"], map.cultures[cid]["group"]]
 		if p.get("coastal", false):
 			txt += "\nCosteira"
 	info_label.text = txt
@@ -206,6 +214,7 @@ func _on_month_passed() -> void:
 # ------------------------------------------------------------------ loop e entrada
 func _process(delta: float) -> void:
 	clock.process(delta)
+	_update_tooltip()
 
 	var dir := Vector2.ZERO
 	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
@@ -219,6 +228,13 @@ func _process(delta: float) -> void:
 	if dir != Vector2.ZERO:
 		camera.position += dir.normalized() * CAM_SPEED * delta / camera.zoom.x
 		_clamp_camera()
+
+
+func _update_tooltip() -> void:
+	var m := get_viewport().get_mouse_position()
+	var over_ui := start_panel.visible or top_bar.get_global_rect().has_point(m) \
+			or (side_panel.visible and side_panel.get_global_rect().has_point(m))
+	tooltip.update_for(map, -1 if over_ui else map.province_at_mouse(), m)
 
 
 func _clamp_camera() -> void:

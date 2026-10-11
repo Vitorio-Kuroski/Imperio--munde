@@ -1,0 +1,522 @@
+# Culturas de 1444 (aproximação histórica; NÃO são os dados do EU4).
+# Formato:
+#   @Grupo|r,g,b                         -> abre um grupo cultural (cor base do grupo)
+#   id|Nome|Cidade,lat,lon[,alcance_km];...  -> cultura do grupo atual e suas cidades-âncora
+# Cada província de terra recebe a cultura da âncora mais próxima alcançável por terra
+# (cruzar o mar custa mais; ilhas sem âncora pegam a cultura da costa mais próxima).
+# A cor de cada cultura é derivada da cor do grupo (tools/refine_world.py).
+
+# ================================================================ EUROPA
+@Britânico|200,60,60
+ingles|Inglês|Londres,51.51,-0.13;York,53.96,-1.08;Bristol,51.45,-2.59;Norwich,52.63,1.30;Exeter,50.72,-3.53;Lancaster,54.05,-2.80;Lincoln,53.23,-0.54;Durham,54.78,-1.57;Coventry,52.41,-1.51;Dublin,53.35,-6.26,20
+escoces|Escocês|Edimburgo,55.95,-3.19;Glasgow,55.86,-4.25;Aberdeen,57.15,-2.09;Dumfries,55.07,-3.60;Perth,56.40,-3.43
+
+@Celta|70,160,90
+irlandes|Irlandês|Cork,51.90,-8.47;Galway,53.27,-9.05;Limerick,52.66,-8.63;Derry,54.99,-7.32;Sligo,54.27,-8.47;Waterford,52.26,-7.11;Kilkenny,52.65,-7.25;Belfast,54.60,-5.93;Athlone,53.42,-7.94
+gaelico|Gaélico escocês|Inverness,57.48,-4.22;Stornoway,58.21,-6.39;Fort William,56.82,-5.11;Kirkwall,58.98,-2.96;Lerwick,60.15,-1.15;Oban,56.41,-5.47
+gales|Galês|Cardiff,51.48,-3.18;Swansea,51.62,-3.94;Aberystwyth,52.41,-4.08;Bangor,53.23,-4.13;Carmarthen,51.86,-4.31;Wrexham,53.05,-2.99;Brecon,51.95,-3.39
+cornico|Córnico|Truro,50.26,-5.05;Penzance,50.12,-5.54
+bretao|Bretão|Brest,48.39,-4.49;Quimper,48.00,-4.10;Vannes,47.66,-2.76;Saint-Brieuc,48.51,-2.76
+
+@Francês|80,100,200
+frances|Francês|Paris,48.86,2.35;Orléans,47.90,1.90;Reims,49.26,4.03;Troyes,48.30,4.07;Tours,47.39,0.69;Bourges,47.08,2.40;Chartres,48.45,1.49;Rennes,48.11,-1.68;Le Mans,48.00,0.20
+normando|Normando|Rouen,49.44,1.10;Caen,49.18,-0.37;Cherbourg,49.64,-1.62;Évreux,49.02,1.15
+picardo|Picardo|Amiens,49.89,2.30;Lille,50.63,3.06;Arras,50.29,2.78;Calais,50.95,1.86
+valao|Valão|Liège,50.63,5.57;Namur,50.47,4.87;Mons,50.45,3.95;Luxemburgo,49.61,6.13
+angevino|Poitevino|Poitiers,46.58,0.34;La Rochelle,46.16,-1.15;Angers,47.47,-0.55;Nantes,47.22,-1.55
+borgonhes|Borgonhês|Dijon,47.32,5.04;Besançon,47.24,6.02;Mâcon,46.31,4.83;Auxerre,47.80,3.57;Nancy,48.69,6.18;Metz,49.12,6.18
+arpitano|Arpitano|Lyon,45.76,4.84;Genebra,46.20,6.14;Lausanne,46.52,6.63;Chambéry,45.57,5.92;Grenoble,45.19,5.72;Aosta,45.74,7.32
+occitano|Occitano|Toulouse,43.60,1.44;Montpellier,43.61,3.88;Limoges,45.83,1.26;Clermont,45.78,3.08;Rodez,44.35,2.57;Périgueux,45.18,0.72
+gascao|Gascão|Bordéus,44.84,-0.58;Bayonne,43.49,-1.47;Pau,43.30,-0.37;Auch,43.65,0.59
+provencal|Provençal|Marselha,43.30,5.37;Aix,43.53,5.45;Avinhão,43.95,4.81;Nice,43.70,7.27;Digne,44.09,6.24
+
+@Ibérico|210,170,50
+castelhano|Castelhano|Toledo,39.86,-4.03;Madri,40.42,-3.70;Burgos,42.34,-3.70;Valladolid,41.65,-4.73;Salamanca,40.97,-5.66;Cuenca,40.07,-2.13;Múrcia,37.99,-1.13;Badajoz,38.88,-6.97;Cáceres,39.47,-6.37;Sória,41.76,-2.46;León,42.60,-5.57;Oviedo,43.36,-5.85;Santander,43.46,-3.80
+andaluz|Andaluz|Sevilha,37.39,-5.99;Córdoba,37.88,-4.78;Granada,37.18,-3.60;Jaén,37.77,-3.79;Málaga,36.72,-4.42;Cádis,36.53,-6.29;Almería,36.84,-2.46
+aragones|Aragonês|Saragoça,41.65,-0.88;Huesca,42.14,-0.41;Teruel,40.34,-1.11
+catalao|Catalão|Barcelona,41.39,2.17;Valência,39.47,-0.38;Palma,39.57,2.65;Perpignan,42.70,2.90;Lleida,41.62,0.62;Tarragona,41.12,1.25;Alicante,38.35,-0.48
+galego|Galego|Santiago,42.88,-8.54;Corunha,43.36,-8.41;Lugo,43.01,-7.56;Ourense,42.34,-7.86
+portugues|Português|Lisboa,38.72,-9.14;Porto,41.15,-8.61;Coimbra,40.21,-8.43;Évora,38.57,-7.91;Faro,37.02,-7.93;Braga,41.55,-8.42;Bragança,41.81,-6.76;Funchal,32.65,-16.91;Ponta Delgada,37.74,-25.67
+basco|Basco|Bilbau,43.26,-2.93;San Sebastián,43.32,-1.98;Pamplona,42.82,-1.64;Vitória,42.85,-2.67
+
+@Italiano|60,150,90
+lombardo|Lombardo|Milão,45.46,9.19;Bérgamo,45.70,9.67;Bréscia,45.54,10.21;Pavia,45.19,9.16;Como,45.81,9.09;Cremona,45.13,10.02
+piemontes|Piemontês|Turim,45.07,7.69;Asti,44.90,8.20;Cuneo,44.38,7.54
+ligure|Lígure|Gênova,44.41,8.93;Savona,44.31,8.48;La Spezia,44.10,9.82
+veneto|Vêneto|Veneza,45.44,12.32;Verona,45.44,10.99;Pádua,45.41,11.88;Vicenza,45.55,11.55;Treviso,45.67,12.24;Udine,46.06,13.24;Trieste,45.65,13.78
+emiliano|Emiliano|Bolonha,44.49,11.34;Módena,44.65,10.93;Ferrara,44.84,11.62;Parma,44.80,10.33;Ravena,44.42,12.20
+toscano|Toscano|Florença,43.77,11.26;Siena,43.32,11.33;Pisa,43.72,10.40;Lucca,43.84,10.50;Arezzo,43.46,11.88
+romano|Romano|Roma,41.90,12.50;Perúgia,43.11,12.39;Ancona,43.62,13.52;Viterbo,42.42,12.10;L'Aquila,42.35,13.40
+napolitano|Napolitano|Nápoles,40.85,14.27;Bari,41.12,16.87;Salerno,40.68,14.77;Foggia,41.46,15.55;Cosenza,39.30,16.25;Lecce,40.35,18.17;Campobasso,41.56,14.66
+siciliano|Siciliano|Palermo,38.12,13.36;Catânia,37.50,15.09;Messina,38.19,15.55;Siracusa,37.08,15.29;Agrigento,37.31,13.58;Reggio,38.11,15.65;Valeta,35.90,14.51
+sardo|Sardo|Cagliari,39.22,9.12;Sassari,40.73,8.56;Oristano,39.90,8.59
+corso|Corso|Ajaccio,41.92,8.74;Bastia,42.70,9.45
+
+@Germânico|150,130,90
+holandes|Holandês|Amsterdã,52.37,4.90;Utrecht,52.09,5.12;Roterdã,51.92,4.48;Arnhem,51.98,5.91
+flamengo|Flamengo|Antuérpia,51.22,4.40;Gante,51.05,3.72;Bruges,51.21,3.22;Bruxelas,50.85,4.35
+frisio|Frísio|Groningen,53.22,6.57;Leeuwarden,53.20,5.80;Emden,53.37,7.21
+baixosaxao|Baixo-saxão|Hamburgo,53.55,10.00;Bremen,53.08,8.80;Lübeck,53.87,10.69;Hanôver,52.37,9.73;Münster,51.96,7.63;Magdeburgo,52.13,11.63;Rostock,54.09,12.10;Brunsvique,52.27,10.52;Schwerin,53.63,11.41
+pomerano|Pomerano|Stettin,53.43,14.55;Kolberg,54.18,15.58;Stolp,54.46,17.03;Greifswald,54.09,13.38
+prussiano|Prussiano|Königsberg,54.71,20.51;Danzig,54.35,18.65;Elbing,54.16,19.40;Thorn,53.01,18.60;Allenstein,53.78,20.49;Berlim,52.52,13.40;Frankfurt (Oder),52.34,14.55;Brandemburgo,52.41,12.56;Cottbus,51.76,14.33
+renano|Renano|Colônia,50.94,6.96;Mainz,50.00,8.27;Trier,49.75,6.64;Koblenz,50.36,7.59;Frankfurt,50.11,8.68;Düsseldorf,51.23,6.78
+hessiano|Hessiano|Kassel,51.31,9.48;Marburg,50.81,8.77;Fulda,50.55,9.68
+saxao|Saxão|Dresden,51.05,13.74;Leipzig,51.34,12.37;Erfurt,50.98,11.03;Wittenberg,51.87,12.65
+franconio|Francônio|Nuremberg,49.45,11.08;Würzburg,49.79,9.95;Bamberg,49.89,10.89
+suabio|Suábio|Stuttgart,48.78,9.18;Augsburgo,48.37,10.90;Ulm,48.40,9.99;Freiburg,47.99,7.85;Estrasburgo,48.58,7.75
+bavaro|Bávaro|Munique,48.14,11.58;Regensburg,49.01,12.10;Landshut,48.54,12.15;Passau,48.57,13.43
+austriaco|Austríaco|Viena,48.21,16.37;Linz,48.31,14.29;Graz,47.07,15.44;Innsbruck,47.27,11.40;Salzburgo,47.80,13.04;Klagenfurt,46.62,14.31;Bolzano,46.50,11.35
+suico|Suíço|Zurique,47.37,8.54;Berna,46.95,7.45;Basileia,47.56,7.59;Lucerna,47.05,8.31
+silesiano|Silesiano|Breslau,51.11,17.03;Oppeln,50.67,17.93;Liegnitz,51.21,16.16;Glogau,51.66,16.08
+
+@Escandinavo|110,150,200
+dinamarques|Dinamarquês|Copenhague,55.68,12.57;Aarhus,56.16,10.20;Lund,55.70,13.19;Aalborg,57.05,9.92;Odense,55.40,10.39;Schleswig,54.52,9.56
+sueco|Sueco|Estocolmo,59.33,18.07;Uppsala,59.86,17.64;Gotemburgo,57.71,11.97;Kalmar,56.66,16.36;Linköping,58.41,15.62;Gävle,60.67,17.14;Umeå,63.83,20.26;Visby,57.64,18.30;Örebro,59.27,15.21
+noruegues|Norueguês|Oslo,59.91,10.75;Bergen,60.39,5.32;Trondheim,63.43,10.39;Stavanger,58.97,5.73;Bodø,67.28,14.40
+islandes|Islandês|Reykjavík,64.15,-21.94;Akureyri,65.68,-18.09;Tórshavn,62.01,-6.77
+
+@Eslavo ocidental|190,90,120
+polones|Polonês|Cracóvia,50.06,19.94;Varsóvia,52.23,21.01;Poznań,52.41,16.93;Łódź,51.76,19.46;Lublin,51.25,22.57;Płock,52.55,19.70;Kalisz,51.76,18.09;Przemyśl,49.78,22.77
+tcheco|Tcheco|Praga,50.08,14.44;Plzeň,49.75,13.38;Budějovice,48.97,14.47;Hradec Králové,50.21,15.83
+moravio|Morávio|Brno,49.20,16.61;Olomouc,49.59,17.25
+eslovaco|Eslovaco|Bratislava,48.15,17.11;Nitra,48.31,18.09;Košice,48.72,21.26;Banská Bystrica,48.74,19.15;Žilina,49.22,18.74
+
+@Eslavo oriental|90,170,170
+russo|Russo|Moscou,55.76,37.62;Tver,56.86,35.90;Vladímir,56.13,40.41;Riazan,54.63,39.74;Níjni Novgorod,56.33,44.00;Iaroslavl,57.63,39.87;Kostroma,57.77,40.93;Tula,54.19,37.62;Kaluga,54.51,36.26;Smolensk,54.78,32.05;Vologda,59.22,39.89;Briansk,53.24,34.37;Kursk,51.73,36.19;Viatka,58.60,49.66
+novgorodiano|Novgorodiano|Novgorod,58.52,31.27;Pskov,57.82,28.33;Kholmogory,64.22,41.65;Ustiug,60.76,46.30;Beloozero,60.03,37.79
+ruteno|Ruteno|Kiev,50.45,30.52;Lviv,49.84,24.03;Chernihiv,51.49,31.29;Zhytomyr,50.25,28.66;Lutsk,50.75,25.34;Vinnytsia,49.23,28.47;Kamianets,48.68,26.58;Poltava,49.59,34.55;Kharkiv,50.00,36.23
+bielorrusso|Bielorrusso|Minsk,53.90,27.57;Polotsk,55.49,28.79;Vitebsk,55.18,30.20;Hrodna,53.68,23.83;Brest,52.10,23.69;Mogilev,53.90,30.33;Gomel,52.44,30.98;Pinsk,52.11,26.10
+
+@Eslavo do sul|210,120,60
+croata|Croata|Zagreb,45.81,15.98;Rijeka,45.33,14.44;Split,43.51,16.44;Zadar,44.12,15.23;Ragusa,42.65,18.09
+esloveno|Esloveno|Liubliana,46.06,14.51;Maribor,46.55,15.65
+bosnio|Bósnio|Sarajevo,43.86,18.41;Banja Luka,44.77,17.19;Mostar,43.34,17.81;Tuzla,44.54,18.68
+servio|Sérvio|Belgrado,44.82,20.46;Niš,43.32,21.90;Kragujevac,44.01,20.92;Novi Pazar,43.14,20.51;Priština,42.66,21.17;Podgorica,42.44,19.26;Novi Sad,45.27,19.83
+bulgaro|Búlgaro|Sófia,42.70,23.32;Tarnovo,43.08,25.63;Plovdiv,42.15,24.75;Varna,43.21,27.91;Vidin,43.99,22.88;Escópia,42.00,21.43;Ohrid,41.12,20.80;Burgas,42.50,27.47
+
+@Carpático|170,90,170
+hungaro|Húngaro|Buda,47.50,19.04;Szeged,46.25,20.15;Debrecen,47.53,21.63;Pécs,46.07,18.23;Győr,47.69,17.63;Eger,47.90,20.38;Kolozsvár,46.77,23.60;Várad,47.06,21.93;Temesvár,45.75,21.23;Marosvásárhely,46.54,24.56
+romeno|Romeno|Bucareste,44.43,26.10;Iași,47.16,27.59;Suceava,47.65,26.26;Târgoviște,44.92,25.46;Craiova,44.32,23.80;Chișinău,47.01,28.86;Alba Iulia,46.07,23.58
+
+@Báltico|180,160,70
+lituano|Lituano|Vilnius,54.69,25.28;Kaunas,54.90,23.90;Šiauliai,55.93,23.31;Panevėžys,55.73,24.36
+letao|Letão|Riga,56.95,24.11;Daugavpils,55.87,26.54;Liepāja,56.51,21.01;Cēsis,57.31,25.27;Jelgava,56.65,23.72
+
+@Fino-úgrico|100,130,160
+finlandes|Finlandês|Turku,60.45,22.27;Helsinque,60.17,24.94;Tampere,61.50,23.79;Viborg,60.71,28.75;Kuopio,62.89,27.68;Oulu,65.01,25.47;Vaasa,63.10,21.62
+estoniano|Estoniano|Tallinn,59.44,24.75;Tartu,58.38,26.72;Pärnu,58.39,24.50;Kuressaare,58.25,22.48
+carelio|Carélio|Petrozavodsk,61.79,34.36;Kem,64.95,34.58;Olonets,60.98,32.97;Sortavala,61.70,30.69
+sami|Sámi|Kiruna,67.86,20.23;Tromsø,69.65,18.96;Murmansk,68.97,33.08;Inari,68.90,27.03;Alta,69.97,23.27;Kandalaksha,67.15,32.41;Luleå,65.58,22.15
+komi|Komi|Syktyvkar,61.67,50.83;Ukhta,63.56,53.70;Pechora,65.15,57.22;Perm,58.01,56.25
+mari|Mari|Yoshkar-Ola,56.63,47.89;Izhevsk,56.85,53.20
+mordovio|Mordóvio|Saransk,54.18,45.17;Penza,53.20,45.00
+ostiaco|Ostíaco|Khanty-Mansiysk,61.00,69.00;Surgut,61.25,73.40;Berezovo,63.93,65.04;Ivdel,60.69,60.42
+samoiedo|Samoiedo|Naryan-Mar,67.64,53.01;Vorkuta,67.50,64.05;Salekhard,66.53,66.60;Dudinka,69.40,86.18;Nadym,65.53,72.52;Norilsk,69.35,88.20;Khatanga,71.98,102.50;Turukhansk,65.80,87.97;Tazovsky,67.47,78.70
+
+@Bizantino|60,110,200
+grego|Grego|Constantinopla,41.01,28.98;Atenas,37.98,23.73;Tessalônica,40.64,22.94;Ioannina,39.66,20.85;Patras,38.25,21.73;Mistra,37.07,22.43;Larissa,39.64,22.42;Cândia,35.34,25.13;Rodes,36.43,28.22;Nicósia,35.17,33.36;Trebizonda,41.00,39.72;Corfu,39.62,19.92;Quios,38.37,26.14;Mitilene,39.10,26.55
+albanes|Albanês|Tirana,41.33,19.82;Durrës,41.32,19.45;Shkodër,42.07,19.51;Vlorë,40.47,19.49;Gjirokastër,40.08,20.14
+
+@Caucasiano|140,170,80
+armenio|Armênio|Erevan,40.18,44.51;Van,38.50,43.38;Erzurum,39.90,41.27;Kars,40.60,43.10;Sis,37.45,35.82;Gyumri,40.79,43.85;Nakhchivan,39.21,45.41;Karabakh,39.82,46.75;Erzincan,39.75,39.49;Muş,38.75,41.50
+georgiano|Georgiano|Tbilisi,41.72,44.79;Kutaisi,42.27,42.70;Batumi,41.64,41.64;Gori,41.98,44.11;Telavi,41.92,45.47;Sukhumi,43.00,41.02;Zugdidi,42.51,41.87;Akhaltsikhe,41.64,42.98
+circassiano|Circassiano|Krasnodar,45.04,38.98;Maykop,44.61,40.10;Nalchik,43.49,43.62;Cherkessk,44.23,42.06;Anapa,44.89,37.32;Sochi,43.60,39.73;Piatigorsk,44.04,43.06
+daguestani|Daguestani|Derbent,42.06,48.29;Makhachkala,42.98,47.50;Khunzakh,42.54,46.70;Grozny,43.32,45.69;Vladikavkaz,43.02,44.68;Kizlyar,43.85,46.71
+
+# ================================================================ ESTEPE, SIBÉRIA E ÁSIA CENTRAL
+@Túrquico|190,70,70
+turco|Turco|Bursa,40.18,29.06;Edirne,41.68,26.56;Ancara,39.93,32.86;Konya,37.87,32.48;Kastamonu,41.38,33.78;Sivas,39.75,37.02;Kayseri,38.73,35.49;Esmirna,38.42,27.14;Antália,36.90,30.70;Aydın,37.85,27.84;Amasya,40.65,35.83;Malatya,38.35,38.31;Adana,37.00,35.32;Kütahya,39.42,29.98;Galípoli,40.41,26.67
+azeri|Azeri|Tabriz,38.08,46.29;Ardabil,38.25,48.29;Baku,40.41,49.87;Ganja,40.68,46.36;Shamakhi,40.63,48.64;Urmia,37.55,45.08
+turcomano|Turcomano|Merv,37.60,61.83;Ashgabat,37.95,58.38;Balkanabat,39.51,54.36;Dashoguz,41.84,59.97;Türkmenabat,39.07,63.58
+tartaro|Tártaro|Kazan,55.79,49.11;Bolgar,54.97,49.06;Simbirsk,54.31,48.40;Chistopol,55.37,50.64
+bashkir|Bashkir|Ufa,54.73,55.96;Sterlitamak,53.63,55.95;Magnitogorsk,53.41,58.98;Chelyabinsk,55.16,61.40
+nogai|Nogai|Astracã,46.35,48.04;Atyrau,47.10,51.92;Saratov,51.53,46.03;Sarai,48.71,44.51;Orenburg,51.77,55.10;Uralsk,51.23,51.37;Elista,46.31,44.26;Mangyshlak,43.65,51.17
+crimeano|Tártaro da Crimeia|Bakhchisaray,44.75,33.86;Simferopol,44.95,34.10;Kherson,46.64,32.61;Melitopol,46.85,35.37;Zaporíjia,47.84,35.14;Odessa,46.48,30.72;Azov,47.10,39.42
+cazaque|Cazaque|Turquestão,43.30,68.25;Almaty,43.24,76.89;Karaganda,49.80,73.10;Astana,51.17,71.45;Aktobe,50.28,57.21;Semey,50.41,80.23;Kyzylorda,44.85,65.51;Balkhash,46.85,74.98;Zhezkazgan,47.78,67.71;Kostanay,53.21,63.62;Pavlodar,52.29,76.97;Aral,46.79,61.67
+chagatai|Chagatai|Samarcanda,39.65,66.96;Bucara,39.77,64.42;Tashkent,41.30,69.24;Khiva,41.38,60.36;Urgench,41.55,60.63;Fergana,40.39,71.78;Nukus,42.46,59.60;Qarshi,38.86,65.79;Termez,37.22,67.28
+quirguiz|Quirguiz|Bishkek,42.87,74.59;Osh,40.51,72.80;Naryn,41.43,76.00;Karakol,42.49,78.39
+uigur|Uigur|Kashgar,39.47,75.99;Yarkand,38.42,77.24;Khotan,37.11,79.92;Aksu,41.17,80.26;Kucha,41.72,82.96;Turpan,42.95,89.19;Hami,42.83,93.51;Korla,41.76,86.15
+siberiano|Tártaro siberiano|Tobolsk,58.20,68.25;Tyumen,57.15,65.53;Omsk,54.99,73.37;Tomsk,56.50,84.97;Tara,56.90,74.37;Novosibirsk,55.03,82.92;Barnaul,53.35,83.78
+iacuto|Iacuto|Iakutsk,62.03,129.73;Vilyuysk,63.75,121.62;Olekminsk,60.37,120.42;Verkhoyansk,67.55,133.39;Zhigansk,66.77,123.37;Sangar,63.92,127.47
+altaio|Altaio|Kyzyl,51.72,94.45;Gorno-Altaysk,51.96,85.96;Abakan,53.72,91.43;Krasnoyarsk,56.01,92.85;Kemerovo,55.35,86.09
+
+@Mongol|170,120,60
+mongol|Mongol|Karakorum,47.20,102.82;Ulan Bator,47.92,106.92;Choibalsan,48.07,114.53;Hohhot,40.84,111.75;Baotou,40.65,109.84;Mörön,49.63,100.16;Dalanzadgad,43.57,104.42;Sainshand,44.89,110.12;Hailar,49.21,119.74;Xilinhot,43.93,116.07;Alxa,38.85,105.73
+oirate|Oirate|Khovd,48.00,91.64;Ölgii,48.97,89.97;Altai,46.37,96.26;Ghulja,43.91,81.33;Tacheng,46.75,82.98;Karamay,45.58,84.89;Ürümqi,43.83,87.62;Uliastai,47.74,96.84
+buriato|Buriato|Ulan-Ude,51.83,107.58;Irkutsk,52.29,104.30;Chita,52.03,113.50;Kyakhta,50.35,106.45
+
+@Tungúsico|100,150,120
+jurchen|Jurchen|Harbin,45.80,126.53;Jilin,43.84,126.55;Mudanjiang,44.55,129.63;Qiqihar,47.35,123.92;Yilan,46.32,129.56;Vladivostok,43.12,131.89;Khabarovsk,48.48,135.08;Jiamusi,46.80,130.32;Hunchun,42.87,130.36
+evenque|Evenque|Tynda,55.15,124.72;Blagoveshchensk,50.26,127.53;Okhotsk,59.36,143.24;Tura,64.27,100.22;Yerbogachen,61.27,108.01;Kirensk,57.78,108.11;Bratsk,56.13,101.61;Magadan,59.56,150.80;Ayan,56.45,138.17;Ust-Kut,56.79,105.76;Baykit,61.67,96.37;Bomnak,54.72,128.86;Komsomolsk,50.55,137.01
+paleosiberiano|Paleossiberiano|Anadyr,64.73,177.51;Pevek,69.70,170.31;Petropavlovsk,53.02,158.65;Palana,59.08,159.95;Srednekolymsk,67.45,153.71;Chersky,68.75,161.33;Bilibino,68.05,166.44;Nikolayevsk,53.14,140.73;Okha,53.57,142.95;Provideniya,64.38,-173.30
+ainu|Ainu|Sapporo,43.06,141.35;Asahikawa,43.77,142.37;Kushiro,42.98,144.38;Hakodate,41.77,140.73;Yuzhno-Sakhalinsk,46.96,142.74;Kurilsk,45.23,147.88
+
+# ================================================================ LESTE DA ÁSIA
+@Chinês|210,180,60
+mandarim|Mandarim|Pequim,39.90,116.40;Taiyuan,37.87,112.55;Jinan,36.65,117.12;Xi'an,34.34,108.94;Kaifeng,34.80,114.31;Luoyang,34.62,112.45;Shijiazhuang,38.04,114.51;Tianjin,39.14,117.18;Datong,40.08,113.30;Lanzhou,36.06,103.83;Yinchuan,38.49,106.23;Shenyang,41.80,123.43;Liaoyang,41.27,123.17;Dalian,38.91,121.60;Qingdao,36.07,120.38;Zhengzhou,34.75,113.62;Xuzhou,34.26,117.18;Nanquim,32.06,118.80;Yangzhou,32.39,119.41;Hefei,31.82,117.23;Anqing,30.53,117.06;Jiuquan,39.74,98.49
+wu|Wu|Hangzhou,30.27,120.15;Suzhou,31.30,120.62;Xangai,31.23,121.47;Ningbo,29.87,121.55;Shaoxing,30.00,120.58;Wenzhou,28.00,120.67
+gan|Gan|Nanchang,28.68,115.86;Jiujiang,29.70,116.00;Ganzhou,25.83,114.93;Ji'an,27.11,114.99
+xiang|Xiang|Changsha,28.23,112.94;Hengyang,26.89,112.57;Shaoyang,27.24,111.47;Changde,29.03,111.70
+min|Min|Fuzhou,26.07,119.30;Quanzhou,24.87,118.68;Xiamen,24.48,118.09;Nanping,26.64,118.18;Chaozhou,23.66,116.62;Haikou,20.04,110.34
+yue|Yue|Cantão,23.13,113.26;Wuzhou,23.48,111.28;Zhaoqing,23.05,112.47;Zhanjiang,21.27,110.36;Guilin,25.27,110.29
+shu|Mandarim do sudoeste|Chengdu,30.66,104.06;Chongqing,29.56,106.55;Wuhan,30.59,114.30;Hanzhong,33.07,107.03;Nanchong,30.80,106.08;Yichang,30.69,111.29;Xiangyang,32.01,112.12
+
+@Montanhês do sul|120,170,80
+zhuang|Zhuang|Nanning,22.82,108.37;Baise,23.90,106.62;Liuzhou,24.33,109.41;Hechi,24.69,108.09
+miao|Miao|Guiyang,26.65,106.63;Zunyi,27.72,106.93;Kaili,26.58,107.98;Huaihua,27.55,109.96
+yi|Yi|Kunming,25.04,102.71;Xichang,27.89,102.26;Qujing,25.49,103.80;Dali,25.60,100.27;Lijiang,26.87,100.23;Zhaotong,27.34,103.72
+li|Li|Sanya,18.25,109.51;Wuzhishan,18.78,109.52
+
+@Tibetano|190,110,60
+tibetano|Tibetano|Lhasa,29.65,91.12;Shigatse,29.27,88.88;Chamdo,31.14,97.17;Xining,36.62,101.78;Golmud,36.40,94.90;Ngari,32.50,80.10;Nagqu,31.48,92.05;Kangding,30.05,101.96;Yushu,33.00,97.00;Leh,34.16,77.58;Thimphu,27.47,89.64;Gangtok,27.33,88.61;Changtang,34.50,86.00
+
+@Leste asiático|200,80,110
+coreano|Coreano|Seul,37.57,126.98;Pyongyang,39.02,125.75;Busan,35.18,129.08;Gwangju,35.16,126.85;Daegu,35.87,128.60;Hamhung,39.92,127.54;Chongjin,41.80,129.78;Kaesong,37.97,126.55;Sinuiju,40.10,124.40
+japones|Japonês|Quioto,35.01,135.77;Edo,35.68,139.69;Osaka,34.69,135.50;Hiroshima,34.39,132.46;Fukuoka,33.59,130.40;Sendai,38.27,140.87;Kagoshima,31.60,130.56;Niigata,37.92,139.04;Kanazawa,36.56,136.66;Nagoya,35.18,136.91;Kochi,33.56,133.53;Aomori,40.82,140.74;Akita,39.72,140.10
+ryukyuano|Ryukyuano|Naha,26.21,127.68;Amami,28.38,129.49
+
+# ================================================================ SUDESTE ASIÁTICO E OCEANIA
+@Indochinês|70,140,140
+vietnamita|Vietnamita|Hanói,21.03,105.85;Thanh Hoa,19.81,105.78;Vinh,18.68,105.68;Hue,16.46,107.59;Haiphong,20.86,106.68;Lang Son,21.85,106.76
+cham|Cham|Vijaya,13.78,109.22;Nha Trang,12.24,109.19;Phan Rang,11.56,108.99;Da Nang,16.05,108.20;Phan Thiet,10.93,108.10;Kon Tum,14.35,108.00
+khmer|Khmer|Angkor,13.36,103.86;Phnom Penh,11.56,104.92;Battambang,13.10,103.20;Prey Nokor,10.82,106.63;Can Tho,10.05,105.75;Kampong Thom,12.71,104.89;Korat,14.98,102.10
+
+@Tai|200,110,160
+tailandes|Tailandês|Ayutthaya,14.35,100.57;Sukhothai,17.01,99.82;Phitsanulok,16.82,100.26;Bangkok,13.76,100.50;Nakhon Si Thammarat,8.43,99.96;Phetchaburi,13.11,99.94;Chanthaburi,12.61,102.10
+lanna|Lanna|Chiang Mai,18.79,98.98;Chiang Rai,19.91,99.83;Nan,18.78,100.78
+laosiano|Laosiano|Luang Prabang,19.89,102.13;Vientiane,17.98,102.63;Savannakhet,16.55,104.75;Udon Thani,17.41,102.79;Ubon,15.24,104.85;Champasak,14.88,105.87
+shan|Shan|Taunggyi,20.78,97.04;Lashio,22.94,97.75;Kengtung,21.29,99.60;Myitkyina,25.38,97.40;Jinghong,22.01,100.80;Mangshi,24.43,98.58
+
+@Birmanês|160,140,60
+birmanes|Birmanês|Ava,21.97,96.08;Bagan,21.17,94.86;Prome,18.82,95.22;Magway,20.15,94.92;Monywa,22.11,95.13;Toungoo,18.94,96.43
+mon|Mon|Pegu,17.34,96.48;Yangon,16.84,96.17;Mawlamyine,16.49,97.63;Dawei,14.08,98.19;Pathein,16.78,94.73
+arakanes|Arakanês|Mrauk U,20.59,93.19;Sittwe,20.15,92.90;Thandwe,18.46,94.37
+
+@Malaio|210,100,60
+malaio|Malaio|Malaca,2.19,102.25;Kuala Lumpur,3.14,101.69;Johor,1.46,103.76;Kota Bharu,6.13,102.24;Pattani,6.87,101.25;Kedah,6.12,100.37;Kuantan,3.81,103.33;Palembang,-2.99,104.76;Jambi,-1.61,103.61;Pekanbaru,0.51,101.45;Tanjung Pinang,0.92,104.45;Brunei,4.94,114.95;Pontianak,-0.03,109.33;Banjarmasin,-3.32,114.59;Pangkal Pinang,-2.13,106.11;Samarinda,-0.50,117.15
+acehnes|Acehnês|Banda Aceh,5.55,95.32;Samudera Pasai,5.18,97.15
+batak|Batak|Medan,3.59,98.67;Sibolga,1.74,98.78;Toba,2.60,98.90
+minangkabau|Minangkabau|Padang,-0.95,100.35;Pagaruyung,-0.47,100.62;Bengkulu,-3.80,102.27;Lampung,-5.43,105.26
+javanes|Javanês|Trowulan,-7.56,112.38;Surabaya,-7.25,112.75;Yogyakarta,-7.80,110.36;Semarang,-6.97,110.42;Demak,-6.89,110.64;Madiun,-7.63,111.52;Malang,-7.98,112.63;Banyuwangi,-8.22,114.37
+sundanes|Sundanês|Pakuan,-6.60,106.80;Bandung,-6.92,107.60;Cirebon,-6.71,108.56;Banten,-6.12,106.15;Sunda Kelapa,-6.20,106.85
+balines|Balinês|Bali,-8.65,115.22;Lombok,-8.58,116.12
+bugis|Bugis|Makassar,-5.14,119.43;Bone,-4.54,120.33;Parepare,-4.01,119.62;Luwu,-2.99,120.20;Kendari,-3.97,122.51;Palu,-0.90,119.87;Gorontalo,0.54,123.06;Manado,1.47,124.84
+dayak|Dayak|Palangkaraya,-2.21,113.92;Kuching,1.55,110.34;Sibu,2.30,111.82;Tarakan,3.30,117.63;Kota Kinabalu,5.98,116.07;Putussibau,0.84,112.93;Long Bawan,3.90,115.70;Sandakan,5.84,118.12
+moluqueno|Moluquenho|Ternate,0.79,127.38;Tidore,0.68,127.40;Ambon,-3.70,128.17;Banda,-4.52,129.90;Masohi,-3.30,128.97;Tobelo,1.73,128.01
+nusatenggara|Timorense|Kupang,-10.18,123.60;Díli,-8.56,125.57;Ende,-8.84,121.66;Waingapu,-9.66,120.26;Bima,-8.46,118.73
+formosano|Formosano|Taipé,25.03,121.57;Tainan,22.99,120.21;Taitung,22.76,121.14;Hualien,23.99,121.60;Kaohsiung,22.63,120.30;Taichung,24.15,120.67
+malgaxe|Malgaxe|Antananarivo,-18.88,47.51;Toamasina,-18.15,49.40;Mahajanga,-15.72,46.32;Toliara,-23.35,43.67;Fianarantsoa,-21.45,47.09;Antsiranana,-12.28,49.29;Morondava,-20.28,44.28;Taolagnaro,-25.03,46.98;Sambava,-14.27,50.17;Maintirano,-18.06,44.03;Ihosy,-22.40,46.12
+
+@Filipino|90,120,200
+tagalo|Tagalo|Maynila,14.60,120.98;Batangas,13.76,121.06;Naga,13.62,123.19;Legazpi,13.14,123.74;Puerto Princesa,9.74,118.73
+visaia|Visaia|Cebu,10.31,123.89;Iloilo,10.72,122.56;Tacloban,11.24,125.00;Butuan,8.95,125.54;Bohol,9.65,123.85
+ilocano|Ilocano|Vigan,17.57,120.39;Laoag,18.20,120.59;Tuguegarao,17.61,121.73;Baguio,16.41,120.60
+moro|Moro|Cotabato,7.22,124.25;Jolo,6.05,121.00;Zamboanga,6.91,122.08;Davao,7.07,125.61;Cagayan de Oro,8.48,124.65;Marawi,8.00,124.29
+
+@Oceânico|70,150,190
+papuasio|Papuásio|Jayapura,-2.53,140.72;Sorong,-0.88,131.25;Merauke,-8.49,140.40;Port Moresby,-9.44,147.18;Lae,-6.72,147.00;Madang,-5.22,145.79;Mount Hagen,-5.86,144.23;Wewak,-3.55,143.63;Timika,-4.55,136.89;Manokwari,-0.86,134.08;Daru,-9.07,143.21;Alotau,-10.31,150.45
+melanesio|Melanésio|Rabaul,-4.20,152.18;Kavieng,-2.58,150.80;Honiara,-9.43,159.95;Port Vila,-17.73,168.32;Nouméa,-22.27,166.45;Suva,-18.14,178.44
+polinesio|Polinésio|Honolulu,21.31,-157.86;Hilo,19.71,-155.08;Apia,-13.83,-171.77;Tonga,-21.14,-175.20;Taiti,-17.53,-149.57
+maori|Maori|Auckland,-36.85,174.76;Wellington,-41.29,174.78;Christchurch,-43.53,172.64;Dunedin,-45.87,170.50;Rotorua,-38.14,176.25;Kaitaia,-35.11,173.26
+micronesio|Micronésio|Guam,13.44,144.79;Palau,7.50,134.62;Pohnpei,6.88,158.22;Majuro,7.09,171.38;Tarawa,1.45,173.03
+
+@Aborígene|170,100,70
+aborigene_n|Aborígene do norte|Darwin,-12.46,130.84;Katherine,-14.47,132.26;Kununurra,-15.77,128.74;Weipa,-12.63,141.88;Cairns,-16.92,145.77;Broome,-17.96,122.24;Tennant Creek,-19.65,134.19;Mount Isa,-20.73,139.49
+aborigene_d|Aborígene do deserto|Alice Springs,-23.70,133.88;Kalgoorlie,-30.75,121.47;Ceduna,-32.13,133.68;Port Hedland,-20.31,118.60;Coober Pedy,-29.01,134.75;Giles,-25.04,128.30
+aborigene_l|Aborígene do leste|Sydney,-33.87,151.21;Melbourne,-37.81,144.96;Brisbane,-27.47,153.03;Adelaide,-34.93,138.60;Townsville,-19.26,146.82;Rockhampton,-23.38,150.51;Dubbo,-32.24,148.60;Broken Hill,-31.95,141.47;Hobart,-42.88,147.33
+aborigene_o|Aborígene do oeste|Perth,-31.95,115.86;Carnarvon,-24.88,113.66;Esperance,-33.86,121.89;Geraldton,-28.78,114.61
+
+# ================================================================ SUBCONTINENTE INDIANO
+@Indo-ariano oriental|220,140,60
+bengali|Bengali|Gaur,25.00,88.14;Daca,23.81,90.41;Calcutá,22.57,88.36;Chittagong,22.36,91.78;Sylhet,24.90,91.87;Rajshahi,24.37,88.60;Khulna,22.85,89.54;Murshidabad,24.18,88.27;Comilla,23.46,91.18;Rangpur,25.75,89.25
+assames|Assamês|Guwahati,26.14,91.74;Jorhat,26.75,94.20;Dibrugarh,27.47,94.91;Tezpur,26.63,92.80;Imphal,24.82,93.94;Kohima,25.67,94.11;Shillong,25.58,91.89;Aizawl,23.73,92.72
+oria|Oriá|Cuttack,20.46,85.88;Puri,19.81,85.83;Balasore,21.49,86.93;Berhampur,19.31,84.79;Sambalpur,21.47,83.97
+bihari|Bihari|Patna,25.59,85.14;Gaya,24.79,85.00;Darbhanga,26.15,85.90;Varanasi,25.32,82.97;Gorakhpur,26.76,83.37
+
+@Indo-ariano ocidental|200,170,80
+hindustani|Hindustâni|Délhi,28.61,77.21;Agra,27.18,78.01;Lucknow,26.85,80.95;Kanpur,26.45,80.33;Meerut,28.98,77.71;Bareilly,28.37,79.43;Gwalior,26.22,78.18;Allahabad,25.44,81.85;Jaunpur,25.75,82.69;Bhopal,23.26,77.41;Sagar,23.84,78.74
+rajastani|Rajastâni|Amber,26.92,75.79;Chittor,24.88,74.62;Udaipur,24.59,73.71;Jodhpur,26.24,73.02;Bikaner,28.02,73.31;Ajmer,26.45,74.64;Jaisalmer,26.92,70.92;Kota,25.18,75.83;Alwar,27.55,76.60;Mandu,22.35,75.40;Ujjain,23.18,75.78
+guzerate|Guzerate|Ahmedabad,23.02,72.57;Surat,21.17,72.83;Vadodara,22.31,73.18;Junagadh,21.52,70.46;Bhuj,23.24,69.67;Rajkot,22.30,70.80;Diu,20.71,70.98
+sindi|Sindi|Thatta,24.75,67.92;Hyderabad (Sind),25.40,68.37;Sukkur,27.70,68.86;Karachi,24.86,67.00;Umerkot,25.36,69.74;Larkana,27.56,68.21
+panjabi|Panjabi|Lahore,31.55,74.34;Multan,30.20,71.47;Amritsar,31.63,74.87;Jalandhar,31.33,75.58;Sialkot,32.49,74.53;Bathinda,30.21,74.95;Sirhind,30.64,76.39;Rawalpindi,33.60,73.04;Jhang,31.27,72.32
+caxemir|Caxemir|Srinagar,34.08,74.80;Jammu,32.73,74.86;Gilgit,35.92,74.31;Chitral,35.85,71.79
+nepales|Nepalês|Catmandu,27.72,85.32;Pokhara,28.21,83.99;Biratnagar,26.45,87.27;Nepalgunj,28.05,81.62;Shimla,31.10,77.17;Dehradun,30.32,78.03;Almora,29.60,79.66
+marata|Marata|Pune,18.52,73.86;Mumbai,19.08,72.88;Nashik,20.00,73.79;Aurangabad,19.88,75.34;Kolhapur,16.70,74.24;Nagpur,21.15,79.09;Amravati,20.94,77.78;Ratnagiri,16.99,73.30;Bidar,17.91,77.52;Solapur,17.66,75.91
+concani|Concani|Goa,15.49,73.83;Karwar,14.81,74.13
+
+@Dravídico|90,160,110
+telugo|Telugo|Warangal,17.97,79.59;Golconda,17.38,78.49;Vijayawada,16.51,80.65;Rajahmundry,17.00,81.80;Visakhapatnam,17.69,83.22;Nellore,14.44,79.99;Kurnool,15.83,78.04;Tirupati,13.63,79.42;Anantapur,14.68,77.60;Karimnagar,18.44,79.13
+canares|Canarês|Vijayanagara,15.33,76.46;Bangalore,12.97,77.59;Mysore,12.30,76.64;Belgaum,15.85,74.50;Bijapur,16.83,75.71;Gulbarga,17.33,76.83;Mangalore,12.91,74.86;Hubli,15.36,75.12;Shimoga,13.93,75.57;Raichur,16.20,77.36
+malaiala|Malaiala|Calicute,11.25,75.78;Cochim,9.93,76.27;Quilon,8.89,76.61;Trivandrum,8.52,76.94;Cananor,11.87,75.37;Thrissur,10.53,76.21
+tamil|Tâmil|Madurai,9.93,78.12;Thanjavur,10.79,79.14;Kanchipuram,12.83,79.70;Tiruchirappalli,10.79,78.70;Coimbatore,11.00,76.96;Tirunelveli,8.71,77.76;Vellore,12.92,79.13;Salem,11.66,78.15;Jaffna,9.66,80.01;Trincomalee,8.57,81.23;Pondicherry,11.94,79.81;Batticaloa,7.71,81.69
+gondi|Gondi|Jabalpur,23.18,79.99;Raipur,21.25,81.63;Bilaspur,22.08,82.15;Mandla,22.60,80.37;Chanda,19.96,79.30;Ranchi,23.34,85.31;Jagdalpur,19.07,82.03;Balaghat,21.80,80.18
+
+@Insular índico|200,100,140
+cingales|Cingalês|Kandy,7.29,80.63;Kotte,6.93,79.86;Galle,6.05,80.22;Anuradhapura,8.31,80.40;Kurunegala,7.49,80.36;Ratnapura,6.68,80.40
+maldivo|Maldivo|Malé,4.18,73.51
+andamanes|Andamanês|Port Blair,11.62,92.73;Car Nicobar,9.17,92.82
+
+# ================================================================ IRÃ, CÁUCASO SUL E ORIENTE MÉDIO
+@Iraniano|90,140,90
+persa|Persa|Isfahan,32.65,51.67;Shiraz,29.59,52.58;Rey,35.69,51.39;Qazvin,36.27,50.00;Hamadan,34.80,48.51;Kashan,33.98,51.43;Yazd,31.90,54.36;Kerman,30.28,57.08;Qom,34.64,50.88;Ormuz,27.19,56.27;Bushehr,28.97,50.84;Lar,27.68,54.34;Semnan,35.58,53.40
+khorasani|Khorasani|Herat,34.35,62.20;Mashhad,36.30,59.60;Nishapur,36.21,58.79;Sabzevar,36.21,57.68;Balkh,36.71,67.11;Birjand,32.87,59.22;Tabas,33.60,56.92
+tajique|Tajique|Dushanbe,38.56,68.77;Khujand,40.28,69.62;Khorog,37.49,71.55;Faizabad,37.12,70.58;Kunduz,36.73,68.86;Bamiyan,34.82,67.83;Cabul,34.53,69.17
+pashtun|Pashtun|Kandahar,31.62,65.71;Ghazni,33.55,68.42;Jalalabad,34.43,70.45;Peshawar,34.01,71.58;Quetta,30.18,66.99;Bannu,32.99,70.60;Kohat,33.58,71.44;Dera Ismail Khan,31.83,70.90
+baluchi|Balúchi|Kalat,29.03,66.59;Gwadar,25.13,62.33;Zahedan,29.50,60.86;Turbat,26.00,63.06;Khuzdar,27.81,66.61;Kharan,28.58,65.42;Chabahar,25.29,60.64;Sibi,29.54,67.88;Zaranj,30.96,61.86;Dera Ghazi Khan,30.05,70.64
+gilaki|Gilaki|Rasht,37.28,49.58;Sari,36.56,53.06;Amol,36.47,52.35;Gorgan,36.84,54.43;Lahijan,37.21,50.00
+luri|Luri|Khorramabad,33.49,48.36;Borujerd,33.90,48.75;Dezful,32.38,48.40;Yasuj,30.67,51.59;Ilam,33.64,46.42;Shahr-e Kord,32.33,50.86
+curdo|Curdo|Diyarbakır,37.91,40.24;Erbil,36.19,44.01;Sulaymaniyah,35.56,45.44;Kermanshah,34.31,47.07;Sanandaj,35.31,47.00;Hakkari,37.57,43.74;Bitlis,38.40,42.11;Mardin,37.31,40.74;Siirt,37.93,41.94;Mahabad,36.76,45.72;Dohuk,36.87,42.95
+
+@Árabe|80,160,80
+levantino|Levantino|Damasco,33.51,36.29;Alepo,36.20,37.13;Homs,34.73,36.71;Hama,35.13,36.75;Beirute,33.89,35.50;Trípoli (Líbano),34.44,35.83;Jerusalém,31.77,35.21;Gaza,31.50,34.47;Acre,32.93,35.08;Amã,31.95,35.93;Karak,31.18,35.70;Latakia,35.53,35.79;Raqqa,35.95,39.01;Deir ez-Zor,35.34,40.14;Antioquia,36.20,36.16
+iraquiano|Iraquiano|Bagdá,33.31,44.36;Baçorá,30.51,47.78;Mossul,36.34,43.13;Kirkuk,35.47,44.39;Hilla,32.48,44.42;Najaf,32.00,44.33;Kut,32.50,45.82;Samarra,34.20,43.87;Ramadi,33.43,43.30;Nasiriyah,31.04,46.26;Ahvaz,31.32,48.67;Amarah,31.84,47.14;Haditha,34.14,42.38
+beduino|Beduíno|Hail,27.52,41.69;Riad,24.71,46.68;Tabuk,28.38,36.57;Al Jawf,29.97,40.21;Buraidah,26.33,43.97;Rafha,29.64,43.49;Arar,30.97,41.04;Wadi ad-Dawasir,20.46,44.78;Bisha,20.00,42.60;Palmira,34.56,38.27;Rutba,33.04,40.28;Hafar al-Batin,28.43,45.97;Sharurah,17.47,47.12;Thumrait,17.67,54.03
+hejazi|Hejazi|Meca,21.39,39.86;Medina,24.47,39.61;Jidá,21.49,39.19;Yanbu,24.09,38.06;Taif,21.27,40.42;Al-Ula,26.62,37.92;Abha,18.22,42.50
+iemenita|Iemenita|Sana,15.37,44.19;Áden,12.79,45.03;Taiz,13.58,44.02;Zabid,14.20,43.32;Mukalla,14.54,49.12;Saada,16.94,43.76;Marib,15.46,45.33;Tarim,16.06,49.00;Al Ghaydah,16.20,52.18;Najran,17.49,44.13;Hodeidah,14.80,42.95;Jizan,16.89,42.55;Socotorá,12.65,54.02
+omani|Omani|Mascate,23.59,58.38;Nizwa,22.93,57.53;Sohar,24.36,56.75;Sur,22.57,59.53;Salalah,17.02,54.09;Ibri,23.23,56.52;Haima,19.96,56.28;Duqm,19.66,57.70
+khaleeji|Khaleeji|Julfar,25.79,55.94;Abu Dhabi,24.45,54.38;Dubai,25.20,55.27;Doha,25.29,51.53;Bahrein,26.23,50.59;Hofuf,25.38,49.59;Kuwait,29.37,47.98;Qatif,26.56,50.01
+egipcio|Egípcio|Cairo,30.04,31.24;Alexandria,31.20,29.92;Damietta,31.42,31.81;Tanta,30.79,31.00;Mansura,31.04,31.38;Faium,29.31,30.84;Minia,28.11,30.74;Assiut,27.18,31.18;Qena,26.16,32.72;Luxor,25.69,32.64;Assuã,24.09,32.90;Suez,29.97,32.55;Kharga,25.45,30.55
+
+# ================================================================ ÁFRICA DO NORTE E SAARA
+@Magrebino|170,140,80
+marroquino|Marroquino|Fez,34.03,-5.00;Rabat,34.02,-6.83;Tânger,35.76,-5.83;Meknès,33.90,-5.55;Tetuão,35.57,-5.37;Safi,32.30,-9.24;Anfa,33.57,-7.59;Marrakech,31.63,-8.01;Larache,35.19,-6.16;Taza,34.21,-4.01
+argelino|Argelino|Argel,36.75,3.06;Tlemcen,34.88,-1.32;Orã,35.70,-0.63;Constantina,36.37,6.61;Annaba,36.90,7.77;Mostaganem,35.93,0.09;Médéa,36.26,2.75;Biskra,34.85,5.73
+tunisino|Tunisino|Túnis,36.81,10.18;Kairouan,35.68,10.10;Sfax,34.74,10.76;Gabès,33.88,10.10;Bizerte,37.27,9.87;Sousse,35.83,10.64;Djerba,33.81,10.85;Tozeur,33.92,8.13;Gafsa,34.42,8.78
+libio|Líbio|Trípoli,32.89,13.19;Misrata,32.38,15.09;Bengasi,32.12,20.07;Derna,32.77,22.64;Tobruk,32.08,23.96;Sirte,31.21,16.59;Marsa Matruh,31.35,27.24;Ajdabiya,30.76,20.23
+
+@Berbere|190,150,100
+berbere|Berbere|Bejaia,36.75,5.08;Tizi Ouzou,36.71,4.05;Batna,35.56,6.17;Agadir,30.43,-9.60;Taroudant,30.47,-8.88;Ouarzazate,30.92,-6.89;Al Hoceima,35.25,-3.94;Khenifra,32.94,-5.67;Sijilmassa,31.93,-4.43;Ghardaïa,32.49,3.67;Ouargla,31.95,5.33;Touggourt,33.10,6.06;Djelfa,34.67,3.26;El Bayadh,33.68,1.02;Béchar,31.62,-2.22;Figuig,32.11,-1.23;Siwa,29.20,25.52;Nalut,31.87,10.98;Ghadames,30.13,9.50;Sabha,27.04,14.43;Murzuq,25.92,13.92;Guelmim,28.99,-10.06
+tuaregue|Tuaregue|Tamanrasset,22.79,5.53;Djanet,24.55,9.48;Ghat,24.96,10.17;Agadez,16.97,7.99;Arlit,18.74,7.39;Kidal,18.44,1.41;Tessalit,20.20,1.01;Menaka,15.92,2.40;In Salah,27.19,2.47;Adrar,27.87,-0.29;Illizi,26.48,8.47
+mouro|Mouro|Chinguetti,20.46,-12.36;Atar,20.52,-13.05;Ouadane,20.93,-11.62;Walata,17.30,-7.03;Tichitt,18.44,-9.50;Nouakchott,18.09,-15.98;Nouadhibou,20.94,-17.04;Tindouf,27.67,-8.15;Smara,26.74,-11.68;Laayoune,27.15,-13.20;Dakhla,23.68,-15.96;Taoudenni,22.68,-3.98;Zouérat,22.73,-12.47;Kiffa,16.62,-11.40;Néma,16.62,-7.26;Tan-Tan,28.44,-11.10
+
+@Saariano|160,110,80
+canuri|Canúri|Ngazargamu,12.89,11.93;Maiduguri,11.85,13.16;Mao,14.12,15.31;Nguigmi,14.25,13.11;Diffa,13.32,12.61;Potiskum,11.71,11.08;Bol,13.46,14.71;Dikwa,12.03,13.92;Damaturu,11.75,11.96
+tebu|Tebu|Bilma,18.69,12.92;Faya,17.92,19.10;Bardaï,21.36,17.00;Kufra,24.20,23.29;Fada,17.18,21.58;Zouar,20.45,16.53
+bagirmi|Baguirmi|Massenya,11.40,16.17;N'Djamena,12.13,15.06;Mongo,12.18,18.69;Ati,13.21,18.34
+maba|Maba|Abéché,13.83,20.83;Biltine,14.53,20.92;Am Timan,10.98,20.28;Goz Beïda,12.22,21.41
+fur|Fur|El Fasher,13.63,25.35;Nyala,12.05,24.88;Geneina,13.45,22.45;El Daein,11.46,26.13
+kordofani|Kordofani|El Obeid,13.18,30.22;Kadugli,11.01,29.72;Dilling,12.05,29.65;Babanusa,11.33,27.81;Sodiri,14.42,29.08
+
+# ================================================================ ÁFRICA OCIDENTAL
+@Mandê|200,90,50
+mandinga|Mandinga|Niani,11.38,-8.38;Kangaba,11.93,-8.41;Siguiri,11.42,-9.17;Kankan,10.38,-9.31;Kita,13.03,-9.49;Kouroussa,10.65,-9.88;Odienné,9.51,-7.56;Banjul,13.45,-16.58;Ziguinchor,12.56,-16.27;Kaabu,12.17,-14.66;Bissau,11.86,-15.60;Kolda,12.89,-14.94
+bambara|Bambara|Bamako,12.64,-8.00;Ségou,13.43,-6.27;Koutiala,12.39,-5.46;Sikasso,11.32,-5.67;Bougouni,11.42,-7.48
+soninque|Soninquê|Nioro,15.23,-9.59;Yélimané,15.12,-10.57;Bakel,14.90,-12.46;Nara,15.17,-7.29;Koumbi Saleh,15.77,-8.00
+
+@Atlântico|120,170,70
+wolof|Uolofe|Dacar,14.69,-17.45;Saint-Louis,16.03,-16.49;Kaolack,14.15,-16.07;Thiès,14.79,-16.93;Louga,15.62,-16.22;Diourbel,14.65,-16.23;Linguère,15.39,-15.12
+fula|Fula|Podor,16.65,-14.96;Matam,15.66,-13.26;Labé,11.32,-12.28;Mamou,10.38,-12.09;Kayes,14.45,-11.44;Kédougou,12.56,-12.18;Tambacounda,13.77,-13.67;Mopti,14.49,-4.20;Dori,14.03,-0.03
+mende|Mende|Freetown,8.48,-13.23;Bo,7.96,-11.74;Kenema,7.88,-11.19;Makeni,8.88,-12.04;Conacri,9.64,-13.58;Kindia,10.06,-12.86;Boké,10.94,-14.30;Kabala,9.59,-11.55;Nzérékoré,7.75,-8.82;Gbarnga,7.00,-9.47;Guéckédou,8.56,-10.13
+kru|Kru|Monróvia,6.30,-10.80;Buchanan,5.88,-10.05;Harper,4.38,-7.72;San-Pédro,4.75,-6.64;Man,7.41,-7.55;Gagnoa,6.13,-5.95;Daloa,6.88,-6.45;Greenville,5.01,-9.04
+
+@Sudanês ocidental|220,170,70
+songai|Songai|Gao,16.27,-0.04;Tombuctu,16.77,-3.00;Djenné,13.90,-4.55;Ansongo,15.66,0.50;Niamey,13.51,2.11;Tillabéri,14.21,1.45;Dosso,13.05,3.19;Hombori,15.28,-1.70
+mossi|Mossi|Uagadugu,12.37,-1.52;Ouahigouya,13.58,-2.42;Kaya,13.09,-1.08;Tenkodogo,11.78,-0.37;Koudougou,12.25,-2.36;Fada N'gourma,12.06,0.36;Bobo-Dioulasso,11.18,-4.30
+dagomba|Dagomba|Tamale,9.40,-0.85;Yendi,9.44,-0.01;Bolgatanga,10.79,-0.85;Wa,10.06,-2.50;Natitingou,10.30,1.38
+hauca|Hauçá|Kano,12.00,8.52;Katsina,12.99,7.60;Zaria,11.09,7.71;Gobir,13.06,5.24;Kebbi,12.45,4.20;Gusau,12.16,6.66;Daura,13.03,8.32;Maradi,13.50,7.10;Zinder,13.80,8.99;Tahoua,14.89,5.26;Bauchi,10.31,9.84;Kaduna,10.52,7.44;Dutse,11.76,9.34
+
+@Kwa|190,80,100
+aca|Acã|Kumasi,6.69,-1.62;Bono,7.59,-1.94;Elmina,5.08,-1.35;Cape Coast,5.10,-1.25;Acra,5.60,-0.19;Koforidua,6.09,-0.26;Sunyani,7.34,-2.33;Bondoukou,8.04,-2.80;Abidjan,5.36,-4.00;Sefwi,6.21,-2.49;Axim,4.87,-2.24;Yamoussoukro,6.82,-5.28
+ewe|Ewe|Lomé,6.13,1.22;Ho,6.60,0.47;Aného,6.23,1.60;Allada,6.66,2.15;Abomey,7.18,1.99;Uidá,6.36,2.09;Atakpamé,7.53,1.13;Sokodé,8.98,1.13;Kara,9.55,1.19;Djougou,9.71,1.67
+ioruba|Iorubá|Oyo,7.85,3.93;Ifé,7.47,4.56;Ijebu Ode,6.82,3.92;Lagos,6.52,3.38;Abeokuta,7.16,3.35;Ibadan,7.38,3.94;Ilorin,8.50,4.55;Ondo,7.10,4.84;Akure,7.25,5.20;Ketu,7.36,2.60;Porto-Novo,6.50,2.60;Saki,8.67,3.39
+edo|Edo|Benin,6.34,5.62;Warri,5.52,5.75;Auchi,7.07,6.27;Agbor,6.25,6.19;Owo,7.20,5.59
+igbo|Igbo|Nri,6.21,7.07;Onitsha,6.14,6.79;Enugu,6.44,7.50;Owerri,5.48,7.03;Umuahia,5.53,7.49;Abakaliki,6.32,8.11;Nsukka,6.86,7.40;Arochukwu,5.39,7.91
+ijaw|Ijaw|Port Harcourt,4.82,7.03;Bonny,4.45,7.17;Brass,4.31,6.24;Calabar,4.95,8.33;Uyo,5.04,7.92;Yenagoa,4.92,6.26
+nupe|Nupe|Bida,9.08,6.01;Lokoja,7.80,6.74;Minna,9.61,6.55;Abuja,9.08,7.40;Kontagora,10.40,5.47;Idah,7.11,6.73
+jukun|Jukun|Wukari,7.87,9.78;Makurdi,7.73,8.54;Jos,9.90,8.86;Lafia,8.49,8.52;Jalingo,8.89,11.36;Yola,9.20,12.48;Gombe,10.29,11.17
+
+# ================================================================ ÁFRICA ORIENTAL E NILÓTICA
+@Nilo-saariano|150,90,60
+nubio|Núbio|Dongola,19.17,30.48;Wadi Halfa,21.80,31.35;Karima,18.55,31.85;Atbara,17.70,33.98;Soba,15.50,32.56;Sennar,13.55,33.60;Shendi,16.69,33.43
+dinka|Dinka|Bor,6.21,31.56;Rumbek,6.81,29.68;Aweil,8.77,27.40;Wau,7.70,27.99;Renk,11.75,32.80
+nuer|Nuer|Malakal,9.53,31.66;Bentiu,9.23,29.83;Gambela,8.25,34.59;Nasir,8.60,33.07;Akobo,7.78,33.00
+bari|Bari|Juba,4.85,31.58;Kapoeta,4.77,33.59;Torit,4.41,32.57;Yei,4.09,30.68
+luo|Luo|Gulu,2.78,32.30;Lira,2.25,32.90;Arua,3.02,30.91;Moroto,2.53,34.66;Soroti,1.71,33.61;Kitgum,3.28,32.88;Kisumu,0.10,34.76;Homa Bay,-0.53,34.46
+massai|Massai|Narok,-1.08,35.87;Kajiado,-1.85,36.78;Arusha,-3.39,36.68;Nakuru,-0.30,36.07;Eldoret,0.51,35.27;Maralal,1.10,36.70;Lodwar,3.12,35.60;Marsabit,2.34,37.98
+sara|Sara|Sarh,9.15,18.39;Moundou,8.57,16.08;Doba,8.65,16.85;Laï,9.40,16.30;Kyabé,9.45,18.94
+
+@Cuchítico|120,110,190
+amarico|Amárico|Gondar,12.60,37.47;Debre Markos,10.33,37.72;Bahir Dar,11.59,37.39;Dessie,11.13,39.63;Debre Berhan,9.68,39.53;Lalibela,12.03,39.04;Ankober,9.59,39.73;Adis Abeba,9.03,38.74
+tigrinia|Tigrínia|Axum,14.12,38.72;Adwa,14.16,38.90;Mekele,13.50,39.47;Asmara,15.32,38.93;Debarwa,15.10,38.83;Massawa,15.61,39.45;Keren,15.78,38.45
+sidamo|Sidamo|Hawassa,7.06,38.48;Arba Minch,6.03,37.55;Hosaena,7.55,37.85;Jimma,7.67,36.83;Bonga,7.27,36.24;Sodo,6.86,37.76
+oromo|Oromo|Negele,5.33,39.58;Moyale,3.52,39.06;Robe,7.12,40.00;Yabelo,4.88,38.08
+afar|Afar|Asaita,11.57,41.44;Semera,11.79,41.00;Assab,13.00,42.74;Tadjoura,11.79,42.88;Djibuti,11.59,43.15;Dallol,14.24,40.30
+harari|Harari|Harar,9.31,42.12;Zeila,11.35,43.47;Dire Dawa,9.60,41.86
+somali|Somali|Mogadíscio,2.05,45.32;Berbera,10.44,45.01;Hargeisa,9.56,44.06;Bosaso,11.28,49.18;Garowe,8.40,48.48;Kismayo,-0.36,42.54;Baidoa,3.12,43.65;Beledweyne,4.74,45.20;Galkayo,6.77,47.43;Hobyo,5.35,48.53;Barawa,1.11,44.03;Gode,5.95,43.55;Jijiga,9.35,42.80;Wajir,1.75,40.06;Garissa,-0.45,39.65
+beja|Beja|Kassala,15.45,36.40;Port Sudan,19.62,37.22;Suakin,19.10,37.33;Haya,18.33,36.38;Halaib,22.21,36.65;Marsa Alam,25.07,34.89;Berenice,23.95,35.47
+
+# ================================================================ ÁFRICA BANTU E AUSTRAL
+@Bantu central|90,130,70
+kongo|Kongo|Mbanza Kongo,-6.27,14.24;Matadi,-5.83,13.45;Boma,-5.85,13.05;Kinshasa,-4.44,15.27;Brazzaville,-4.27,15.24;Loango,-4.79,11.86;Cabinda,-5.55,12.20;Uíge,-7.61,15.06;Soyo,-6.13,12.37;Mbanza-Ngungu,-5.25,14.86;Dolisie,-4.20,12.67
+mbundu|Mbundu|Luanda,-8.84,13.23;Malanje,-9.54,16.34;N'dalatando,-9.30,14.91;Dondo,-9.69,14.43
+ovimbundu|Ovimbundu|Huambo,-12.78,15.74;Kuito,-12.38,16.93;Benguela,-12.58,13.41;Lobito,-12.36,13.54;Sumbe,-11.21,13.84;Lubango,-14.92,13.49;Namibe,-15.20,12.15
+kuba|Kuba|Kikwit,-5.04,18.82;Tshikapa,-6.41,20.80;Ilebo,-4.33,20.58;Mweka,-4.85,21.56;Bandundu,-3.32,17.37;Kenge,-4.80,16.90
+luba|Luba|Kamina,-8.74,24.99;Kabinda,-6.13,24.48;Mwene Ditu,-7.00,23.45;Kananga,-5.90,22.42;Mbuji Mayi,-6.15,23.60;Kalemie,-5.95,29.19;Kongolo,-5.38,27.00;Kabalo,-6.05,26.92;Lusambo,-4.97,23.44
+lunda|Lunda|Solwezi,-12.18,26.39;Kolwezi,-10.71,25.47;Lubumbashi,-11.66,27.48;Likasi,-10.98,26.73;Mwinilunga,-11.74,24.43;Saurimo,-9.66,20.39;Dilolo,-10.70,22.33;Luena,-11.78,19.92
+bemba|Bemba|Kasama,-10.21,31.18;Mansa,-11.20,28.89;Ndola,-12.97,28.64;Lusaka,-15.39,28.32;Kabwe,-14.45,28.45;Mbala,-8.84,31.37;Serenje,-13.23,30.24;Mpika,-11.83,31.45
+luyana|Luyana|Mongu,-15.25,23.13;Sesheke,-17.48,24.30;Livingstone,-17.85,25.86;Senanga,-16.11,23.30;Kaoma,-14.80,24.80;Katima Mulilo,-17.50,24.27;Menongue,-14.66,17.69
+mongo|Mongo|Mbandaka,0.05,18.26;Boende,-0.28,20.88;Basankusu,1.22,19.80;Lisala,2.15,21.51;Bumba,2.19,22.47;Inongo,-1.94,18.27;Djolu,0.58,22.45;Bokungu,-0.69,22.32;Ikela,-1.18,23.27
+tetela|Tetela|Lodja,-3.49,23.43;Lomela,-2.31,23.28;Kindu,-2.95,25.92;Kasongo,-4.45,26.66;Opala,-0.61,24.36;Punia,-1.47,26.45;Lubutu,-0.73,26.58;Ubundu,-0.36,25.48;Kisangani,0.52,25.19;Isangi,0.77,24.26
+fangue|Fangue|Libreville,0.39,9.45;Lambaréné,-0.70,10.24;Makokou,0.57,12.86;Oyem,1.60,11.58;Port-Gentil,-0.72,8.78;Mouila,-1.87,11.06;Bata,1.86,9.77;Ebolowa,2.90,11.15;Yaoundé,3.87,11.52;Kribi,2.94,9.91;Douala,4.05,9.70;Bertoua,4.58,13.68;Ouesso,1.61,16.05;Tchibanga,-2.85,11.03;Koulamoutou,-1.13,12.48
+teke|Teke|Franceville,-1.63,13.58;Djambala,-2.54,14.75;Owando,-0.48,15.90;Impfondo,1.62,18.06;Mossendjo,-2.95,12.72
+bamileke|Bamileke|Bamenda,5.96,10.15;Bafoussam,5.48,10.42;Foumban,5.73,10.90;Buea,4.16,9.24;Mamfe,5.75,9.31;Nkongsamba,4.95,9.94
+adamaua|Adamaua|Garoua,9.30,13.39;Ngaoundéré,7.32,13.58;Maroua,10.59,14.32;Meiganga,6.52,14.29;Bouar,5.95,15.60;Berbérati,4.26,15.79
+ubangui|Ubangui|Bangui,4.37,18.56;Bambari,5.76,20.67;Bangassou,4.74,22.82;Ndélé,8.41,20.65;Bria,6.54,21.99;Gemena,3.25,19.77;Birao,10.29,22.78
+azande|Azande|Obo,5.40,26.49;Zemio,5.03,25.13;Yambio,4.57,28.40;Isiro,2.78,27.62;Buta,2.79,24.73
+
+@Bantu oriental|60,160,150
+suaili|Suaíli|Kilwa,-8.96,39.51;Mombaça,-4.04,39.67;Melinde,-3.22,40.12;Zanzibar,-6.17,39.20;Pate,-2.27,40.90;Sofala,-20.16,34.73;Ilha de Moçambique,-15.03,40.73;Pemba,-5.25,39.77;Dar es Salaam,-6.79,39.21;Tanga,-5.07,39.10;Quelimane,-17.88,36.89;Angoche,-16.23,39.91;Moroni,-11.70,43.25;Beira,-19.83,34.84
+kikuyu|Kikuyu|Nyeri,-0.42,36.95;Nairóbi,-1.29,36.82;Embu,-0.54,37.46;Meru,0.05,37.65;Machakos,-1.52,37.26;Kitui,-1.37,38.01;Murang'a,-0.72,37.15
+nyamwezi|Nyamwezi|Tabora,-5.02,32.80;Mwanza,-2.52,32.90;Shinyanga,-3.66,33.42;Singida,-4.82,34.75;Dodoma,-6.16,35.75;Kigoma,-4.88,29.63;Mpanda,-6.34,31.07;Musoma,-1.50,33.80
+yao|Yao|Iringa,-7.77,35.69;Mbeya,-8.90,33.45;Songea,-10.68,35.65;Mtwara,-10.27,40.18;Lindi,-10.00,39.71;Morogoro,-6.82,37.66;Njombe,-9.33,34.77;Tunduru,-11.10,37.35;Sumbawanga,-7.97,31.62;Lichinga,-13.31,35.24
+nyoro|Nyoro|Kitara,0.56,31.39;Kampala,0.35,32.58;Hoima,1.43,31.35;Masaka,-0.34,31.73;Fort Portal,0.67,30.27;Jinja,0.42,33.20;Mbarara,-0.61,30.66;Bukoba,-1.33,31.81
+ruanda|Ruandês|Kigali,-1.95,30.06;Butare,-2.60,29.74;Gitega,-3.43,29.92;Bujumbura,-3.38,29.36;Goma,-1.68,29.22;Bukavu,-2.51,28.86
+nande|Nande|Butembo,0.14,29.29;Beni,0.49,29.47;Bunia,1.56,30.25;Mambasa,1.36,29.03
+macua|Macua|Nampula,-15.12,39.27;Cuamba,-14.80,36.54;Pemba (Moçambique),-12.97,40.52;Montepuez,-13.13,39.00;Mocímboa,-11.35,40.35;Gurué,-15.46,36.98
+maravi|Maraui|Lilongwe,-13.96,33.79;Blantyre,-15.79,35.00;Zomba,-15.39,35.32;Mzuzu,-11.46,34.02;Tete,-16.16,33.59;Chipata,-13.63,32.65;Nkhotakota,-12.92,34.29;Mangochi,-14.48,35.26;Karonga,-9.93,33.93
+xona|Xona|Grande Zimbábue,-20.27,30.93;Harare,-17.83,31.05;Bulawayo,-20.15,28.58;Mutare,-18.97,32.67;Gweru,-19.45,29.82;Chinhoyi,-17.36,30.20;Kariba,-16.52,28.80;Manica,-18.94,32.88;Chimoio,-19.12,33.48
+tsonga|Tsonga|Maputo,-25.97,32.57;Inhambane,-23.86,35.38;Xai-Xai,-25.05,33.64;Chókwè,-24.53,32.98;Vilankulo,-22.00,35.31;Giyani,-23.30,30.71
+
+@Bantu austral|150,170,70
+nguni|Nguni|Durban,-29.86,31.02;Ulundi,-28.33,31.42;Pietermaritzburg,-29.60,30.38;Mthatha,-31.59,28.78;East London,-33.02,27.91;Mbabane,-26.31,31.14;Queenstown,-31.90,26.88;Port Shepstone,-30.74,30.45;Kokstad,-30.55,29.42
+sotho|Soto-tsuana|Gaborone,-24.65,25.91;Serowe,-22.39,26.71;Mahikeng,-25.86,25.64;Rustenburg,-25.67,27.24;Maseru,-29.31,27.48;Bloemfontein,-29.12,26.21;Polokwane,-23.90,29.45;Pretória,-25.75,28.19;Kuruman,-27.45,23.43;Francistown,-21.17,27.51;Welkom,-27.98,26.73
+herero|Herero|Windhoek,-22.56,17.08;Okahandja,-21.98,16.91;Otjiwarongo,-20.46,16.65;Opuwo,-18.06,13.84;Ondangwa,-17.91,15.98;Oshakati,-17.79,15.70;Rundu,-17.92,19.77;Walvis Bay,-22.96,14.51;Tsumeb,-19.24,17.71;Ondjiva,-17.07,15.73
+
+@Coissã|210,180,130
+khoikhoi|Khoikhoi|Cabo,-33.92,18.42;Port Elizabeth,-33.96,25.60;George,-33.96,22.46;Springbok,-29.66,17.89;Upington,-28.45,21.26;Beaufort West,-32.35,22.58;Keetmanshoop,-26.58,18.13;Lüderitz,-26.65,15.16;Mariental,-24.63,17.97;Graaff-Reinet,-32.25,24.53;Calvinia,-31.47,19.78
+san|San|Ghanzi,-21.70,21.65;Tsabong,-26.02,22.40;Maun,-19.98,23.42;Gobabis,-22.45,18.97;Tsumkwe,-19.59,20.50;Kang,-23.67,22.79
+
+# ================================================================ AMÉRICA DO NORTE
+@Esquimó-aleúte|170,200,220
+inuite|Inuíte|Nuuk,64.18,-51.72;Ilulissat,69.22,-51.10;Tasiilaq,65.61,-37.64;Iqaluit,63.75,-68.52;Rankin Inlet,62.81,-92.09;Cambridge Bay,69.12,-105.06;Kugluktuk,67.83,-115.10;Tuktoyaktuk,69.45,-133.03;Utqiagvik,71.29,-156.79;Nome,64.50,-165.41;Kotzebue,66.90,-162.60;Bethel,60.79,-161.76;Kuujjuaq,58.10,-68.40;Inukjuak,58.45,-78.10;Pond Inlet,72.70,-77.96;Arviat,61.11,-94.06;Baker Lake,64.32,-96.02;Gjoa Haven,68.63,-95.88;Igloolik,69.38,-81.80;Kodiak,57.79,-152.40;Unalaska,53.87,-166.54;Dillingham,59.04,-158.46;Nain,56.54,-61.69;Cape Dorset,64.23,-76.54;Clyde River,70.47,-68.59;Sachs Harbour,71.99,-125.24;Ulukhaktok,70.74,-117.77;Ittoqqortoormiit,70.49,-21.97;Upernavik,72.79,-56.15
+
+@Na-dené|150,110,80
+atabascano|Atabascano|Fairbanks,64.84,-147.72;Anchorage,61.22,-149.90;Yellowknife,62.45,-114.37;Whitehorse,60.72,-135.06;Fort Smith,60.00,-111.89;Fort McMurray,56.73,-111.38;Norman Wells,65.28,-126.83;Fort Simpson,61.86,-121.35;Fort Nelson,58.81,-122.70;Fort St. John,56.25,-120.85;Dawson,64.06,-139.43;Inuvik,68.36,-133.72;Fort Yukon,66.56,-145.27;McGrath,62.95,-155.60;Tok,63.34,-142.99;Uranium City,59.57,-108.61;Hay River,60.82,-115.80;Prince George,53.92,-122.75;Dease Lake,58.44,-130.00;Tanana,65.17,-152.08;Galena,64.74,-156.93
+tlingit|Tlingit|Juneau,58.30,-134.42;Sitka,57.05,-135.33;Ketchikan,55.34,-131.64;Prince Rupert,54.32,-130.32;Masset,54.01,-132.15;Yakutat,59.55,-139.73;Cordova,60.54,-145.76
+apache|Apache|Flagstaff,35.20,-111.65;Window Rock,35.68,-109.05;Farmington,36.73,-108.21;Roswell,33.39,-104.52;El Paso,31.76,-106.49;Show Low,34.25,-110.03;Las Cruces,32.32,-106.76;Amarillo,35.22,-101.83;Lubbock,33.58,-101.86;Midland,32.00,-102.08;Denver,39.74,-104.99;Cheyenne,41.14,-104.82;Colorado Springs,38.83,-104.82;Pueblo,38.25,-104.61
+
+@Planalto e costa noroeste|90,140,130
+salish|Salish|Bella Coola,52.37,-126.75;Port Hardy,50.72,-127.50;Vancouver,49.28,-123.12;Victoria,48.43,-123.37;Seattle,47.61,-122.33;Portland,45.52,-122.68;Astoria,46.19,-123.83;Kamloops,50.67,-120.33;Spokane,47.66,-117.43;Kelowna,49.89,-119.50;Olympia,47.04,-122.90;Missoula,46.87,-113.99
+sahaptin|Sahaptin|Lewiston,46.42,-117.02;Yakima,46.60,-120.51;Walla Walla,46.06,-118.34;Pendleton,45.67,-118.79;The Dalles,45.60,-121.18
+
+@Uto-asteca do norte|190,140,90
+shoshone|Shoshone|Boise,43.62,-116.20;Elko,40.83,-115.76;Pocatello,42.86,-112.45;Twin Falls,42.56,-114.46;Burns,43.59,-119.05;Lander,42.83,-108.73;Ely,39.25,-114.89;Reno,39.53,-119.81;Bishop,37.36,-118.40;Las Vegas,36.17,-115.14;Cedar City,37.68,-113.06
+ute|Ute|Salt Lake City,40.76,-111.89;Vernal,40.46,-109.53;Grand Junction,39.06,-108.55;Durango,37.27,-107.88;Provo,40.23,-111.66
+californiano|Californiano|San Francisco,37.77,-122.42;Sacramento,38.58,-121.49;Los Angeles,34.05,-118.24;San Diego,32.72,-117.16;Fresno,36.74,-119.79;Eureka,40.80,-124.16;Redding,40.59,-122.39;Santa Barbara,34.42,-119.70;Monterey,36.60,-121.89;Bakersfield,35.37,-119.02;Ensenada,31.87,-116.60;Klamath Falls,42.22,-121.78;Crescent City,41.76,-124.20;Coos Bay,43.37,-124.22;San Quintín,30.56,-115.94;Guerrero Negro,27.97,-114.05;La Paz,24.14,-110.31;Loreto,26.01,-111.35
+oodham|O'odham|Phoenix,33.45,-112.07;Tucson,32.22,-110.97;Yuma,32.69,-114.63;Hermosillo,29.07,-110.96;Kingman,35.19,-114.05;Prescott,34.54,-112.47;Nogales,31.31,-110.94
+pueblo|Pueblo|Santa Fe,35.69,-105.94;Albuquerque,35.08,-106.65;Taos,36.41,-105.57;Zuni,35.07,-108.85;Hopi,35.80,-110.50;Acoma,34.90,-107.58;Gallup,35.53,-108.74;Socorro,34.06,-106.89
+cahita|Cahita|Ciudad Obregón,27.48,-109.93;Navojoa,27.07,-109.44;Los Mochis,25.79,-108.99;Culiacán,24.81,-107.39;Álamos,27.03,-108.94
+raramuri|Rarámuri|Creel,27.75,-107.64;Chihuahua,28.63,-106.07;Parral,26.93,-105.66;Madera,29.19,-108.14;Paquimé,30.37,-107.95;Guachochi,26.82,-107.07
+chichimeca|Chichimeca|Durango,24.02,-104.65;Zacatecas,22.77,-102.58;San Luis Potosí,22.15,-100.98;Saltillo,25.42,-101.00;Monterrey,25.69,-100.32;Torreón,25.54,-103.41;Aguascalientes,21.88,-102.29;Monclova,26.90,-101.42;Guanajuato,21.02,-101.26
+coahuilteca|Coahuilteca|Nuevo Laredo,27.48,-99.52;Matamoros,25.87,-97.50;Piedras Negras,28.70,-100.52;San Antonio,29.42,-98.49;Corpus Christi,27.80,-97.40;Ojinaga,29.57,-104.42
+
+@Mesoamericano|180,70,90
+nauatle|Náuatle|Tenochtitlan,19.43,-99.13;Texcoco,19.51,-98.88;Tlaxcala,19.32,-98.24;Cholula,19.06,-98.30;Cuernavaca,18.92,-99.23;Pachuca,20.10,-98.76;Tula,20.05,-99.34;Tehuacán,18.46,-97.39;Taxco,18.56,-99.60;Iguala,18.35,-99.54;Chilpancingo,17.55,-99.50;Orizaba,18.85,-97.10;Acapulco,16.86,-99.88
+purepecha|Purépecha|Tzintzuntzan,19.63,-101.58;Morelia,19.70,-101.19;Uruapan,19.41,-102.06;Zamora,19.98,-102.28;Zitácuaro,19.44,-100.36;Apatzingán,19.09,-102.35;Zacatula,17.96,-102.20;Colima,19.24,-103.72
+caxcan|Caxcan|Guadalajara,20.67,-103.35;Tepic,21.50,-104.89;Puerto Vallarta,20.62,-105.23;Mazatlán,23.25,-106.41;Tequila,20.88,-103.84;Lagos,21.36,-101.93
+otomi|Otomi|Querétaro,20.59,-100.39;Ixmiquilpan,20.48,-99.22;Jilotepec,19.95,-99.53;San Juan del Río,20.39,-99.99;Celaya,20.52,-100.81;Toluca,19.28,-99.66
+huasteco|Huasteco|Tampico,22.25,-97.86;Ciudad Valles,21.99,-99.01;Tamazunchale,21.26,-98.79;Pánuco,22.05,-98.18;Tuxpan,20.95,-97.40;Huejutla,21.14,-98.42;Ciudad Victoria,23.74,-99.15
+totonaca|Totonaca|Xalapa,19.53,-96.92;Papantla,20.45,-97.32;Cempoala,19.44,-96.40;Veracruz,19.17,-96.13;Teziutlán,19.82,-97.36
+mixteca|Mixteca|Tlaxiaco,17.27,-97.68;Tilantongo,17.29,-97.29;Huajuapan,17.80,-97.78;Tututepec,16.13,-97.60;Pinotepa,16.34,-98.05;Coixtlahuaca,17.71,-97.32
+zapoteca|Zapoteca|Zaachila,17.07,-96.73;Tehuantepec,16.32,-95.24;Mitla,16.92,-96.36;Juchitán,16.43,-95.02;Puerto Escondido,15.86,-97.07;Miahuatlán,16.33,-96.60
+zoque|Zoque|Coatzacoalcos,18.13,-94.46;Acayucan,17.95,-94.91;Tuxtla,16.75,-93.12;Tuxtepec,18.09,-96.12;Minatitlán,17.98,-94.55
+pipil|Pipil|Cuscatlán,13.69,-89.22;Santa Ana,13.99,-89.56;Escuintla,14.30,-90.78;Izalco,13.74,-89.67
+
+@Maia|200,120,60
+maia|Maia iucateque|Mayapán,20.63,-89.46;Mérida,20.97,-89.62;Chichén Itzá,20.68,-88.57;Campeche,19.85,-90.53;Chetumal,18.50,-88.30;Cozumel,20.42,-86.92;Valladolid,20.69,-88.20;Champotón,19.35,-90.72;Tulum,20.21,-87.47;Belize,17.50,-88.20;Tayasal,16.93,-89.89;Potonchán,17.99,-92.92
+quiche|Quiché|Q'umarkaj,15.02,-91.17;Iximche,14.73,-90.99;Kaminaljuyú,14.63,-90.51;Quetzaltenango,14.84,-91.52;Cobán,15.47,-90.37;Huehuetenango,15.32,-91.47;San Cristóbal,16.74,-92.64;Comitán,16.25,-92.13;Soconusco,14.91,-92.26;Copán,14.84,-89.14
+
+@Centro-americano|100,160,90
+lenca|Lenca|San Miguel,13.48,-88.18;Tegucigalpa,14.07,-87.19;Comayagua,14.45,-87.64;Choluteca,13.30,-87.19;La Esperanza,14.31,-88.18;San Pedro Sula,15.50,-88.03
+misquito|Misquito|Puerto Lempira,15.27,-83.77;Bluefields,12.01,-83.76;Puerto Cabezas,14.03,-83.39;Trujillo,15.92,-85.95;La Ceiba,15.77,-86.79;Juticalpa,14.66,-86.22
+nicarao|Nicarao|Manágua,12.13,-86.25;León,12.43,-86.88;Granada,11.93,-85.96;Rivas,11.44,-85.83;Nicoya,10.15,-85.45;Liberia,10.63,-85.44;Matagalpa,12.93,-85.92;Estelí,13.09,-86.35
+istmenho|Ístmico|San José,9.93,-84.09;Cartago,9.86,-83.92;Limón,9.99,-83.03;Panamá,8.98,-79.52;David,8.43,-82.43;Colón,9.36,-79.90;Santiago (Panamá),8.10,-80.98;Darién,8.40,-78.15;Bocas del Toro,9.34,-82.24;Puntarenas,9.98,-84.83;Golfito,8.64,-83.18
+
+@Algonquino|120,100,160
+algonquino|Algonquino costeiro|Boston,42.36,-71.06;Providence,41.82,-71.41;Hartford,41.76,-72.69;Manhattan,40.71,-74.01;Filadélfia,39.95,-75.17;Albany,42.65,-73.76;Atlantic City,39.36,-74.42
+mikmaq|Mi'kmaq|Halifax,44.65,-63.58;Saint John,45.27,-66.06;Charlottetown,46.24,-63.13;Sydney (Nova Escócia),46.14,-60.19;Gaspé,48.83,-64.48;Fredericton,45.96,-66.64
+abenaki|Abenaki|Bangor,44.80,-68.77;Portland (Maine),43.66,-70.26;Concord,43.21,-71.54;Burlington,44.48,-73.21
+powhatan|Powhatan|Richmond,37.54,-77.44;Norfolk,36.85,-76.29;Washington,38.90,-77.04;Baltimore,39.29,-76.61;Dover,39.16,-75.52
+cree|Cree|Moose Factory,51.26,-80.61;Chibougamau,49.91,-74.37;Waskaganish,51.48,-78.76;Churchill,58.77,-94.17;Thompson,55.74,-97.86;The Pas,53.82,-101.24;Prince Albert,53.20,-105.75;La Ronge,55.10,-105.28;Fort Albany,52.20,-81.69;Attawapiskat,52.93,-82.43;Peawanuck,55.00,-85.43;York Factory,57.00,-92.30;Norway House,53.98,-97.83;Chisasibi,53.79,-78.91
+innu|Innu|Schefferville,54.81,-66.83;Sept-Îles,50.22,-66.38;Goose Bay,53.30,-60.33;Natashquan,50.19,-61.82;Labrador City,52.94,-66.91;Baie-Comeau,49.22,-68.15
+beothuk|Beothuk|St. John's,47.56,-52.71;Gander,48.95,-54.61;Corner Brook,48.95,-57.95;Grand Falls,48.94,-55.66
+anishinaabe|Anishinaabe|Sault Ste. Marie,46.52,-84.35;Thunder Bay,48.38,-89.25;Duluth,46.79,-92.10;Sudbury,46.49,-80.99;North Bay,46.31,-79.46;Ottawa,45.42,-75.70;Timmins,48.48,-81.33;Kenora,49.77,-94.49;Winnipeg,49.90,-97.14;Marquette,46.55,-87.40;Traverse City,44.76,-85.62;Green Bay,44.51,-88.01;Bemidji,47.47,-94.88;Sioux Lookout,50.10,-91.92;Detroit,42.33,-83.05;Grand Rapids,42.96,-85.67;Val-d'Or,48.10,-77.78;Geraldton,49.72,-86.95;Pickle Lake,51.47,-90.19;Red Lake,51.04,-93.83
+illinois|Illinois|Chicago,41.88,-87.63;Peoria,40.69,-89.59;Indianápolis,39.77,-86.16;Fort Wayne,41.08,-85.14;Milwaukee,43.04,-87.91;Madison,43.07,-89.40;La Crosse,43.80,-91.24;Dubuque,42.50,-90.66
+shawnee|Shawnee|Columbus,39.96,-83.00;Cincinnati,39.10,-84.51;Toledo,41.65,-83.54;Pittsburgh,40.44,-79.99;Charleston (Virgínia Ocidental),38.35,-81.63;Lexington,38.04,-84.50
+pesnegros|Pés-Negros|Calgary,51.05,-114.07;Lethbridge,49.69,-112.84;Great Falls,47.50,-111.30;Medicine Hat,50.04,-110.68;Red Deer,52.27,-113.81;Havre,48.55,-109.68;Edmonton,53.55,-113.49
+
+@Iroquês|170,80,60
+iroques|Iroquês|Onondaga,43.05,-76.15;Rochester,43.16,-77.61;Utica,43.10,-75.23;Elmira,42.09,-76.81;Kingston,44.23,-76.49;Hochelaga,45.50,-73.57;Stadaconé,46.81,-71.21
+huron|Huron|Toronto,43.65,-79.38;Midland,44.75,-79.88;Buffalo,42.89,-78.88;Cleveland,41.50,-81.69;Erie,42.13,-80.09;London (Ontário),42.98,-81.25
+cheroqui|Cheroqui|Knoxville,35.96,-83.92;Chattanooga,35.05,-85.31;Asheville,35.60,-82.55;Greenville,34.85,-82.40
+
+@Siouan|200,150,70
+dacota|Dacota|Minneapolis,44.98,-93.27;Sioux Falls,43.55,-96.73;Pierre,44.37,-100.35;Rapid City,44.08,-103.23;Fargo,46.88,-96.79;Aberdeen,45.46,-98.49;Rochester (Minnesota),44.02,-92.46;Mankato,44.16,-94.00;Devils Lake,48.11,-98.86
+mandan|Mandan|Bismarck,46.81,-100.78;Minot,48.23,-101.30;Williston,48.15,-103.62
+assiniboine|Assiniboine|Regina,50.45,-104.62;Saskatoon,52.13,-106.67;Swift Current,50.29,-107.79;Brandon,49.85,-99.95;Lloydminster,53.28,-110.00;Estevan,49.14,-102.99
+crow|Crow|Billings,45.78,-108.50;Miles City,46.41,-105.84;Casper,42.87,-106.31;Sheridan,44.80,-106.96;Cody,44.53,-109.06;Bozeman,45.68,-111.04
+chiwere|Chiwere|Topeka,39.05,-95.68;Kansas City,39.10,-94.58;Des Moines,41.59,-93.62;St. Joseph,39.77,-94.85;Iowa City,41.66,-91.53
+catawba|Catawba|Columbia,34.00,-81.03;Charleston,32.78,-79.93;Charlotte,35.23,-80.84;Raleigh,35.78,-78.64;Wilmington,34.23,-77.94;Roanoke,37.27,-79.94
+
+@Sudeste norte-americano|140,170,100
+mississipiano|Mississipiano|Cahokia,38.63,-90.20;Memphis,35.15,-90.05;Nashville,36.16,-86.78;Louisville,38.25,-85.76;Angel,37.97,-87.57;Paducah,37.08,-88.60;Springfield,39.80,-89.64;Cape Girardeau,37.31,-89.52;Little Rock,34.75,-92.29
+muscogee|Muscogee|Ocmulgee,32.84,-83.63;Columbus (Geórgia),32.46,-84.99;Montgomery,32.38,-86.30;Moundville,33.21,-87.57;Etowah,34.13,-84.80;Mobile,30.69,-88.04;Savannah,32.08,-81.09;Augusta,33.47,-81.97;Huntsville,34.73,-86.59
+choctaw|Choctaw|Jackson,32.30,-90.18;Natchez,31.56,-91.40;Tupelo,34.26,-88.70;Meridian,32.36,-88.70;Hattiesburg,31.33,-89.29;Baton Rouge,30.45,-91.19;Nova Orleans,29.95,-90.07
+timucua|Timucua|Jacksonville,30.33,-81.66;Orlando,28.54,-81.38;Gainesville,29.65,-82.32;Daytona,29.21,-81.02;Tampa,27.95,-82.46;Tallahassee,30.44,-84.28;Pensacola,30.42,-87.22
+calusa|Calusa|Fort Myers,26.64,-81.87;Miami,25.76,-80.19;Key West,24.56,-81.78;West Palm Beach,26.72,-80.05;Sebring,27.50,-81.44
+
+@Caddoano|180,120,140
+caddo|Caddo|Shreveport,32.52,-93.75;Texarkana,33.43,-94.05;Nacogdoches,31.60,-94.66;Tyler,32.35,-95.30;Dallas,32.78,-96.80;Spiro,35.39,-94.40;Hot Springs,34.50,-93.06
+pawnee|Pawnee|Lincoln,40.81,-96.68;North Platte,41.12,-100.77;Grand Island,40.93,-98.34;Omaha,41.26,-95.93;Scottsbluff,41.87,-103.67;Sioux City,42.50,-96.40
+wichita|Wichita|Wichita,37.69,-97.34;Salina,38.84,-97.61;Hays,38.88,-99.33;Dodge City,37.75,-100.02;Oklahoma City,35.47,-97.52;Lawton,34.60,-98.39;Tulsa,36.15,-95.99
+tonkawa|Tonkawa|Lake Charles,30.23,-93.22;Houston,29.76,-95.37;Austin,30.27,-97.74;Waco,31.55,-97.15;Abilene,32.45,-99.73;San Angelo,31.46,-100.44;Victoria,28.81,-97.00
+
+# ================================================================ CARIBE E AMÉRICA DO SUL
+@Caribenho|60,170,180
+taino|Taíno|Santo Domingo,18.49,-69.93;Santiago (Hispaniola),19.45,-70.70;Port-au-Prince,18.54,-72.34;Cap-Haïtien,19.76,-72.20;Havana,23.11,-82.37;Santiago de Cuba,20.02,-75.82;Camagüey,21.38,-77.92;Bayamo,20.38,-76.64;San Juan,18.47,-66.11;Kingston (Jamaica),17.97,-76.79;Montego Bay,18.47,-77.92;Nassau,25.05,-77.36;Holguín,20.89,-76.26;Pinar del Río,22.42,-83.70;Santa Clara,22.41,-79.96;Les Cayes,18.19,-73.75;Mayagüez,18.20,-67.14
+caribe|Caribe|Martinica,14.60,-61.07;Guadalupe,16.24,-61.53;Barbados,13.10,-59.62;Trinidad,10.66,-61.51;Granada (Antilhas),12.06,-61.75;Santa Lúcia,14.01,-60.99;Dominica,15.30,-61.39;Antígua,17.12,-61.85;Caiena,4.92,-52.31;Paramaribo,5.85,-55.20;Georgetown,6.80,-58.16;Barcelona (Venezuela),10.13,-64.70;Cumaná,10.45,-64.17;Angostura,8.12,-63.55;Tucupita,9.06,-62.05;Maripasoula,3.64,-54.03;Lethem,3.38,-59.79;Boa Vista,2.82,-60.67;Santa Elena de Uairén,4.60,-61.11
+aruaque|Aruaque|Coro,11.41,-69.67;Maracaibo,10.65,-71.64;Riohacha,11.54,-72.91;Valencia (Venezuela),10.16,-68.00;Barquisimeto,10.07,-69.32;Caracas,10.48,-66.90
+achagua|Achagua|San Fernando de Apure,7.89,-67.47;Barinas,8.62,-70.21;Puerto Ayacucho,5.66,-67.62;Arauca,7.08,-70.76;Puerto Carreño,6.19,-67.48;Villavicencio,4.14,-73.63;Yopal,5.34,-72.39
+
+@Chibcha andino|190,140,60
+muisca|Muisca|Bacatá,4.71,-74.07;Hunza,5.54,-73.36;Sogamoso,5.72,-72.93;Zipaquirá,5.02,-74.00;Bucaramanga,7.12,-73.12;Cúcuta,7.89,-72.51;Mérida (Venezuela),8.59,-71.16
+tairona|Tairona|Santa Marta,11.24,-74.20;Cartagena,10.39,-75.48;Barranquilla,10.96,-74.80;Valledupar,10.46,-73.25;Montería,8.75,-75.88;Sincelejo,9.30,-75.40;Mompox,9.24,-74.43
+quimbaia|Quimbaia|Medellín,6.24,-75.58;Cali,3.45,-76.53;Popayán,2.44,-76.61;Pasto,1.21,-77.28;Neiva,2.93,-75.28;Ibagué,4.44,-75.23;Manizales,5.07,-75.52;Quibdó,5.69,-76.66;Buenaventura,3.88,-77.03;Tumaco,1.80,-78.76;San Agustín,1.88,-76.27
+
+@Andino|200,70,70
+quechua|Quíchua|Cusco,-13.53,-71.97;Ayacucho,-13.16,-74.22;Huancayo,-12.07,-75.20;Abancay,-13.64,-72.88;Huánuco,-9.93,-76.24;Cajamarca,-7.16,-78.51;Huaraz,-9.53,-77.53;Andahuaylas,-13.66,-73.39;Lima,-12.05,-77.04;Ica,-14.07,-75.73;Nazca,-14.83,-74.94;Arequipa,-16.41,-71.54
+quitu|Quitu-cara|Quito,-0.20,-78.50;Cuenca,-2.90,-79.00;Riobamba,-1.67,-78.65;Ambato,-1.24,-78.62;Ibarra,0.35,-78.12;Loja,-4.00,-79.20;Latacunga,-0.93,-78.62
+chimu|Chimu|Chan Chan,-8.11,-79.03;Chiclayo,-6.77,-79.84;Piura,-5.19,-80.63;Tumbes,-3.57,-80.45;Chimbote,-9.07,-78.59;Lambayeque,-6.70,-79.90
+manteno|Manteño|Guayaquil,-2.19,-79.89;Manta,-0.95,-80.73;Esmeraldas,0.96,-79.65;Machala,-3.26,-79.96;Santa Elena,-2.23,-80.86
+aimara|Aimará|Puno,-15.84,-70.02;La Paz,-16.50,-68.15;Oruro,-17.97,-67.11;Potosí,-19.58,-65.75;Charcas,-19.05,-65.26;Cochabamba,-17.39,-66.16;Tacna,-18.01,-70.25;Arica,-18.48,-70.31;Uyuni,-20.46,-66.83;Juliaca,-15.50,-70.13;Moquegua,-17.19,-70.94;Tarija,-21.53,-64.73
+chachapoia|Chachapoia|Chachapoyas,-6.23,-77.87;Tarapoto,-6.48,-76.36;Moyobamba,-6.03,-76.97
+diaguita|Diaguita|Copiapó,-27.37,-70.33;La Serena,-29.90,-71.25;Salta,-24.78,-65.42;Tucumán,-26.81,-65.22;Catamarca,-28.47,-65.78;La Rioja,-29.41,-66.86;Santiago del Estero,-27.79,-64.26;Calama,-22.46,-68.93;Atacama,-22.91,-68.20;Antofagasta,-23.65,-70.40;Iquique,-20.21,-70.15
+huarpe|Huarpe|San Juan,-31.54,-68.54;Mendoza,-32.89,-68.84;San Luis,-33.30,-66.34;Córdoba (Argentina),-31.42,-64.18;Villa Dolores,-31.94,-65.19
+
+@Cone sul|130,150,190
+mapuche|Mapuche|Santiago (Chile),-33.45,-70.67;Concepción,-36.83,-73.05;Temuco,-38.74,-72.60;Valdivia,-39.81,-73.25;Osorno,-40.57,-73.14;Puerto Montt,-41.47,-72.94;Talca,-35.43,-71.66;Chillán,-36.61,-72.10;Valparaíso,-33.05,-71.62;Rancagua,-34.17,-70.74;Neuquén,-38.95,-68.06;Bariloche,-41.13,-71.31;Chiloé,-42.48,-73.76
+tehuelche|Tehuelche|Comodoro Rivadavia,-45.86,-67.48;Río Gallegos,-51.62,-69.22;Trelew,-43.25,-65.31;Puerto Madryn,-42.77,-65.04;San Julián,-49.31,-67.73;Esquel,-42.91,-71.32;Puerto Deseado,-47.75,-65.89;Viedma,-40.81,-62.99;El Calafate,-50.34,-72.27;Coyhaique,-45.57,-72.07;Cochrane,-47.25,-72.57
+fueguino|Fueguino|Ushuaia,-54.80,-68.30;Río Grande,-53.79,-67.70;Punta Arenas,-53.16,-70.92;Puerto Natales,-51.73,-72.51;Puerto Aysén,-45.40,-72.69;Puerto Williams,-54.93,-67.61
+pampeano|Pampeano|Buenos Aires,-34.60,-58.38;La Plata,-34.92,-57.95;Mar del Plata,-38.00,-57.56;Bahía Blanca,-38.72,-62.27;Santa Rosa,-36.62,-64.29;Tandil,-37.32,-59.13;Rosário,-32.95,-60.64;Río Cuarto,-33.13,-64.35;Junín,-34.59,-60.95
+charrua|Charrua|Montevidéu,-34.90,-56.16;Salto,-31.38,-57.96;Tacuarembó,-31.71,-55.98;Melo,-32.37,-54.17;Paysandú,-32.32,-58.08;Rocha,-34.48,-54.33;Bagé,-31.33,-54.11;Pelotas,-31.77,-52.34
+chaco|Chaquenho|Filadelfia,-22.35,-60.03;Resistencia,-27.45,-58.99;Formosa,-26.18,-58.18;Tartagal,-22.52,-63.80;Santa Cruz,-17.81,-63.16;Roboré,-18.33,-59.76
+
+@Tupi-guarani|70,150,70
+tupi|Tupi|Rio de Janeiro,-22.91,-43.17;Salvador,-12.97,-38.50;São Paulo,-23.55,-46.63;Recife,-8.05,-34.88;Natal,-5.79,-35.21;Fortaleza,-3.73,-38.53;São Luís,-2.53,-44.30;Belém,-1.46,-48.50;Vitória,-20.32,-40.34;Porto Seguro,-16.45,-39.06;Ilhéus,-14.79,-39.05;Maceió,-9.67,-35.74;Aracaju,-10.91,-37.07;João Pessoa,-7.12,-34.86;Santos,-23.96,-46.33;Cabo Frio,-22.88,-42.02;Parnaíba,-2.90,-41.78;Macapá,0.03,-51.07;Teresina,-5.09,-42.80;Campos,-21.75,-41.32
+guarani|Guarani|Assunção,-25.26,-57.58;Encarnación,-27.33,-55.87;Ciudad del Este,-25.51,-54.61;Posadas,-27.37,-55.90;Corrientes,-27.47,-58.83;Paraná,-31.73,-60.53;Concordia,-31.39,-58.02;Porto Alegre,-30.03,-51.23;Florianópolis,-27.60,-48.55;Curitiba,-25.43,-49.27;Santa Maria,-29.69,-53.81;Campo Grande,-20.44,-54.65;Dourados,-22.22,-54.81;Concepción (Paraguai),-23.41,-57.43;Paranaguá,-25.52,-48.51;Foz do Iguaçu,-25.55,-54.59
+munduruku|Munduruku|Porto Velho,-8.76,-63.90;Humaitá,-7.51,-63.02;Ji-Paraná,-10.88,-61.95;Vilhena,-12.74,-60.15;Juína,-11.38,-58.74;Alta Floresta,-9.87,-56.09;Sinop,-11.86,-55.50;Itaituba,-4.28,-55.98
+omagua|Omágua|Tefé,-3.35,-64.71;Coari,-4.08,-63.14;Tabatinga,-4.25,-69.94;Iquitos,-3.75,-73.25;Carauari,-4.88,-66.90;Eirunepé,-6.66,-69.87
+
+@Jê|160,110,70
+je|Jê|Brasília,-15.79,-47.88;Goiânia,-16.69,-49.26;Uberlândia,-18.92,-48.28;Palmas,-10.18,-48.33;Barreiras,-12.15,-45.00;Rio Verde,-17.80,-50.92;Barra do Garças,-15.89,-52.26;Araguaína,-7.19,-48.20;Imperatriz,-5.52,-47.47;Marabá,-5.37,-49.12;Redenção,-8.03,-50.03;Floriano,-6.77,-43.02;Bom Jesus da Lapa,-13.25,-43.42;Montes Claros,-16.73,-43.86
+cariri|Cariri|Juazeiro do Norte,-7.21,-39.32;Campina Grande,-7.23,-35.88;Petrolina,-9.39,-40.50;Picos,-7.08,-41.47;Feira de Santana,-12.27,-38.97;Crateús,-5.18,-40.67;Quixadá,-4.97,-39.02;Paulo Afonso,-9.40,-38.22;Caruaru,-8.28,-35.98;Garanhuns,-8.89,-36.49
+botocudo|Botocudo|Belo Horizonte,-19.92,-43.94;Governador Valadares,-18.85,-41.95;Teófilo Otoni,-17.86,-41.51;Juiz de Fora,-21.76,-43.35;Vitória da Conquista,-14.86,-40.84;Ipatinga,-19.47,-42.54
+caingangue|Caingangue|Lages,-27.82,-50.33;Guarapuava,-25.39,-51.46;Londrina,-23.31,-51.16;Bauru,-22.31,-49.06;Ribeirão Preto,-21.18,-47.81;Presidente Prudente,-22.12,-51.39;Chapecó,-27.10,-52.62;Passo Fundo,-28.26,-52.41
+bororo|Bororo|Cuiabá,-15.60,-56.10;Cáceres,-16.07,-57.68;Corumbá,-19.00,-57.65;Rondonópolis,-16.47,-54.64
+
+@Amazônico|60,120,80
+aruaque_am|Aruaque amazônico|Manaus,-3.12,-60.02;São Gabriel da Cachoeira,-0.13,-67.09;Barcelos,-0.97,-62.92;Lábrea,-7.26,-64.80;Rio Branco,-9.97,-67.81;Trinidad,-14.83,-64.90;Riberalta,-11.00,-66.07;Guajará-Mirim,-10.78,-65.34;Oiapoque,3.84,-51.83;Puerto Inírida,3.87,-67.92
+tapajo|Tapajó|Santarém,-2.44,-54.71;Óbidos,-1.92,-55.52;Parintins,-2.63,-56.74;Breves,-1.68,-50.48;Marajó,-0.72,-48.52;Laranjal do Jari,-0.80,-52.45;Altamira,-3.20,-52.21
+pano|Pano|Cruzeiro do Sul,-7.63,-72.67;Pucallpa,-8.38,-74.55;Puerto Maldonado,-12.59,-69.19
+jivaro|Jívaro|Macas,-2.31,-78.12;Puyo,-1.49,-78.00;Tena,-0.99,-77.81;Nueva Loja,0.09,-76.89;Mocoa,1.15,-76.65;Jaén (Peru),-5.71,-78.81
+tucano|Tucano|Mitú,1.20,-70.17;Florencia,1.61,-75.61;San José del Guaviare,2.57,-72.64

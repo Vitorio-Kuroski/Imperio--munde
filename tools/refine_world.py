@@ -4,13 +4,15 @@
 Uso (a partir da pasta do projeto):
   python3 tools/refine_world.py              # donos, costa e nomes (mantém o terreno salvo)
   python3 tools/refine_world.py --terreno    # também recalcula o terreno (baixa ~60 MB na 1ª vez)
-  python3 tools/refine_world.py --previa previa.png [--modo terreno]
+  python3 tools/refine_world.py --previa previa.png [--modo terreno|cultura]
 
 - Donos de 1444: cada âncora de tools/data/nations_*.txt cresce pelo grafo de vizinhança
   (Dijkstra a partir da província da âncora). O custo de uma província é a distância em linha
   reta até a âncora menos o alcance, mas ela só é alcançada por um caminho de vizinhos (cruzar
   uma zona marítima soma SEA_PENALTY). Assim os países ficam contíguos e não pulam mares.
   Fica com o país de menor custo; acima de LIMIT_KM fica sem dono.
+- Culturas de 1444: âncoras de tools/data/cultures_1444.txt crescem do mesmo jeito, sem limite
+  (toda província de terra recebe uma cultura); o mar pode ser cruzado em cadeia, mais caro.
 - Terreno: relevo do ETOPO5 (NOAA, domínio público) + clima do WorldClim 2.1 (Fick & Hijmans,
   2017; não pode ser redistribuído: é baixado para tools/data/raw/, fora do git). Só o rótulo
   final de cada província vai para o map.json.
@@ -38,6 +40,7 @@ LIMIT_KM = 200       # distância máxima (já descontado o alcance da âncora) 
 SEA_PENALTY = 120    # km extras para cruzar uma zona marítima
 STEP = 3             # amostragem dos pixels do mapa para terreno e regiões
 REMOTE_PX = 45       # sem cidade a menos disso (px) -> nome da região geográfica
+SNAP_PX = 12         # cidade/âncora que cai no mar procura terra até essa distância (px)
 
 ETOPO_URL = "https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO5/TOPO/ETOPO5/ETOPO5.DOS"
 WC_URL = "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_%s.zip"
@@ -231,48 +234,69 @@ for fn in ("nations_1444.txt", "nations_world_1444.txt"):
 
 
 
-def seed_of(a_lat, a_lon):
+def seed_of(a_lat, a_lon, snap=SNAP_PX):
+    """Província de terra que contém a âncora (ou a do pixel de terra mais próximo, p/ cidades costeiras)."""
     x, y = ll_to_px(a_lat, a_lon)
     xi, yi = int(x), int(y)
-    if 0 <= xi < W and 0 <= yi < H and lab[yi, xi] < nl:
-        return int(lab[yi, xi])
+    if 0 <= xi < W and 0 <= yi < H:
+        if lab[yi, xi] < nl:
+            return int(lab[yi, xi])
+        y0, x0 = max(yi - snap, 0), max(xi - snap, 0)
+        win = lab[y0:yi + snap + 1, x0:xi + snap + 1]
+        yy, xx = np.nonzero(win < nl)
+        if len(yy):
+            m = np.argmin((yy + y0 - yi) ** 2 + (xx + x0 - xi) ** 2)
+            return int(win[yy[m], xx[m]])
     d = haversine(a_lat, a_lon, lat[:nl], lon[:nl])
     k = int(np.argmin(d))
     return k if d[k] < 300 else -1
 
 
-dist = np.full(N, np.inf)
-src = np.full(N, -1)
-heap = []
-seeds = []
-for ai, (a_lat, a_lon, reach, ni, first) in enumerate(anchors):
-    s = seed_of(a_lat, a_lon)
-    seeds.append(s)
-    if s < 0:
-        continue
-    d0 = haversine(a_lat, a_lon, lat[s], lon[s]) - reach
-    if d0 < dist[s]:
-        dist[s] = d0
-        src[s] = ai
-        heapq.heappush(heap, (d0, s, ai))
-while heap:
-    d, u, ai = heapq.heappop(heap)
-    if d > dist[u] or src[u] != ai:
-        continue
-    if d > LIMIT_KM:
-        break
-    a_lat, a_lon, reach = anchors[ai][:3]
-    for v in neigh[u]:
-        if sea[u] and sea[v]:
-            continue                     # o mar só serve de ponte de um passo
-        # custo de gargalo: a distância em linha reta até a âncora, mas só por caminho contíguo
-        nd = max(d, float(haversine(a_lat, a_lon, lat[v], lon[v])) - reach)
-        if sea[v]:
-            nd += SEA_PENALTY
-        if nd < dist[v]:
-            dist[v] = nd
-            src[v] = ai
-            heapq.heappush(heap, (nd, v, ai))
+def grow(anchors, limit, sea_penalty, sea_chain):
+    """Dijkstra a partir das províncias das âncoras (lat, lon, alcance, ...).
+
+    O custo de uma província é a distância em linha reta até a âncora menos o alcance, mas ela
+    só é alcançada por um caminho de vizinhos; cada zona marítima no caminho soma sea_penalty.
+    sea_chain=False: o mar é ponte de um passo só (terra -> mar -> terra).
+    Retorna (custo, índice da âncora vencedora, província-semente de cada âncora).
+    """
+    dist = np.full(N, np.inf)
+    src = np.full(N, -1)
+    heap = []
+    seeds = []
+    for ai, a in enumerate(anchors):
+        s = seed_of(a[0], a[1])
+        seeds.append(s)
+        if s < 0:
+            continue
+        # a província que contém a âncora é dela; entre âncoras na mesma província vence a
+        # mais próxima do centro
+        d0 = -a[2] + 0.01 * float(haversine(a[0], a[1], lat[s], lon[s]))
+        if d0 < dist[s]:
+            dist[s] = d0
+            src[s] = ai
+            heapq.heappush(heap, (d0, s, ai))
+    while heap:
+        d, u, ai = heapq.heappop(heap)
+        if d > dist[u] or src[u] != ai:
+            continue
+        if d > limit:
+            break
+        a_lat, a_lon, reach = anchors[ai][:3]
+        for v in neigh[u]:
+            if sea[u] and sea[v] and not sea_chain:
+                continue
+            nd = max(d, float(haversine(a_lat, a_lon, lat[v], lon[v])) - reach)
+            if sea[v]:
+                nd += sea_penalty
+            if nd < dist[v]:
+                dist[v] = nd
+                src[v] = ai
+                heapq.heappush(heap, (nd, v, ai))
+    return dist, src, seeds
+
+
+dist, src, seeds = grow(anchors, LIMIT_KM, SEA_PENALTY, sea_chain=False)
 owner = np.full(N, -1)
 for i in range(nl):
     if src[i] >= 0 and dist[i] <= LIMIT_KM:
@@ -294,6 +318,46 @@ for ai, (a_lat, a_lon, reach, ni, first) in enumerate(anchors):
     capital[ni] = s
 lost = [nations[ni]["tag"] for ni in range(len(nations)) if ni not in capital]
 print("  países:", len(capital), " sem dono:", int((owner[:nl] < 0).sum()), " sem capital em terra:", lost)
+
+# ------------------------------------------------------------------ culturas de 1444
+print("culturas...")
+import colorsys
+cultures, c_anchors = [], []
+group, gcol, gsize = "", (128, 128, 128), {}
+for line in open(os.path.join(DATA, "cultures_1444.txt"), encoding="utf-8"):
+    line = line.strip()
+    if not line or line.startswith("#"):
+        continue
+    if line.startswith("@"):
+        group, col = line[1:].split("|")
+        gcol = tuple(int(v) for v in col.split(","))
+        continue
+    cid, name, anc = line.split("|")
+    ci = len(cultures)
+    cultures.append({"id": cid, "name": name, "group": group, "base": gcol, "k": gsize.get(group, 0)})
+    gsize[group] = gsize.get(group, 0) + 1
+    for it in [q for q in anc.split(";") if q]:
+        q = it.split(",")
+        c_anchors.append((float(q[1]), float(q[2]), float(q[3]) if len(q) > 3 else 0.0, ci))
+assert len({c["id"] for c in cultures}) == len(cultures), "id de cultura repetido"
+# cor: tom do grupo, variando matiz, saturação e brilho entre as culturas do mesmo grupo
+for c in cultures:
+    h, sat, val = colorsys.rgb_to_hsv(*(v / 255 for v in c["base"]))
+    n, k = gsize[c["group"]], c["k"]
+    h = (h + (k - (n - 1) / 2) * min(0.03, 0.16 / max(n, 1))) % 1.0
+    sat = min(1.0, max(0.25, sat * (0.75, 1.0, 1.2)[k % 3]))
+    val = min(1.0, max(0.35, val * (1.0, 0.82, 1.12, 0.92)[k % 4]))
+    c["color"] = [int(round(v * 255)) for v in colorsys.hsv_to_rgb(h, sat, val)]
+    del c["base"], c["k"]
+c_dist, c_src, c_seeds = grow(c_anchors, np.inf, 400, sea_chain=True)
+culture = np.full(N, -1)
+for i in range(nl):
+    if c_src[i] >= 0:
+        culture[i] = c_anchors[c_src[i]][3]
+    else:                                # inalcançável (não deveria acontecer): âncora mais próxima
+        culture[i] = c_anchors[int(np.argmin([haversine(a[0], a[1], lat[i], lon[i]) for a in c_anchors]))][3]
+unused = [c["id"] for ci, c in enumerate(cultures) if not (culture[:nl] == ci).any()]
+print("  culturas:", len(cultures), " sem província:", unused)
 
 # ------------------------------------------------------------------ nomes
 print("nomes...")
@@ -340,7 +404,7 @@ plon = np.array([float(f["properties"]["longitude"]) for f in feats])
 ppop = np.array([float(f["properties"]["pop_max"] or 0) for f in feats])
 ppx, ppy = ll_to_px(plat, plon)
 # província de cada cidade; cidades de litoral que caem no mar vão para a terra mais próxima
-SNAP = 6
+SNAP = SNAP_PX
 pid_at = np.full(len(feats), -1)
 for k in np.nonzero((ppx >= 0) & (ppx < W) & (ppy >= 0) & (ppy < H))[0]:
     x, y = int(ppx[k]), int(ppy[k])
@@ -425,11 +489,13 @@ for i, p in enumerate(P):
     if not p["sea"]:
         p["owner"] = nations[owner[i]]["tag"] if owner[i] >= 0 else ""
         p["coastal"] = bool(coastal[i])
+        p["culture"] = cultures[culture[i]]["id"]
         if do_terrain:
             base = p.get("base_development", p["development"])
             p["base_development"] = base
             p["development"] = max(1, int(round(base * DEV_MULT.get(terrain[i], 1.0))))
 data["countries"] = countries
+data["cultures"] = [c for ci, c in enumerate(cultures) if (culture[:nl] == ci).any()]
 with open(MAP_JSON, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
 print("salvo:", MAP_JSON)
@@ -448,9 +514,11 @@ if prev_out:
             pal[i] = (40, 77, 117)
         elif prev_mode == "terreno":
             pal[i] = TCOL.get(p["terrain"], (115, 110, 97))
+        elif prev_mode == "cultura":
+            pal[i] = cultures[culture[i]]["color"]
         else:
             pal[i] = tag_col.get(p["owner"], (115, 110, 97))
-        own_i[i] = -2 if p["sea"] else owner[i]
+        own_i[i] = -2 if p["sea"] else (culture[i] if prev_mode == "cultura" else owner[i])
     img = pal[lab].astype(np.float32)
     e = np.zeros(lab.shape, np.float32)
     for dy, dx in ((0, 1), (1, 0)):

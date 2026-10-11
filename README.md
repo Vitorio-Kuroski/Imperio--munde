@@ -20,7 +20,8 @@ Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
 | Zoom | Roda do mouse |
 | Pausar / continuar | Espaço |
 | Velocidade | `+` e `-` (1 a 5) |
-| Modo de mapa (político / terreno) | `T` ou botão na barra superior |
+| Modo de mapa (político → terreno → cultura) | `T` ou botão na barra superior |
+| Ver província, cultura, dono ou terreno | Passar o mouse sobre o mapa |
 
 ## Estrutura
 - `scripts/main.gd` — câmera, interface, escolha de país e entrada.
@@ -55,7 +56,7 @@ O Godot passa a usar essa pasta automaticamente; para voltar ao mapa de exemplo,
 pip install pillow numpy scipy
 python3 tools/refine_world.py                       # donos de 1444, costa e nomes
 python3 tools/refine_world.py --terreno             # também recalcula o terreno (baixa ~60 MB na 1ª vez)
-python3 tools/refine_world.py --previa previa.png [--modo terreno]
+python3 tools/refine_world.py --previa previa.png [--modo terreno|cultura]
 ```
 Trabalha direto sobre `data/world/map.json` e `assets/world/province_ids.png`, então funciona sem a imagem original.
 - **Donos:** cada cidade-âncora cresce pelas províncias vizinhas; os países ficam contíguos e só cruzam o mar
@@ -64,10 +65,14 @@ Trabalha direto sobre `data/world/map.json` e `assets/world/province_ids.png`, e
   pântano, tundra, geleira) a partir do relevo (ETOPO5, NOAA) e do clima (WorldClim 2.1, Fick & Hijmans 2017).
   Os dados brutos ficam em `tools/data/raw/` (fora do git; o WorldClim não pode ser redistribuído).
   O desenvolvimento passa a ser ajustado pelo terreno (o valor original fica em `base_development`).
+- **Culturas de 1444:** ~360 culturas em ~50 grupos (`tools/data/cultures_1444.txt`, aproximação histórica,
+  não são os dados do EU4). Cada cultura tem cidades-âncora; toda província de terra recebe a cultura da
+  âncora mais próxima alcançável pelos vizinhos. A cor vem do grupo, variando por cultura.
+  Para ajustar, edite o arquivo (formato no cabeçalho) e rode `refine_world.py`.
 - **Nomes:** cidades de litoral que caíam no mar voltam para a província certa (ex.: Lisboa); províncias
   remotas recebem o nome da região geográfica (`tools/data/ne_50m_geography_regions.geojson`, Natural Earth);
   em nomes repetidos a cidade mais populosa fica sem numeral (London × London de Ontário).
-- Depois de editar `tools/data/nations_*.txt`, rode `refine_world.py` (não precisa do `--terreno`).
+- Depois de editar `tools/data/nations_*.txt` ou `cultures_1444.txt`, rode `refine_world.py` (não precisa do `--terreno`).
 
 ## Regenerar o mapa-múndi
 ```

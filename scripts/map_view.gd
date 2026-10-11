@@ -22,13 +22,16 @@ const TERRAIN_COLORS := {
 	"pântano": Color8(90, 120, 100),
 }
 
-enum MapMode { POLITICO, TERRENO }
+enum MapMode { POLITICO, TERRENO, CULTURA }
+const MAP_MODE_NAMES := ["político", "terreno", "cultura"]
 
 var map_w: int
 var map_h: int
 var provinces: Array = []
 var countries: Dictionary = {}     # tag -> dict
 var country_index: Dictionary = {} # tag -> 1..N (0 = sem dono)
+var cultures: Dictionary = {}      # id -> dict (name, group, color)
+var culture_index: Dictionary = {} # id -> 1..N (0 = nenhuma)
 var id_image: Image
 var palette_image: Image
 var palette_tex: ImageTexture
@@ -56,6 +59,11 @@ func load_map(map_scale: float) -> void:
 	for c in data["countries"]:
 		countries[c["tag"]] = c
 		country_index[c["tag"]] = n
+		n += 1
+	n = 1
+	for c in data.get("cultures", []):
+		cultures[c["id"]] = c
+		culture_index[c["id"]] = n
 		n += 1
 
 	var ids_tex := load(ids_path) as Texture2D
@@ -85,10 +93,19 @@ func province_color(pid: int) -> Color:
 		return SEA_COLOR
 	if map_mode == MapMode.TERRENO:
 		return TERRAIN_COLORS.get(p["terrain"], UNOWNED_COLOR)
+	if map_mode == MapMode.CULTURA:
+		return culture_color(p.get("culture", ""))
 	var tag: String = p["owner"]
 	if tag == "" or not countries.has(tag):
 		return UNOWNED_COLOR
 	var c: Array = countries[tag]["color"]
+	return Color8(int(c[0]), int(c[1]), int(c[2]))
+
+
+func culture_color(cid: String) -> Color:
+	if not cultures.has(cid):
+		return UNOWNED_COLOR
+	var c: Array = cultures[cid]["color"]
 	return Color8(int(c[0]), int(c[1]), int(c[2]))
 
 
@@ -98,7 +115,9 @@ func _write_palette(pid: int) -> void:
 	col.a = 1.0
 	palette_image.set_pixel(pid, 0, col)
 	var owner_idx: int = country_index.get(p["owner"], 0)
-	palette_image.set_pixel(pid, 1, Color(owner_idx / 255.0, 0.0, 0.0, 1.0 if p["sea"] else 0.0))
+	var cult_idx: int = culture_index.get(p.get("culture", ""), 0)
+	palette_image.set_pixel(pid, 1, Color(owner_idx / 255.0, (cult_idx & 255) / 255.0,
+			(cult_idx >> 8) / 255.0, 1.0 if p["sea"] else 0.0))
 
 
 func set_owner_of(pid: int, tag: String) -> void:
@@ -112,6 +131,8 @@ func set_map_mode(mode: MapMode) -> void:
 	if mode == map_mode:
 		return
 	map_mode = mode
+	# no modo cultura as bordas fortes passam a separar culturas em vez de países
+	mat.set_shader_parameter("border_mode", 1 if mode == MapMode.CULTURA else 0)
 	for p in provinces:
 		_write_palette(int(p["id"]))
 	palette_tex.update(palette_image)
