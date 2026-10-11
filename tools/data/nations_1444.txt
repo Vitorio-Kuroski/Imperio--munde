@@ -94,18 +94,24 @@ ATH|Atenas|150,150,200|Atenas,37.98,23.73;Tebas,38.32,23.32
 BYZ|Império Bizantino|140,60,160|Constantinopla,41.01,28.98,50;Mistrá,37.07,22.37;Patras,38.25,21.74;Corinto,37.94,22.93
 
 # ---------------------------------------------------------------- Rússia e estepe
-MOS|Moscóvia|60,120,80|Moscou,55.76,37.62;Vladimir,56.13,40.41;Níjni Novgorod,56.33,44.00;Kostroma,57.77,40.93;Iaroslavl,57.63,39.87;Tula,54.19,37.62;Kaluga,54.51,36.26;Kolomna,55.08,38.78;Murom,55.57,42.05;Velikiy Ustiug,60.76,46.30,150;Vologda,59.22,39.89,120
+MOS|Moscóvia|60,120,80|Moscou,55.76,37.62;Vladimir,56.13,40.41;Níjni Novgorod,56.33,44.00;Tula,54.19,37.62;Kaluga,54.51,36.26;Kolomna,55.08,38.78;Murom,55.57,42.05;Velikiy Ustiug,60.76,46.30,150;Vologda,59.22,39.89,120;Kostroma,57.77,40.93
 RYA|Riazã|150,100,90|Riazã,54.63,39.74;Yelets,52.62,38.50
+YAR|Iaroslavl|120,150,120|Iaroslavl,57.63,39.87;Rostov,57.19,39.41
+GAL|Galich|170,130,170|Galich,58.38,42.35,110
 TVE|Tver|110,100,170|Tver,56.86,35.90;Rzhev,56.26,34.33
+PER|Grande Perm|200,150,90|Cherdyn,60.40,56.50,250;Solikamsk,59.63,56.77,150
+VYA|Viatka|130,170,200|Viatka,58.60,49.66,170
 NOV|Novgorod|215,215,235|Novgorod,58.52,31.27,120;Staraya Ladoga,60.00,32.30,100;Olonets,61.00,32.90,110;Arcangel,64.54,40.54,200;Onega,63.90,38.10,150;Kem,64.96,34.60,150;Kola,68.88,33.03,250;Belozersk,60.03,37.78,100;Kargopol,61.50,38.90,120;Ust-Tsilma,65.44,52.20,250
 PSK|Pskov|230,200,200|Pskov,57.82,28.33
-KAZ|Canato de Cazã|60,170,160|Cazã,55.79,49.12,150;Cheboksary,56.13,47.25,110
+KAZ|Canato de Cazã|60,170,160|Cazã,55.79,49.12,200;Cheboksary,56.13,47.25,110;Simbirsk,54.31,48.40,130;Ufa,54.73,55.96,200;Yoshkar-Ola,56.63,47.89,90
 GRT|Grande Horda|210,180,130|Sarai,48.54,46.18,200;Tsaritsyn,48.70,44.51,150;Azov,47.10,39.42,150;Saratov,51.53,46.03,150
 AST|Canato de Astracã|190,160,110|Astracã,46.35,48.04,150
-NOG|Nogai|190,200,170|Atyrau,47.10,51.92,250;Emba,48.83,58.13,250;Mangyshlak,43.65,51.17,250;Orenburg,51.77,55.10,250
+NOG|Horda Nogai|190,200,170|Atyrau,47.10,51.92,350;Emba,48.83,58.13,350;Mangyshlak,43.65,51.17,300;Orenburg,51.77,55.10,300;Aktobe,50.28,57.21,350;Aralsk,46.79,61.02,300;Ural'sk,51.23,51.37,250
 CRI|Canato da Crimeia|215,195,115|Bakhchysarai,44.75,33.86;Perekop,46.12,33.69;Kerch,45.35,36.47
 CIR|Circássia|160,200,130|Maikop,44.61,40.10,150;Nalchik,43.49,43.62,120;Anapa,44.89,37.32,100
-GEO|Geórgia|215,70,90|Tbilisi,41.72,44.79;Kutaisi,42.27,42.69;Akhaltsikhe,41.64,42.98;Batumi,41.65,41.64;Telavi,41.92,45.47
+KRT|Kartli|215,70,90|Tbilisi,41.72,44.79;Telavi,41.92,45.47;Gori,41.98,44.11
+IME|Imereti|200,90,120|Kutaisi,42.27,42.69;Batumi,41.65,41.64
+SAM|Samtskhe|230,110,110|Akhaltsikhe,41.64,42.98,70
 SRV|Shirvan|120,170,170|Shamakhi,40.63,48.64;Baku,40.41,49.87;Derbent,42.07,48.29
 
 # ---------------------------------------------------------------- Anatólia, Levante, Egito, Arábia
@@ -120,7 +126,7 @@ CYP|Chipre|180,100,200|Nicósia,35.17,33.37,60;Famagusta,35.12,33.94;Limassol,34
 MAM|Mamelucos|200,170,60|Cairo,30.04,31.24,110;Alexandria,31.20,29.92;Damieta,31.42,31.81;Assiut,27.18,31.18,110;Luxor,25.69,32.64,110;Assuã,24.09,32.90,140;Suez,29.97,32.55;Al-Tor,28.24,33.62,120;Gaza,31.50,34.47;Jerusalém,31.77,35.21;Damasco,33.51,36.29;Aleppo,36.20,37.16;Trípoli do Líbano,34.44,35.84;Beirute,33.89,35.50;Homs,34.73,36.72;Hama,35.13,36.75;Safed,32.96,35.50;Acre,32.93,35.08;Karak,31.18,35.70,110;Aqaba,29.53,35.01,110;Antioquia,36.20,36.16;Palmira,34.55,38.27,200;Meca,21.39,39.86,200;Medina,24.47,39.61,200;Jeddah,21.54,39.17,150;Tabuk,28.38,36.57,200;Tobruk,32.08,23.98,150;Derna,32.77,22.64,150;Bengasi,32.12,20.07,150;Siwa,29.20,25.52,200;Marsa Matruh,31.35,27.24,150
 AKK|Aq Qoyunlu|220,230,230|Diyarbakır,37.91,40.24;Mardin,37.31,40.74;Urfa,37.17,38.79;Erzincan,39.75,39.49;Harput,38.74,39.22
 QAR|Qara Qoyunlu|60,60,75|Tabriz,38.07,46.29;Van,38.50,43.37;Erevan,40.18,44.51;Bagdá,33.31,44.37,100;Mosul,36.34,43.13;Hamadã,34.80,48.51;Basra,30.51,47.78,120;Najaf,32.00,44.34;Kirkuk,35.47,44.39;Erzurum,39.90,41.27;Ardabil,38.25,48.30;Urmia,37.55,45.07;Ganja,40.68,46.36;Kermanshah,34.31,47.07;Ahvaz,31.32,48.67,120
-TIM|Timúridas|200,70,70|Herat,34.34,62.20,200;Meshed,36.30,59.60,200;Isfahan,32.65,51.67,150;Shiraz,29.59,52.58,150;Yazd,31.90,54.37,150;Kerman,30.28,57.07,200;Teerã,35.69,51.39,120;Qom,34.64,50.88;Qazvin,36.27,50.00;Nishapur,36.21,58.80,150;Gorgan,36.84,54.43;Sari,36.56,53.06;Bushehr,28.97,50.84,100;Rasht,37.28,49.58;Birjand,32.87,59.22,200
+TIM|Timúridas|200,70,70|Herat,34.34,62.20,200;Meshed,36.30,59.60,200;Isfahan,32.65,51.67,150;Shiraz,29.59,52.58,150;Yazd,31.90,54.37,150;Kerman,30.28,57.07,200;Teerã,35.69,51.39,120;Qom,34.64,50.88;Qazvin,36.27,50.00;Nishapur,36.21,58.80,150;Gorgan,36.84,54.43;Sari,36.56,53.06;Bushehr,28.97,50.84,100;Rasht,37.28,49.58;Birjand,32.87,59.22,200;Urgench,41.55,60.63,150
 ORM|Ormuz|120,80,150|Ormuz,27.10,56.46,100;Bahrein,26.07,50.55,80;Mascate,23.59,58.38,100
 OMA|Omã|170,100,60|Nizwa,22.93,57.53,150;Sohar,24.35,56.71
 YEM|Iêmen|90,130,80|Sana,15.35,44.21,200;Saada,16.94,43.76;Hodeida,14.80,42.95,100

@@ -1,8 +1,8 @@
 # Imperium Mundi
 
 Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
-Mapa real da **Europa, Oriente Médio e Norte da África** com **978 províncias** (934 de terra, 44 de mar)
-e **107 países de 1444** (Otomanos, França, Castela, Polônia, Lituânia, Mamelucos, Timúridas, estados do Sacro Império etc.).
+Mapa real da **Europa, Oriente Médio e Norte da África** com **984 províncias** (940 de terra, 44 de mar)
+e **113 países de 1444** (Otomanos, França, Castela, Polônia, Lituânia, Mamelucos, Timúridas, estados do Sacro Império etc.).
 
 > **Aviso de fidelidade:** os países, capitais e cidades são reais, mas as fronteiras de 1444 são uma
 > **aproximação** (cada província vai para o país com a cidade-âncora mais próxima). Não são os dados

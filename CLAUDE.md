@@ -4,8 +4,8 @@ Jogo de grand strategy em Godot 4.x (GDScript), inspirado em Europa Universalis 
 Idioma do jogo e dos comentários: português do Brasil.
 
 ## Estado atual
-- Mapa real (Europa + Oriente Médio + N. África), projeção Mercator, 2048x2411 px, 978 províncias (934 terra, 44 mar).
-- 107 países de 1444 com capitais e cidades reais. Fronteiras APROXIMADAS (ver `tools/data/nations_1444.txt`); não são os dados do EU4.
+- Mapa real (Europa + Oriente Médio + N. África), projeção Mercator, 2048x2411 px, 984 províncias (940 terra, 44 mar).
+- 113 países de 1444 com capitais e cidades reais. Fronteiras APROXIMADAS (ver `tools/data/nations_1444.txt`); não são os dados do EU4.
 - Escolha de país (lista ordenada por tamanho), câmera (WASD/setas/arrastar, zoom), seleção de província, relógio com pausa e 5 velocidades.
 - Ainda NÃO existem: economia, exércitos, guerra, diplomacia, IA, eventos, salvamento.
 
