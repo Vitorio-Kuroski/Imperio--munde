@@ -23,6 +23,10 @@ var side_panel: PanelContainer
 var info_label: Label
 var tooltip: MapTooltip
 var start_panel: CenterContainer
+var eu4_status: Label
+var eu4_buttons: Array[Button] = []
+var importer: Eu4Importer
+var import_thread: Thread
 
 
 func _ready() -> void:
@@ -123,6 +127,7 @@ func _build_ui() -> void:
 	title.text = "Imperium Mundi — escolha seu país"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	outer.add_child(title)
+	_build_eu4_box(outer)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(380, 520)
 	outer.add_child(scroll)
@@ -148,6 +153,118 @@ func _build_ui() -> void:
 	# Dica do mapa (criada por último para ficar por cima)
 	tooltip = MapTooltip.new()
 	ui.add_child(tooltip)
+
+
+# ------------------------------------------------------------------ mapa do EU4 (opcional)
+## Botões da tela inicial para importar o mapa e os donos de 1444 dos arquivos do EU4 do jogador.
+func _build_eu4_box(parent: VBoxContainer) -> void:
+	var using_eu4 := map.source.begins_with(Eu4Importer.OUT_DIR)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 4)
+	parent.add_child(box)
+	eu4_status = Label.new()
+	eu4_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	eu4_status.custom_minimum_size.x = 380
+	eu4_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	eu4_status.add_theme_font_size_override("font_size", 13)
+	eu4_status.text = "Usando o mapa importado do EU4." if using_eu4 \
+			else "Tem o Europa Universalis IV? Carregue o mapa dele (pasta do jogo ou .zip com map/, history/, common/)."
+	box.add_child(eu4_status)
+	var hb := HBoxContainer.new()
+	hb.alignment = BoxContainer.ALIGNMENT_CENTER
+	hb.add_theme_constant_override("separation", 6)
+	box.add_child(hb)
+	var b_dir := Button.new()
+	b_dir.text = "Pasta do EU4..."
+	b_dir.pressed.connect(_open_eu4_dialog.bind(true))
+	hb.add_child(b_dir)
+	var b_zip := Button.new()
+	b_zip.text = "Arquivos .zip..."
+	b_zip.pressed.connect(_open_eu4_dialog.bind(false))
+	hb.add_child(b_zip)
+	eu4_buttons = [b_dir, b_zip]
+	if Eu4Importer.has_import():
+		var b_def := Button.new()
+		b_def.text = "Mapa padrão"
+		b_def.tooltip_text = "Apaga o mapa importado do EU4 e volta ao mapa do jogo"
+		b_def.pressed.connect(func():
+			Eu4Importer.remove_import()
+			get_tree().reload_current_scene())
+		hb.add_child(b_def)
+		eu4_buttons.append(b_def)
+
+
+func _open_eu4_dialog(folder: bool) -> void:
+	if OS.get_name() == "Android":
+		# precisa de acesso aos arquivos do aparelho (o Android pergunta ao jogador)
+		OS.request_permissions()
+	var dlg := FileDialog.new()
+	dlg.access = FileDialog.ACCESS_FILESYSTEM
+	dlg.use_native_dialog = false
+	if folder:
+		dlg.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+		dlg.title = "Escolha a pasta do Europa Universalis IV"
+	else:
+		dlg.file_mode = FileDialog.FILE_MODE_OPEN_FILES
+		dlg.title = "Escolha os .zip com map/, history/ e common/ do EU4"
+		dlg.filters = PackedStringArray(["*.zip ; Arquivos zip"])
+	dlg.current_dir = _guess_eu4_dir(folder)
+	dlg.size = Vector2i(get_viewport_rect().size * 0.8)
+	dlg.dir_selected.connect(func(d: String): _import_eu4(PackedStringArray([d])))
+	dlg.files_selected.connect(_import_eu4)
+	dlg.visibility_changed.connect(func(): if not dlg.visible: dlg.queue_free())
+	ui.add_child(dlg)
+	dlg.popup_centered()
+
+
+## Pasta inicial do diálogo: instalação comum do EU4 na Steam, senão Downloads.
+func _guess_eu4_dir(folder: bool) -> String:
+	if folder:
+		var home := OS.get_environment("HOME")
+		for d in ["C:/Program Files (x86)/Steam/steamapps/common/Europa Universalis IV",
+				"C:/Program Files/Steam/steamapps/common/Europa Universalis IV",
+				home + "/.steam/steam/steamapps/common/Europa Universalis IV",
+				home + "/.local/share/Steam/steamapps/common/Europa Universalis IV",
+				home + "/Library/Application Support/Steam/steamapps/common/Europa Universalis IV"]:
+			if DirAccess.dir_exists_absolute(d):
+				return d.get_base_dir()
+	return OS.get_system_dir(OS.SYSTEM_DIR_DOWNLOADS)
+
+
+func _import_eu4(paths: PackedStringArray) -> void:
+	if import_thread != null:
+		return
+	importer = Eu4Importer.new()
+	var found := 0
+	for p in paths:
+		found += importer.add_source(p)
+	if found == 0:
+		eu4_status.text = "Não achei arquivos do EU4 aí. Escolha a pasta do jogo (a que tem map/, history/ e common/) ou os .zip."
+		importer = null
+		return
+	for b in eu4_buttons:
+		b.disabled = true
+	eu4_status.text = "Importando..."
+	import_thread = Thread.new()
+	import_thread.start(importer.run)
+
+
+## Acompanha a importação (chamado todo quadro). Retorna true quando a cena vai ser recarregada.
+func _poll_import() -> bool:
+	if import_thread == null:
+		return false
+	if not importer.done:
+		eu4_status.text = importer.get_status()
+		return false
+	import_thread.wait_to_finish()
+	import_thread = null
+	if importer.error != "":
+		eu4_status.text = importer.error
+		for b in eu4_buttons:
+			b.disabled = false
+		return false
+	get_tree().reload_current_scene()      # recarrega com o mapa novo
+	return true
 
 
 func _start_game(tag: String) -> void:
@@ -214,6 +331,8 @@ func _on_month_passed() -> void:
 
 # ------------------------------------------------------------------ loop e entrada
 func _process(delta: float) -> void:
+	if _poll_import():
+		return          # a cena está sendo recarregada com o mapa novo
 	clock.process(delta)
 	_update_tooltip()
 

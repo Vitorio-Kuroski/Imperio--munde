@@ -38,18 +38,24 @@ var palette_tex: ImageTexture
 var mat: ShaderMaterial
 var selected_id := -1
 var map_mode := MapMode.POLITICO
+var source := ""                   # de onde veio o mapa (caminho do map.json)
 
 
 func load_map(map_scale: float) -> void:
-	# Se existir um mapa importado do EU4 (tools/import_eu4.py), ele tem prioridade.
+	# Prioridade: mapa do EU4 importado no jogo (user://eu4, ver Eu4Importer) >
+	# importado pelo tools/import_eu4.py (res://data/eu4) > mundo > mapa antigo da Europa.
 	var json_path := "res://data/map.json"
 	var ids_path := "res://assets/province_ids.png"
-	if FileAccess.file_exists("res://data/eu4/map.json") and ResourceLoader.exists("res://assets/eu4/province_ids.png"):
+	if Eu4Importer.has_import():
+		json_path = Eu4Importer.OUT_DIR + "/map.json"
+		ids_path = Eu4Importer.OUT_DIR + "/province_ids.png"
+	elif FileAccess.file_exists("res://data/eu4/map.json") and ResourceLoader.exists("res://assets/eu4/province_ids.png"):
 		json_path = "res://data/eu4/map.json"
 		ids_path = "res://assets/eu4/province_ids.png"
 	elif FileAccess.file_exists("res://data/world/map.json") and ResourceLoader.exists("res://assets/world/province_ids.png"):
 		json_path = "res://data/world/map.json"
 		ids_path = "res://assets/world/province_ids.png"
+	source = json_path
 	print("Mapa carregado de: ", json_path)
 	var data = JSON.parse_string(FileAccess.get_file_as_string(json_path))
 	map_w = int(data["width"])
@@ -66,8 +72,14 @@ func load_map(map_scale: float) -> void:
 		culture_index[c["id"]] = n
 		n += 1
 
-	var ids_tex := load(ids_path) as Texture2D
-	id_image = ids_tex.get_image()
+	var ids_tex: Texture2D
+	if ids_path.begins_with("user://"):
+		# arquivo fora do projeto: carrega sem compressão (cada pixel é um id exato)
+		id_image = Image.load_from_file(ids_path)
+		ids_tex = ImageTexture.create_from_image(id_image)
+	else:
+		ids_tex = load(ids_path) as Texture2D
+		id_image = ids_tex.get_image()
 
 	palette_image = Image.create(provinces.size(), 3, false, Image.FORMAT_RGBA8)
 	for p in provinces:

@@ -37,8 +37,17 @@ Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
 - `tools/data/ne_50m_land.geojson` — contorno real da terra (Natural Earth, domínio público).
 
 ## Fronteiras exatas de 1444 (importar do seu EU4)
-O mapa de exemplo é aproximado. Se você tem o **Europa Universalis IV** instalado, importe o mapa,
-as províncias e os donos de 1444 direto da sua instalação:
+O mapa de exemplo é aproximado. Se você tem o **Europa Universalis IV**, dá para usar o mapa,
+as províncias e os donos de 1444 dele.
+
+**Dentro do jogo (PC ou celular):** na tela de escolha de país, toque em **Pasta do EU4...** e escolha
+a pasta do jogo (ex.: `...\steamapps\common\Europa Universalis IV`) ou em **Arquivos .zip...** e
+escolha um ou mais .zip com `map/`, `history/` e `common/` do jogo (pode ser um `provinces.zip` só com
+o `provinces.bmp`). A importação leva alguns segundos (mais no celular) e grava o resultado em
+`user://eu4/` (pasta de dados do jogo, fora do projeto); o jogo recarrega já com o mapa do EU4.
+**Mapa padrão** apaga a importação e volta ao mapa do jogo. No Android o jogo pede acesso aos arquivos.
+
+**Pelo script (para desenvolver no editor):**
 ```
 pip install pillow numpy
 python3 tools/import_eu4.py                                    # tenta achar o jogo sozinho
@@ -46,7 +55,7 @@ python3 tools/import_eu4.py "C:\\Program Files (x86)\\Steam\\steamapps\\common\\
 ```
 O script lê `map/` (provinces.bmp, definition.csv, default.map, e se houver climate.txt e heightmap.bmp), `history/provinces` e `history/countries` (obrigatórios) e, se houver, `common/` e `localisation/` do jogo. Ele gera
 `data/eu4/map.json` + `assets/eu4/province_ids.png` (~5000 províncias, mundo todo, ~190 países).
-O Godot passa a usar essa pasta automaticamente; para voltar ao mapa de exemplo, apague `data/eu4` e `assets/eu4`.
+O Godot passa a usar essa pasta automaticamente (o mapa importado dentro do jogo, em `user://eu4/`, tem prioridade sobre ela); para voltar ao mapa de exemplo, apague `data/eu4` e `assets/eu4`.
 - Esses arquivos são derivados de dados da Paradox: já estão no `.gitignore`. **Não publique no GitHub nem distribua.**
 - Nomes de países e províncias vêm da localização em inglês; o terreno vem do heightmap e do clima do jogo, e a cultura de cada província também é importada.
 - Testado só com uma árvore de arquivos de exemplo no formato do EU4; se algo não bater na sua versão do jogo, me diga a mensagem de erro.
