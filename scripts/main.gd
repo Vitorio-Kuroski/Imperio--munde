@@ -255,6 +255,13 @@ func _unhandled_input(event: InputEvent) -> void:
 				camera.zoom = (camera.zoom * 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 			MOUSE_BUTTON_WHEEL_DOWN:
 				camera.zoom = (camera.zoom / 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
+	elif event is InputEventScreenDrag and event.index == 0:
+		# celular: arrastar com um dedo move o mapa
+		camera.position -= event.relative / camera.zoom
+		_clamp_camera()
+	elif event is InputEventMagnifyGesture:
+		# celular: pinçar com dois dedos dá zoom
+		camera.zoom = (camera.zoom * event.factor).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 	elif event is InputEventMouseMotion:
 		if event.button_mask & (MOUSE_BUTTON_MASK_RIGHT | MOUSE_BUTTON_MASK_MIDDLE):
 			camera.position -= event.relative / camera.zoom
