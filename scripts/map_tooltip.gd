@@ -87,7 +87,7 @@ func _fill(map: MapView, pid: int) -> void:
 			if map.cultures.has(cid):
 				var c: Dictionary = map.cultures[cid]
 				_title.text = c["name"]
-				_sub.text = "%s · %s" % [p["name"], c["group"]]
+				_sub.text = "%s · %s" % [p["name"], c["group"]] if c["group"] != "" else p["name"]
 			else:
 				_title.text = "Cultura desconhecida"
 			_swatch.color = map.culture_color(cid)

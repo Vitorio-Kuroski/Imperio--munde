@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Importa o mapa e os donos de 1444 da SUA instalacao do Europa Universalis IV.
 
-Le (da pasta do jogo):
-  map/provinces.bmp, map/definition.csv, map/default.map, map/climate.txt
-  history/provinces/*.txt, history/countries/*.txt
-  common/country_tags/*.txt, common/countries/*.txt
-  localisation/*countries*_l_english.yml, localisation/*prov_names*_l_english.yml
+Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
+  map/provinces.bmp, map/definition.csv, map/default.map
+  history/provinces/*.txt (dono, cultura e religiao em 1444), history/countries/*.txt
+  map/climate.txt, map/heightmap.bmp           (terreno; opcionais)
+  common/country_tags/*.txt, common/countries/*.txt   (cores dos paises; opcionais)
+  common/cultures/*.txt                        (grupos de cultura; opcional)
+  localisation/*_l_english.yml                 (nomes; opcional)
+Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
+sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
 
 Escreve (na pasta do projeto):
   assets/eu4/province_ids.png   id da provincia em R (byte baixo) e G (byte alto)
@@ -21,7 +25,9 @@ Uso (a partir da pasta do projeto):
 Requer: Pillow, numpy
 """
 import argparse
+import colorsys
 import glob
+import hashlib
 import json
 import os
 import re
@@ -132,6 +138,35 @@ def find_loc(root, pattern):
     return list(dict.fromkeys(files))
 
 
+def hashed_color(key, sat=(0.45, 0.75), val=(0.55, 0.9)):
+    """Cor estável gerada a partir de um texto (para países/culturas sem cor definida)."""
+    h = hashlib.md5(key.encode()).digest()
+    return [int(c * 255) for c in colorsys.hsv_to_rgb(h[0] / 255,
+            sat[0] + (sat[1] - sat[0]) * h[1] / 255, val[0] + (val[1] - val[0]) * h[2] / 255)]
+
+
+def classify_terrain(pid, hmean, hstd, climates):
+    """Terreno a partir do relevo do heightmap e do clima do climate.txt do EU4."""
+    if "impassable" in climates.get(pid, ()):
+        return "intransitável"
+    c = climates.get(pid, ())
+    if hmean is not None:
+        hm, hs = hmean[pid], hstd[pid]
+        if hm > 165 or hs > 16:
+            return "montanhas"
+        if hm > 125 or hs > 8:
+            return "colinas" if "arid" not in c else "deserto"
+    if "arid" in c:
+        return "deserto"
+    if "arctic" in c:
+        return "tundra"
+    if "tropical" in c:
+        return "selva"
+    if "severe_winter" in c:
+        return "floresta"
+    return "planície"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("eu4", nargs="?", help="pasta de instalacao do Europa Universalis IV")
@@ -163,10 +198,13 @@ def main():
 
     dmap = read_text(os.path.join(root, "map", "default.map"))
     sea_ids = ids_in_block(dmap, "sea_starts") | ids_in_block(dmap, "lakes")
-    wasteland = set()
+    climates = {}
     clim = os.path.join(root, "map", "climate.txt")
     if os.path.isfile(clim):
-        wasteland = ids_in_block(read_text(clim), "impassable")
+        ctext = read_text(clim)
+        for key in ("tropical", "arid", "arctic", "mild_winter", "normal_winter", "severe_winter", "impassable"):
+            for pid in ids_in_block(ctext, key):
+                climates.setdefault(pid, set()).add(key)
 
     # nomes de provincias (localizacao em ingles)
     prov_names = {}
@@ -229,12 +267,26 @@ def main():
         sy += np.bincount(blk.ravel(), weights=ys.ravel(), minlength=n_prov)
     cx = sx / np.maximum(cnt, 1)
     cy = sy / np.maximum(cnt, 1)
+    # relevo médio e rugosidade de cada província (map/heightmap.bmp; nível do mar ~ 95)
+    h_mean = h_std = None
+    hm_path = os.path.join(root, "map", "heightmap.bmp")
+    if os.path.isfile(hm_path):
+        hm = np.asarray(Image.open(hm_path).convert("L"), dtype=np.float64)
+        if hm.shape == ids.shape:
+            fl = ids.ravel()
+            s1 = np.bincount(fl, weights=hm.ravel(), minlength=n_prov)
+            s2 = np.bincount(fl, weights=(hm * hm).ravel(), minlength=n_prov)
+            h_mean = s1 / np.maximum(cnt, 1)
+            h_std = np.sqrt(np.maximum(s2 / np.maximum(cnt, 1) - h_mean ** 2, 0))
+        del hm
     del ids
 
     # ---------------------------------------------------------- historia das provincias (dono em 1444)
     print("Lendo historia das provincias...", flush=True)
     owner = {}
     dev = {}
+    culture = {}
+    religion = {}
     for f in glob.glob(os.path.join(root, "history", "provinces", "*.txt")):
         m = re.match(r"\s*(\d+)", os.path.basename(f))
         if not m:
@@ -246,6 +298,10 @@ def main():
         o = st.get("owner")
         if isinstance(o, str) and o:
             owner[pid] = o
+        for k, dst in (("culture", culture), ("religion", religion)):
+            v = st.get(k)
+            if isinstance(v, str) and v:
+                dst[pid] = v
         try:
             dev[pid] = int(round(sum(float(st.get(k, 0) or 0) for k in ("base_tax", "base_production", "base_manpower"))))
         except (TypeError, ValueError):
@@ -262,16 +318,31 @@ def main():
         for m in re.finditer(r'^\s*([A-Z0-9]{3}):\d*\s+"(.*)"\s*$', read_text(f), re.M):
             names.setdefault(m.group(1), m.group(2))
 
+    for hf in glob.glob(os.path.join(root, "history", "countries", "*.txt")):
+        m = re.match(r"\s*([A-Z0-9]{3})\s*-\s*(.+?)\.txt$", os.path.basename(hf))
+        if m:
+            names.setdefault(m.group(1), re.sub(r"(?<=[a-z])(?=[A-Z])", " ", m.group(2).strip()))
+    # cores de reserva: as do mapa do projeto para a mesma tag
+    own_colors = {}
+    for nf in glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "nations_*.txt")):
+        for line in read_text(nf).splitlines():
+            q = line.split("|")
+            if len(q) >= 3 and re.fullmatch(r"[A-Z0-9]{3}", q[0]):
+                try:
+                    own_colors[q[0]] = [int(v) for v in q[2].split(",")]
+                except ValueError:
+                    pass
+
     used = sorted(set(owner.values()))
-    if len(used) > 255:
-        sys.exit(f"{len(used)} paises: o shader suporta no maximo 255.")
+    if len(used) > 65535:
+        sys.exit(f"{len(used)} paises: o shader suporta no maximo 65535.")
     first_prov = {}
     for pid in sorted(owner):
         first_prov.setdefault(owner[pid], pid)
 
     countries = []
     for tag in used:
-        color = [128, 128, 128]
+        color = own_colors.get(tag) or hashed_color(tag)
         rel = tags.get(tag)
         if rel:
             cf = os.path.join(root, "common", rel.replace("\\", "/"))
@@ -293,6 +364,36 @@ def main():
             break
         countries.append({"tag": tag, "name": names.get(tag, tag), "color": color, "capital": capital})
 
+    # ---------------------------------------------------------- culturas
+    groups = {}
+    for cf in glob.glob(os.path.join(root, "common", "cultures", "*.txt")):
+        for gname, gval in parse_script(read_text(cf)):
+            if isinstance(gval, list):
+                for cname, cval in gval:
+                    if isinstance(cval, list) and cname not in ("graphical_culture", "male_names",
+                                                                "female_names", "dynasty_names"):
+                        groups[cname] = gname
+    loc = {}
+    for f in find_loc(root, "*_l_english.yml"):
+        for m in re.finditer(r'^\s*([a-z_]+):\d*\s+"(.*)"\s*$', read_text(f), re.M):
+            loc.setdefault(m.group(1), m.group(2))
+
+    def pretty(key):
+        return loc.get(key) or key.replace("_", " ").title()
+
+    cultures = []
+    for cid in sorted(set(culture.values())):
+        g = groups.get(cid, "")
+        if g:   # cultura do mesmo grupo: tom parecido
+            base = hashed_color(g)
+            hh, ss, vv = colorsys.rgb_to_hsv(*(v / 255 for v in base))
+            k = hashlib.md5(cid.encode()).digest()
+            col = [int(c * 255) for c in colorsys.hsv_to_rgb((hh + (k[0] - 128) / 2600) % 1.0,
+                   min(1, max(0.3, ss + (k[1] - 128) / 900)), min(1, max(0.4, vv + (k[2] - 128) / 700)))]
+        else:
+            col = hashed_color(cid)
+        cultures.append({"id": cid, "name": pretty(cid), "group": pretty(g) if g else "", "color": col})
+
     # ---------------------------------------------------------- map.json
     provinces = []
     for pid in range(n_prov):
@@ -305,17 +406,24 @@ def main():
             nm = prov_names[pid]
         else:
             nm = defs[pid][3] if defs[pid][3] not in ("", "x") else f"Província {pid}"
-        provinces.append({
+        prov = {
             "id": pid, "name": nm, "sea": sea,
             "owner": "" if sea else owner.get(pid, ""),
-            "terrain": "mar" if sea else ("intransitável" if pid in wasteland else "—"),
+            "terrain": "mar" if sea else classify_terrain(pid, h_mean, h_std, climates),
             "development": 0 if sea else dev.get(pid, 0),
             "center": [round(float(cx[pid]), 1), round(float(cy[pid]), 1)],
             "neighbors": sorted(neigh[pid]),
-        })
+        }
+        if not sea:
+            prov["culture"] = culture.get(pid, "")
+            prov["religion"] = religion.get(pid, "")
+            prov["coastal"] = any(q in sea_ids for q in neigh[pid])
+            prov["base_development"] = prov["development"]
+        provinces.append(prov)
 
     with open("data/eu4/map.json", "w", encoding="utf-8") as f:
-        json.dump({"width": W, "height": H, "countries": countries, "provinces": provinces},
+        json.dump({"width": W, "height": H, "countries": countries, "cultures": cultures,
+                   "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])

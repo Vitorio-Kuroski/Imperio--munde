@@ -2,7 +2,7 @@ class_name MapView
 extends Sprite2D
 ## Mapa político baseado em imagem de IDs + shader.
 ## assets/province_ids.png guarda o id de cada província (R = byte baixo, G = byte alto).
-## A cor de cada província vive numa textura-paleta; mudar o dono atualiza só 2 pixels.
+## A cor de cada província vive numa textura-paleta; mudar o dono atualiza só 3 pixels.
 
 const SEA_COLOR := Color(0.16, 0.30, 0.46)
 const UNOWNED_COLOR := Color(0.45, 0.43, 0.38)
@@ -69,7 +69,7 @@ func load_map(map_scale: float) -> void:
 	var ids_tex := load(ids_path) as Texture2D
 	id_image = ids_tex.get_image()
 
-	palette_image = Image.create(provinces.size(), 2, false, Image.FORMAT_RGBA8)
+	palette_image = Image.create(provinces.size(), 3, false, Image.FORMAT_RGBA8)
 	for p in provinces:
 		_write_palette(int(p["id"]))
 	palette_tex = ImageTexture.create_from_image(palette_image)
@@ -116,7 +116,8 @@ func _write_palette(pid: int) -> void:
 	palette_image.set_pixel(pid, 0, col)
 	var owner_idx: int = country_index.get(p["owner"], 0)
 	var cult_idx: int = culture_index.get(p.get("culture", ""), 0)
-	palette_image.set_pixel(pid, 1, Color(owner_idx / 255.0, (cult_idx & 255) / 255.0,
+	palette_image.set_pixel(pid, 2, Color((owner_idx >> 8) / 255.0, 0.0, 0.0, 1.0))
+	palette_image.set_pixel(pid, 1, Color((owner_idx & 255) / 255.0, (cult_idx & 255) / 255.0,
 			(cult_idx >> 8) / 255.0, 1.0 if p["sea"] else 0.0))
 
 

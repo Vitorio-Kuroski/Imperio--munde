@@ -14,17 +14,17 @@ Idioma do jogo e dos comentários: português do Brasil.
 
 ## Estrutura
 - `main.tscn` + `scripts/main.gd`: câmera, interface (criada em código), escolha de país, entrada.
-- `scripts/map_view.gd`: carrega `data/map.json` e `assets/province_ids.png`; mantém a paleta (textura N×2) usada pelo shader.
-- `shaders/map.gdshader`: pinta províncias e bordas na GPU. Linha 0 da paleta = cor; linha 1 = R índice do país dono (0 = nenhum, máx. 255 países), G+B índice da cultura (16 bits), A = 1.0 se for mar. `border_mode` = 1 faz as bordas fortes separarem culturas.
+- `scripts/map_view.gd`: carrega `data/map.json` e `assets/province_ids.png`; mantém a paleta (textura N×3) usada pelo shader.
+- `shaders/map.gdshader`: pinta províncias e bordas na GPU. Linha 0 da paleta = cor; linha 1 = R byte baixo do índice do país dono (0 = nenhum), G+B índice da cultura (16 bits), A = 1.0 se for mar; linha 2 = R byte alto do dono (até 65535 países). `border_mode` = 1 faz as bordas fortes separarem culturas.
 - `scripts/game_clock.gd`: data, pausa, velocidade; sinais `day_passed`, `month_passed`, `year_passed`, `changed`.
 - `data/map.json`: províncias (id, name, sea, owner, terrain, development, center [px], neighbors; no mundo também culture, coastal, base_development), países (tag, name, color, capital), culturas (id, name, group, color).
-- `tools/import_eu4.py`: importa mapa/donos de 1444 da instalação do EU4 do usuário para `data/eu4/` e `assets/eu4/` (no .gitignore; dados da Paradox, nunca commitar). `MapView` prefere essa pasta quando existe. Aceita até 255 países.
+- `tools/import_eu4.py`: importa mapa/donos de 1444 da instalação do EU4 do usuário para `data/eu4/` e `assets/eu4/` (no .gitignore; dados da Paradox, nunca commitar). `MapView` prefere essa pasta quando existe. Traz dono, cultura, religião, costa e terreno (heightmap.bmp + climate.txt); sem `common/countries`/`common/cultures`, cores vêm de `nations_*.txt` ou são geradas e as culturas ficam sem grupo. Testado com um EU4 de 4941 províncias e 665 países em 1444.
 - `tools/gen_map.py`: gera o mapa (`python3 tools/gen_map.py 1956` gera ~2000 províncias; o argumento é o alvo de províncias de terra). Requer pillow, numpy, scipy.
 - `tools/data/nations_1444.txt`: países e cidades-âncora (lat/lon). `tools/data/ne_50m_land.geojson`: contorno da terra (Natural Earth).
 - `tools/colors_to_ids.py`: converte um `provinces.png` de cores únicas em `province_ids.png` (para mapas desenhados à mão).
 
 ## Convenções
-- Dono de província muda por `MapView.set_owner_of(pid, tag)` (atualiza 2 pixels da paleta); nunca pinte pixels em loop.
+- Dono de província muda por `MapView.set_owner_of(pid, tag)` (atualiza 3 pixels da paleta); nunca pinte pixels em loop.
 - Lógica mensal (economia, eventos, IA) entra em `_on_month_passed` ou conectada a `clock.month_passed`.
 - Prefira novos sistemas em scripts separados em `scripts/` (ex.: `economy.gd`, `army.gd`) em vez de crescer o `main.gd`.
 - Não edite `province_ids.png`/`map.json` na mão; ajuste `donos_1444.csv` (donos), `nations_*.txt` (países) ou `cultures_1444.txt` e rode `tools/refine_world.py` (mantém os ids). Só `gen_world.py`/`gen_map.py`/`rebuild_europe.py` mudam os ids (depois rode `refine_world.py --terreno`).

@@ -199,7 +199,8 @@ func _show_province(pid: int) -> void:
 		txt += "Dono: %s\nTerreno: %s\nDesenvolvimento: %d" % [owner_name, p["terrain"], p["development"]]
 		var cid: String = p.get("culture", "")
 		if map.cultures.has(cid):
-			txt += "\nCultura: %s (%s)" % [map.cultures[cid]["name"], map.cultures[cid]["group"]]
+			var grp: String = map.cultures[cid]["group"]
+			txt += "\nCultura: %s" % map.cultures[cid]["name"] + (" (%s)" % grp if grp != "" else "")
 		if p.get("coastal", false):
 			txt += "\nCosteira"
 	info_label.text = txt

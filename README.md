@@ -44,11 +44,11 @@ pip install pillow numpy
 python3 tools/import_eu4.py                                    # tenta achar o jogo sozinho
 python3 tools/import_eu4.py "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Europa Universalis IV"
 ```
-O script lê `map/` (provinces.bmp, definition.csv, default.map), `history/` e `common/` do jogo e gera
+O script lê `map/` (provinces.bmp, definition.csv, default.map, e se houver climate.txt e heightmap.bmp), `history/provinces` e `history/countries` (obrigatórios) e, se houver, `common/` e `localisation/` do jogo. Ele gera
 `data/eu4/map.json` + `assets/eu4/province_ids.png` (~5000 províncias, mundo todo, ~190 países).
 O Godot passa a usar essa pasta automaticamente; para voltar ao mapa de exemplo, apague `data/eu4` e `assets/eu4`.
 - Esses arquivos são derivados de dados da Paradox: já estão no `.gitignore`. **Não publique no GitHub nem distribua.**
-- Nomes de países e províncias vêm da localização em inglês; terreno aparece como "—" (ainda não importado).
+- Nomes de países e províncias vêm da localização em inglês; o terreno vem do heightmap e do clima do jogo, e a cultura de cada província também é importada.
 - Testado só com uma árvore de arquivos de exemplo no formato do EU4; se algo não bater na sua versão do jogo, me diga a mensagem de erro.
 
 ## Dono de cada província (`tools/data/donos_1444.csv`)

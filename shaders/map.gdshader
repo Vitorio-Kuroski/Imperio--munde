@@ -1,10 +1,11 @@
 shader_type canvas_item;
 // Pinta o mapa político a partir de:
 //  - ids:     imagem com o id da província em R (byte baixo) e G (byte alto)
-//  - palette: textura N x 2. Linha 0 = cor da província.
-//             Linha 1 = R: índice do país dono (0 = nenhum), G+B: índice da cultura
-//             (byte baixo/alto, 0 = nenhuma), A: 1.0 se for mar.
-// Trocar o dono de uma província = mudar 2 pixels da paleta (sem loops em GDScript).
+//  - palette: textura N x 3. Linha 0 = cor da província.
+//             Linha 1 = R: índice do país dono (byte baixo; 0 = nenhum), G+B: índice da
+//             cultura (byte baixo/alto, 0 = nenhuma), A: 1.0 se for mar.
+//             Linha 2 = R: byte alto do índice do país dono (até 65535 países).
+// Trocar o dono de uma província = mudar 3 pixels da paleta (sem loops em GDScript).
 
 uniform sampler2D ids : filter_nearest, repeat_disable;
 uniform sampler2D palette : filter_nearest, repeat_disable;
@@ -25,6 +26,10 @@ vec4 color_of(int id) {
 
 vec4 info_of(int id) {
 	return texelFetch(palette, ivec2(id, 1), 0);
+}
+
+int owner_of(int id, vec4 inf) {
+	return int(inf.r * 255.0 + 0.5) + int(texelFetch(palette, ivec2(id, 2), 0).r * 255.0 + 0.5) * 256;
 }
 
 int culture_of(vec4 inf) {
@@ -49,7 +54,7 @@ float edge_to(int id, vec4 inf, ivec2 p) {
 		if (culture_of(inf) != culture_of(ninf)) {
 			return 0.75;          // fronteira entre culturas
 		}
-	} else if (int(inf.r * 255.0 + 0.5) != int(ninf.r * 255.0 + 0.5)) {
+	} else if (owner_of(id, inf) != owner_of(nid, ninf)) {
 		return 0.75;              // fronteira entre países
 	}
 	return 0.22;                  // divisa entre províncias do mesmo país
