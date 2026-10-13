@@ -5,8 +5,8 @@
 # Fora do alcance (> 200 km de qualquer âncora) ficam sem dono: Saara, Arábia, estepes.
 
 # ---------------------------------------------------------------- Ilhas Britânicas
-ENG|Inglaterra|196,42,62|Londres,51.51,-0.13;Cantuária,51.28,1.08;Winchester,51.06,-1.31;Bristol,51.45,-2.59;Exeter,50.72,-3.53;Oxford,51.75,-1.26;Norwich,52.63,1.30;Cambridge,52.20,0.12;Lincoln,53.23,-0.54;Nottingham,52.95,-1.15;Birmingham,52.48,-1.90;Chester,53.19,-2.89;York,53.96,-1.08;Newcastle,54.98,-1.61;Carlisle,54.89,-2.93;Cardiff,51.48,-3.18;Caernarfon,53.14,-4.27;Carmarthen,51.86,-4.31;Calais,50.95,1.86,40;Ruão,49.44,1.10;Caen,49.18,-0.37;Cherbourg,49.64,-1.62;Bordéus,44.84,-0.58,90;Bayonne,43.49,-1.47,50;Dublin,53.35,-6.26,70;Le Mans,48.00,0.20,50;Alençon,48.43,0.09,30
-SCO|Escócia|60,90,170|Edimburgo,55.95,-3.19;Glasgow,55.86,-4.25;Perth,56.40,-3.43;Aberdeen,57.15,-2.09;Inverness,57.48,-4.22,110;Dumfries,55.07,-3.61;Oban,56.41,-5.47,70
+ENG|Inglaterra|193,25,14|Londres,51.51,-0.13;Cantuária,51.28,1.08;Winchester,51.06,-1.31;Bristol,51.45,-2.59;Exeter,50.72,-3.53;Oxford,51.75,-1.26;Norwich,52.63,1.30;Cambridge,52.20,0.12;Lincoln,53.23,-0.54;Nottingham,52.95,-1.15;Birmingham,52.48,-1.90;Chester,53.19,-2.89;York,53.96,-1.08;Newcastle,54.98,-1.61;Carlisle,54.89,-2.93;Cardiff,51.48,-3.18;Caernarfon,53.14,-4.27;Carmarthen,51.86,-4.31;Calais,50.95,1.86,40;Ruão,49.44,1.10;Caen,49.18,-0.37;Cherbourg,49.64,-1.62;Bordéus,44.84,-0.58,90;Bayonne,43.49,-1.47,50;Dublin,53.35,-6.26,70;Le Mans,48.00,0.20,50;Alençon,48.43,0.09,30
+SCO|Escócia|200,175,13|Edimburgo,55.95,-3.19;Glasgow,55.86,-4.25;Perth,56.40,-3.43;Aberdeen,57.15,-2.09;Inverness,57.48,-4.22,110;Dumfries,55.07,-3.61;Oban,56.41,-5.47,70
 ULS|Ulster|90,160,90|Derry,54.99,-7.32;Carrickfergus,54.72,-5.81;Armagh,54.35,-6.65
 CNN|Connacht|110,150,70|Galway,53.27,-9.05;Sligo,54.27,-8.47
 MUN|Desmond|80,140,110|Cork,51.90,-8.47;Limerick,52.66,-8.63;Tralee,52.27,-9.70
@@ -16,44 +16,44 @@ THO|Thomond|60,120,150|Ennis,52.84,-8.98,50
 LOI|Senhorio das Ilhas|90,140,120|Islay,55.80,-6.20,60;Portree,57.41,-6.19,70;Stornoway,58.21,-6.39,70
 
 # ---------------------------------------------------------------- França e vizinhos ocidentais
-FRA|França|50,90,190|Paris,48.86,2.35;Reims,49.26,4.03;Troyes,48.30,4.07;Amiens,49.89,2.30;Beauvais,49.43,2.08;Chartres,48.45,1.49;Tours,47.39,0.69;Bourges,47.08,2.40;Poitiers,46.58,0.34;Limoges,45.83,1.26;Angoulême,45.65,0.16;La Rochelle,46.16,-1.15;Lyon,45.76,4.84;Grenoble,45.19,5.72;Valence,44.93,4.89;Toulouse,43.60,1.44;Montpellier,43.61,3.88;Nîmes,43.84,4.36;Carcassonne,43.21,2.35;Cahors,44.45,1.44;Nevers,47.00,3.16;Le Puy,45.04,3.88;Aurillac,44.93,2.44;Lyon,45.76,4.84;Grenoble,45.19,5.72;Valence,44.93,4.89;Vienne,45.52,4.87
-ORL|Orleães|130,80,150|Orléans,47.90,1.90;Blois,47.59,1.34;Soissons,49.38,3.32
+FRA|França|17,41,173|Paris,48.86,2.35;Reims,49.26,4.03;Troyes,48.30,4.07;Amiens,49.89,2.30;Beauvais,49.43,2.08;Chartres,48.45,1.49;Tours,47.39,0.69;Bourges,47.08,2.40;Poitiers,46.58,0.34;Limoges,45.83,1.26;Angoulême,45.65,0.16;La Rochelle,46.16,-1.15;Lyon,45.76,4.84;Grenoble,45.19,5.72;Valence,44.93,4.89;Toulouse,43.60,1.44;Montpellier,43.61,3.88;Nîmes,43.84,4.36;Carcassonne,43.21,2.35;Cahors,44.45,1.44;Nevers,47.00,3.16;Le Puy,45.04,3.88;Aurillac,44.93,2.44;Lyon,45.76,4.84;Grenoble,45.19,5.72;Valence,44.93,4.89;Vienne,45.52,4.87
+ORL|Orleães|208,113,66|Orléans,47.90,1.90;Blois,47.59,1.34;Soissons,49.38,3.32
 BOU|Bourbon|220,220,230|Moulins,46.57,3.33;Clermont-Ferrand,45.78,3.08
 NEV|Nevers|120,110,190|Nevers,46.99,3.16,40
-PRO|Provença|150,90,60|Marselha,43.30,5.37;Aix-en-Provence,43.53,5.45;Arles,43.68,4.63;Toulon,43.12,5.93;Digne,44.09,6.24;Angers,47.47,-0.55,60
+PRO|Provença|92,156,160|Marselha,43.30,5.37;Aix-en-Provence,43.53,5.45;Arles,43.68,4.63;Toulon,43.12,5.93;Digne,44.09,6.24;Angers,47.47,-0.55,60
 LOR|Lorena|200,170,90|Nancy,48.69,6.18;Bar-le-Duc,48.77,5.16;Metz,49.12,6.18;Épinal,48.17,6.45
-BRI|Bretanha|170,170,170|Rennes,48.11,-1.68;Nantes,47.22,-1.55;Brest,48.39,-4.49;Vannes,47.66,-2.76;Saint-Brieuc,48.51,-2.76
-BUR|Borgonha|110,50,110|Dijon,47.32,5.04;Besançon,47.24,6.02;Mâcon,46.31,4.83;Auxerre,47.80,3.57;Bruxelas,50.85,4.35;Antuérpia,51.22,4.40;Gante,51.05,3.72;Bruges,51.21,3.22;Lille,50.63,3.06;Arras,50.29,2.78;Mons,50.45,3.95;Namur,50.47,4.87;Liège,50.63,5.57;Luxemburgo,49.61,6.13;Amsterdã,52.37,4.90;Haia,52.08,4.31;Middelburg,51.50,3.61;Utrecht,52.09,5.12;Bolduque,51.69,5.30
+BRI|Bretanha|116,98,150|Rennes,48.11,-1.68;Nantes,47.22,-1.55;Brest,48.39,-4.49;Vannes,47.66,-2.76;Saint-Brieuc,48.51,-2.76
+BUR|Borgonha|146,31,69|Dijon,47.32,5.04;Besançon,47.24,6.02;Mâcon,46.31,4.83;Auxerre,47.80,3.57;Bruxelas,50.85,4.35;Antuérpia,51.22,4.40;Gante,51.05,3.72;Bruges,51.21,3.22;Lille,50.63,3.06;Arras,50.29,2.78;Mons,50.45,3.95;Namur,50.47,4.87;Liège,50.63,5.57;Luxemburgo,49.61,6.13;Amsterdã,52.37,4.90;Haia,52.08,4.31;Middelburg,51.50,3.61;Utrecht,52.09,5.12;Bolduque,51.69,5.30
 GEL|Gueldres|90,150,170|Arnhem,51.98,5.91;Venlo,51.37,6.17
 CLE|Cleves|170,120,100|Cleves,51.79,6.14;Wesel,51.66,6.62
 FRI|Frísia|100,150,190|Groningen,53.22,6.57;Leeuwarden,53.20,5.80;Emden,53.37,7.21
-NAV|Navarra|190,60,80|Pamplona,42.82,-1.64;Tudela,42.06,-1.60;Estella,42.67,-2.03
+NAV|Navarra|241,222,56|Pamplona,42.82,-1.64;Tudela,42.06,-1.60;Estella,42.67,-2.03
 FOI|Foix|210,160,60|Foix,42.96,1.61;Pau,43.30,-0.37;Tarbes,43.23,0.07;Orthez,43.49,-0.77
 ARM|Armanhaque|200,110,140|Auch,43.65,0.59;Rodez,44.35,2.57
 
 # ---------------------------------------------------------------- Península Ibérica
-CAS|Castela|215,165,50|Toledo,39.86,-4.03;Burgos,42.34,-3.70;Valladolid,41.65,-4.73;Salamanca,40.97,-5.66;Madri,40.42,-3.70;Sevilha,37.39,-5.99;Córdoba,37.88,-4.78;Santiago de Compostela,42.88,-8.54;Oviedo,43.36,-5.85;León,42.60,-5.57;Jaén,37.77,-3.79;Cádis,36.53,-6.29;Múrcia,37.98,-1.13;Cuenca,40.07,-2.14;Badajoz,38.88,-6.97;Bilbao,43.26,-2.93;Ourense,42.34,-7.86;Ciudad Real,38.99,-3.93;Albacete,38.99,-1.86;Cáceres,39.47,-6.37;Huelva,37.26,-6.95;Santander,43.46,-3.81;Vitória,42.85,-2.67;Soria,41.76,-2.47;Ávila,40.66,-4.70;Segóvia,40.95,-4.12
-ARA|Aragão|235,175,60|Saragoça,41.65,-0.89;Barcelona,41.39,2.17;Valência,39.47,-0.38;Palma de Maiorca,39.57,2.65;Perpignan,42.69,2.90;Lleida,41.62,0.62;Teruel,40.34,-1.11;Alicante,38.35,-0.48;Girona,41.98,2.82;Huesca,42.14,-0.41;Tarragona,41.12,1.25;Castellón,39.99,-0.04;Palermo,38.12,13.36;Messina,38.19,15.55;Catânia,37.50,15.09;Siracusa,37.07,15.29;Agrigento,37.31,13.58;Cagliari,39.22,9.12;Sassari,40.73,8.56;Malta,35.90,14.51,40;Ibiza,38.91,1.43,40;Minorca,39.89,4.26,40
-POR|Portugal|60,140,80|Lisboa,38.72,-9.14;Porto,41.15,-8.61;Coimbra,40.21,-8.43;Évora,38.57,-7.91;Faro,37.02,-7.93;Braga,41.55,-8.43;Viseu,40.66,-7.91;Beja,38.02,-7.87;Ceuta,35.89,-5.32,30
-GRA|Granada|60,160,110|Granada,37.18,-3.60;Málaga,36.72,-4.42;Almería,36.84,-2.46;Ronda,36.74,-5.17;Guadix,37.30,-3.14
+CAS|Castela|194,170,8|Toledo,39.86,-4.03;Burgos,42.34,-3.70;Valladolid,41.65,-4.73;Salamanca,40.97,-5.66;Madri,40.42,-3.70;Sevilha,37.39,-5.99;Córdoba,37.88,-4.78;Santiago de Compostela,42.88,-8.54;Oviedo,43.36,-5.85;León,42.60,-5.57;Jaén,37.77,-3.79;Cádis,36.53,-6.29;Múrcia,37.98,-1.13;Cuenca,40.07,-2.14;Badajoz,38.88,-6.97;Bilbao,43.26,-2.93;Ourense,42.34,-7.86;Ciudad Real,38.99,-3.93;Albacete,38.99,-1.86;Cáceres,39.47,-6.37;Huelva,37.26,-6.95;Santander,43.46,-3.81;Vitória,42.85,-2.67;Soria,41.76,-2.47;Ávila,40.66,-4.70;Segóvia,40.95,-4.12
+ARA|Aragão|161,66,69|Saragoça,41.65,-0.89;Barcelona,41.39,2.17;Valência,39.47,-0.38;Palma de Maiorca,39.57,2.65;Perpignan,42.69,2.90;Lleida,41.62,0.62;Teruel,40.34,-1.11;Alicante,38.35,-0.48;Girona,41.98,2.82;Huesca,42.14,-0.41;Tarragona,41.12,1.25;Castellón,39.99,-0.04;Palermo,38.12,13.36;Messina,38.19,15.55;Catânia,37.50,15.09;Siracusa,37.07,15.29;Agrigento,37.31,13.58;Cagliari,39.22,9.12;Sassari,40.73,8.56;Malta,35.90,14.51,40;Ibiza,38.91,1.43,40;Minorca,39.89,4.26,40
+POR|Portugal|57,161,102|Lisboa,38.72,-9.14;Porto,41.15,-8.61;Coimbra,40.21,-8.43;Évora,38.57,-7.91;Faro,37.02,-7.93;Braga,41.55,-8.43;Viseu,40.66,-7.91;Beja,38.02,-7.87;Ceuta,35.89,-5.32,30
+GRA|Granada|210,219,175|Granada,37.18,-3.60;Málaga,36.72,-4.42;Almería,36.84,-2.46;Ronda,36.74,-5.17;Guadix,37.30,-3.14
 
 # ---------------------------------------------------------------- Itália
 VEN|Veneza|110,150,210|Veneza,45.44,12.32;Pádua,45.41,11.88;Verona,45.44,10.99;Bréscia,45.54,10.22;Treviso,45.67,12.24;Bérgamo,45.70,9.68;Udine,46.06,13.24;Pola,44.87,13.85,50;Zara,44.12,15.23,50;Spalato,43.51,16.44,50;Cattaro,42.42,18.77,40;Escútari,42.07,19.51,50;Durazzo,41.32,19.45,50;Corfu,39.62,19.92,40;Negroponte,38.46,23.60,40;Modon,36.80,21.71,40;Candia,35.34,25.14,70;Chania,35.51,24.02,50
-MLO|Milão|130,170,100|Milão,45.46,9.19;Pavia,45.19,9.16;Cremona,45.13,10.02;Parma,44.80,10.33;Piacenza,45.05,9.69;Como,45.81,9.09;Novara,45.45,8.62;Alexandria,44.91,8.61;Asti,44.90,8.21
-GEN|Gênova|215,90,60|Gênova,44.41,8.93;Savona,44.31,8.48;La Spezia,44.10,9.82;Bastia,42.70,9.45,60;Ajaccio,41.92,8.74,60;Caffa,45.03,35.38,60;Quios,38.37,26.14,35
-FIR|Florença|220,100,100|Florença,43.77,11.26;Pisa,43.72,10.40;Arezzo,43.46,11.88;Livorno,43.55,10.31;Lucca,43.84,10.50
+MLO|Milão|166,108,146|Milão,45.46,9.19;Pavia,45.19,9.16;Cremona,45.13,10.02;Parma,44.80,10.33;Piacenza,45.05,9.69;Como,45.81,9.09;Novara,45.45,8.62;Alexandria,44.91,8.61;Asti,44.90,8.21
+GEN|Gênova|219,216,55|Gênova,44.41,8.93;Savona,44.31,8.48;La Spezia,44.10,9.82;Bastia,42.70,9.45,60;Ajaccio,41.92,8.74,60;Caffa,45.03,35.38,60;Quios,38.37,26.14,35
+FIR|Florença|232,47,49|Florença,43.77,11.26;Pisa,43.72,10.40;Arezzo,43.46,11.88;Livorno,43.55,10.31;Lucca,43.84,10.50
 SIE|Siena|230,170,120|Siena,43.32,11.33;Grosseto,42.76,11.11
-PAP|Estados Papais|220,200,50|Roma,41.90,12.50;Bolonha,44.49,11.34;Perugia,43.11,12.39;Ancona,43.62,13.52;Ravena,44.42,12.20;Viterbo,42.42,12.11;Avinhão,43.95,4.81,40;Rimini,44.06,12.57;Spoleto,42.74,12.74;Terracina,41.29,13.25;Benevento,41.13,14.78,40
+PAP|Estados Papais|213,221,180|Roma,41.90,12.50;Bolonha,44.49,11.34;Perugia,43.11,12.39;Ancona,43.62,13.52;Ravena,44.42,12.20;Viterbo,42.42,12.11;Avinhão,43.95,4.81,40;Rimini,44.06,12.57;Spoleto,42.74,12.74;Terracina,41.29,13.25;Benevento,41.13,14.78,40
 MOD|Módena|150,100,160|Ferrara,44.84,11.62;Módena,44.65,10.93
 MAN|Mântua|190,150,90|Mântua,45.16,10.79
-NAP|Nápoles|230,230,120|Nápoles,40.85,14.27;Bari,41.12,16.87;Tarento,40.47,17.24;Cosenza,39.30,16.25;Reggio Calábria,38.11,15.65;Áquila,42.35,13.40;Salerno,40.68,14.77;Foggia,41.46,15.54;Pescara,42.46,14.21;Potenza,40.64,15.80;Catanzaro,38.91,16.59
-SAV|Saboia|60,150,200|Chambéry,45.57,5.92;Turim,45.07,7.69;Nice,43.70,7.27;Aosta,45.74,7.32;Genebra,46.20,6.14;Lausanne,46.52,6.63;Cuneo,44.39,7.55
+NAP|Nápoles|101,50,150|Nápoles,40.85,14.27;Bari,41.12,16.87;Tarento,40.47,17.24;Cosenza,39.30,16.25;Reggio Calábria,38.11,15.65;Áquila,42.35,13.40;Salerno,40.68,14.77;Foggia,41.46,15.54;Pescara,42.46,14.21;Potenza,40.64,15.80;Catanzaro,38.91,16.59
+SAV|Saboia|235,196,230|Chambéry,45.57,5.92;Turim,45.07,7.69;Nice,43.70,7.27;Aosta,45.74,7.32;Genebra,46.20,6.14;Lausanne,46.52,6.63;Cuneo,44.39,7.55
 MON|Monferrato|200,130,60|Casale Monferrato,45.13,8.45
 
 # ---------------------------------------------------------------- Sacro Império (Alemanha, Suíça, Áustria)
-AUS|Áustria|235,235,235|Viena,48.21,16.37;Linz,48.31,14.29;Graz,47.07,15.44;Klagenfurt,46.62,14.31;Innsbruck,47.26,11.40;Liubliana,46.05,14.51;Trieste,45.65,13.78;Bolzano,46.50,11.35;Trento,46.07,11.12;Bregenz,47.50,9.75;Maribor,46.55,15.65
-SAL|Salzburgo|210,120,150|Salzburgo,47.80,13.04
-BAV|Baviera|110,180,220|Munique,48.14,11.58;Landshut,48.54,12.15;Ingolstadt,48.76,11.42;Regensburg,49.01,12.10;Augsburg,48.37,10.90;Passau,48.57,13.43
+AUS|Áustria|220,220,220|Viena,48.21,16.37;Linz,48.31,14.29;Graz,47.07,15.44;Klagenfurt,46.62,14.31;Innsbruck,47.26,11.40;Liubliana,46.05,14.51;Trieste,45.65,13.78;Bolzano,46.50,11.35;Trento,46.07,11.12;Bregenz,47.50,9.75;Maribor,46.55,15.65
+SAL|Salzburgo|132,107,8|Salzburgo,47.80,13.04
+BAV|Baviera|16,115,187|Munique,48.14,11.58;Landshut,48.54,12.15;Ingolstadt,48.76,11.42;Regensburg,49.01,12.10;Augsburg,48.37,10.90;Passau,48.57,13.43
 SWI|Suíça|220,60,60|Berna,46.95,7.45;Zurique,47.38,8.54;Basileia,47.56,7.59;Lucerna,47.05,8.31;Chur,46.85,9.53
 WUR|Württemberg|60,60,60|Stuttgart,48.78,9.18;Ulm,48.40,9.99;Tübingen,48.52,9.06;Heilbronn,49.14,9.22
 BAD|Baden|230,120,90|Baden-Baden,48.76,8.24;Pforzheim,48.89,8.70;Freiburg,47.99,7.85
@@ -74,64 +74,64 @@ SAX|Saxônia|60,130,90|Dresden,51.05,13.74;Leipzig,51.34,12.37;Wittenberg,51.87,
 BRA|Brandemburgo|110,70,70|Berlim,52.52,13.41;Frankfurt do Oder,52.35,14.55;Stendal,52.60,11.86;Ansbach,49.30,10.57,50;Bayreuth,49.95,11.58,50
 MKL|Mecklemburgo|150,110,60|Schwerin,53.63,11.41;Rostock,54.09,12.10;Neubrandenburg,53.56,13.26
 POM|Pomerânia|110,60,140|Stettin,53.43,14.55;Stralsund,54.31,13.09;Kolberg,54.18,15.57;Stolp,54.46,17.03
-BOH|Boêmia|65,75,160|Praga,50.08,14.44;Brno,49.20,16.61;Olomouc,49.59,17.25;Pilsen,49.75,13.38;Kutná Hora,49.95,15.27;Breslávia,51.11,17.04;Legnica,51.21,16.16;Hradec Králové,50.21,15.83;České Budějovice,48.98,14.47;Cheb,50.08,12.37;Opava,49.94,17.90;Bautzen,51.18,14.42;Görlitz,51.15,14.99;Opole,50.67,17.93
+BOH|Boêmia|155,138,38|Praga,50.08,14.44;Brno,49.20,16.61;Olomouc,49.59,17.25;Pilsen,49.75,13.38;Kutná Hora,49.95,15.27;Breslávia,51.11,17.04;Legnica,51.21,16.16;Hradec Králové,50.21,15.83;České Budějovice,48.98,14.47;Cheb,50.08,12.37;Opava,49.94,17.90;Bautzen,51.18,14.42;Görlitz,51.15,14.99;Opole,50.67,17.93
 
 # ---------------------------------------------------------------- Escandinávia e Báltico
-DEN|Dinamarca|200,50,70|Copenhague,55.68,12.57;Aarhus,56.16,10.20;Aalborg,57.05,9.92;Odense,55.40,10.39;Ribe,55.33,8.76;Lund,55.70,13.19;Halmstad,56.67,12.86;Visby,57.64,18.30,50;Flensburg,54.78,9.44;Kristianstad,56.03,14.16;Rønne,55.10,14.70,40
-SWE|Suécia|50,120,190|Estocolmo,59.33,18.07;Uppsala,59.86,17.64;Linköping,58.41,15.62;Örebro,59.27,15.21;Västerås,59.61,16.55;Kalmar,56.66,16.36;Växjö,56.88,14.81;Skara,58.38,13.44;Gotemburgo,57.71,11.97;Jönköping,57.78,14.16;Falun,60.61,15.63;Karlstad,59.38,13.50;Sundsvall,62.39,17.31,110;Östersund,63.18,14.64,120;Umeå,63.83,20.26,120;Luleå,65.58,22.15,150;Åbo,60.45,22.27;Helsinque,60.17,24.94;Tavastehus,61.00,24.46;Viborg,60.71,28.75;Vaasa,63.10,21.62,100;Oulu,65.01,25.47,130
-NOR|Noruega|140,50,60|Oslo,59.91,10.75;Bergen,60.39,5.32;Trondheim,63.43,10.40;Stavanger,58.97,5.73;Kristiansand,58.15,8.00;Hamar,60.79,11.07;Ålesund,62.47,6.15;Bodø,67.28,14.40,130;Tromsø,69.65,18.96,130;Alta,69.97,23.27,110;Vardø,70.37,31.10,120;Kirkwall,58.98,-2.96,60;Lerwick,60.15,-1.15,60;Tórshavn,62.01,-6.77,60;Reykjavík,64.15,-21.94,250;Akureyri,65.68,-18.09,200
-TEU|Ordem Teutônica|90,90,100|Marienburg,54.04,19.03;Königsberg,54.71,20.51;Danzig,54.35,18.65;Thorn,53.01,18.60;Memel,55.71,21.14;Allenstein,53.78,20.49
-LIV|Ordem Livoniana|120,100,80|Riga,56.95,24.11;Reval,59.44,24.75;Dorpat,58.38,26.72;Pernau,58.38,24.50;Mitau,56.65,23.72;Libau,56.51,21.01;Kuressaare,58.25,22.49,40;Narva,59.38,28.20
+DEN|Dinamarca|189,68,68|Copenhague,55.68,12.57;Aarhus,56.16,10.20;Aalborg,57.05,9.92;Odense,55.40,10.39;Ribe,55.33,8.76;Lund,55.70,13.19;Halmstad,56.67,12.86;Visby,57.64,18.30,50;Flensburg,54.78,9.44;Kristianstad,56.03,14.16;Rønne,55.10,14.70,40
+SWE|Suécia|8,81,160|Estocolmo,59.33,18.07;Uppsala,59.86,17.64;Linköping,58.41,15.62;Örebro,59.27,15.21;Västerås,59.61,16.55;Kalmar,56.66,16.36;Växjö,56.88,14.81;Skara,58.38,13.44;Gotemburgo,57.71,11.97;Jönköping,57.78,14.16;Falun,60.61,15.63;Karlstad,59.38,13.50;Sundsvall,62.39,17.31,110;Östersund,63.18,14.64,120;Umeå,63.83,20.26,120;Luleå,65.58,22.15,150;Åbo,60.45,22.27;Helsinque,60.17,24.94;Tavastehus,61.00,24.46;Viborg,60.71,28.75;Vaasa,63.10,21.62,100;Oulu,65.01,25.47,130
+NOR|Noruega|118,164,188|Oslo,59.91,10.75;Bergen,60.39,5.32;Trondheim,63.43,10.40;Stavanger,58.97,5.73;Kristiansand,58.15,8.00;Hamar,60.79,11.07;Ålesund,62.47,6.15;Bodø,67.28,14.40,130;Tromsø,69.65,18.96,130;Alta,69.97,23.27,110;Vardø,70.37,31.10,120;Kirkwall,58.98,-2.96,60;Lerwick,60.15,-1.15,60;Tórshavn,62.01,-6.77,60;Reykjavík,64.15,-21.94,250;Akureyri,65.68,-18.09,200
+TEU|Ordem Teutônica|103,105,104|Marienburg,54.04,19.03;Königsberg,54.71,20.51;Danzig,54.35,18.65;Thorn,53.01,18.60;Memel,55.71,21.14;Allenstein,53.78,20.49
+LIV|Ordem Livoniana|126,30,100|Riga,56.95,24.11;Reval,59.44,24.75;Dorpat,58.38,26.72;Pernau,58.38,24.50;Mitau,56.65,23.72;Libau,56.51,21.01;Kuressaare,58.25,22.49,40;Narva,59.38,28.20
 
 # ---------------------------------------------------------------- Europa Oriental e Balcãs
-POL|Polônia|205,55,75|Cracóvia,50.06,19.94;Poznań,52.41,16.93;Gniezno,52.53,17.60;Łódź,51.76,19.46;Lublin,51.25,22.57;Sandomierz,50.68,21.75;Kalisz,51.76,18.09;Lviv,49.84,24.03,110;Przemyśl,49.78,22.77;Kamianets-Podilskyi,48.68,26.58,110;Kielce,50.87,20.63;Rzeszów,50.04,22.00;Bydgoszcz,53.12,18.00;Chełm,51.14,23.47;Ternopil,49.55,25.59;Halych,49.12,24.72
-MAZ|Mazóvia|230,120,120|Varsóvia,52.23,21.01;Płock,52.55,19.70
-LIT|Lituânia|140,150,70|Vilnius,54.69,25.28;Kaunas,54.90,23.90;Grodno,53.67,23.83;Brest,52.10,23.70;Białystok,53.13,23.17;Minsk,53.90,27.57;Polotsk,55.49,28.78;Vitebsk,55.19,30.20;Mogilev,53.90,30.33;Smolensk,54.78,32.05;Kiev,50.45,30.52;Tchernigov,51.49,31.29;Lutsk,50.75,25.32;Pinsk,52.12,26.10;Novhorod-Siverskyi,51.99,33.26;Bryansk,53.25,34.37;Vyazma,55.21,34.29;Vinnytsia,49.23,28.47;Zhytomyr,50.25,28.66;Cherkasy,49.44,32.06;Poltava,49.59,34.55;Telšiai,55.98,22.25;Slutsk,53.03,27.56;Bobruisk,53.15,29.22;Gomel,52.44,30.98;Uman,48.75,30.22,90;Bratslav,48.82,28.94,70;Ochakiv,46.61,31.55,150;Khadjibey,46.55,30.65,90;Kremenchuk,49.07,33.42,90
-HUN|Hungria|80,150,95|Buda,47.50,19.04;Presburgo,48.15,17.11;Kassa,48.72,21.26;Debrecen,47.53,21.63;Pécs,46.07,18.23;Szeged,46.25,20.15;Székesfehérvár,47.19,18.41;Győr,47.69,17.65;Eger,47.90,20.37;Trenčín,48.89,18.04;Žilina,49.22,18.74;Cluj,46.77,23.59;Sibiu,45.80,24.15;Brașov,45.65,25.60;Oradea,47.05,21.92;Timișoara,45.76,21.23;Belgrado,44.82,20.46,60
+POL|Polônia|197,93,107|Cracóvia,50.06,19.94;Poznań,52.41,16.93;Gniezno,52.53,17.60;Łódź,51.76,19.46;Lublin,51.25,22.57;Sandomierz,50.68,21.75;Kalisz,51.76,18.09;Lviv,49.84,24.03,110;Przemyśl,49.78,22.77;Kamianets-Podilskyi,48.68,26.58,110;Kielce,50.87,20.63;Rzeszów,50.04,22.00;Bydgoszcz,53.12,18.00;Chełm,51.14,23.47;Ternopil,49.55,25.59;Halych,49.12,24.72
+MAZ|Mazóvia|189,147,153|Varsóvia,52.23,21.01;Płock,52.55,19.70
+LIT|Lituânia|155,69,116|Vilnius,54.69,25.28;Kaunas,54.90,23.90;Grodno,53.67,23.83;Brest,52.10,23.70;Białystok,53.13,23.17;Minsk,53.90,27.57;Polotsk,55.49,28.78;Vitebsk,55.19,30.20;Mogilev,53.90,30.33;Smolensk,54.78,32.05;Kiev,50.45,30.52;Tchernigov,51.49,31.29;Lutsk,50.75,25.32;Pinsk,52.12,26.10;Novhorod-Siverskyi,51.99,33.26;Bryansk,53.25,34.37;Vyazma,55.21,34.29;Vinnytsia,49.23,28.47;Zhytomyr,50.25,28.66;Cherkasy,49.44,32.06;Poltava,49.59,34.55;Telšiai,55.98,22.25;Slutsk,53.03,27.56;Bobruisk,53.15,29.22;Gomel,52.44,30.98;Uman,48.75,30.22,90;Bratslav,48.82,28.94,70;Ochakiv,46.61,31.55,150;Khadjibey,46.55,30.65,90;Kremenchuk,49.07,33.42,90
+HUN|Hungria|149,85,92|Buda,47.50,19.04;Presburgo,48.15,17.11;Kassa,48.72,21.26;Debrecen,47.53,21.63;Pécs,46.07,18.23;Szeged,46.25,20.15;Székesfehérvár,47.19,18.41;Győr,47.69,17.65;Eger,47.90,20.37;Trenčín,48.89,18.04;Žilina,49.22,18.74;Cluj,46.77,23.59;Sibiu,45.80,24.15;Brașov,45.65,25.60;Oradea,47.05,21.92;Timișoara,45.76,21.23;Belgrado,44.82,20.46,60
 CRO|Croácia|130,60,180|Zagreb,45.81,15.98;Osijek,45.55,18.69;Knin,44.04,16.20;Senj,44.99,14.90
-WAL|Valáquia|170,170,60|Târgoviște,44.93,25.46;Curtea de Argeș,45.14,24.68;Craiova,44.32,23.80;Brăila,45.27,27.97;Bucareste,44.43,26.10;Buzău,45.15,26.83
-MOL|Moldávia|160,90,60|Suceava,47.65,26.26;Iași,47.16,27.59;Bacău,46.57,26.91;Cetatea Albă,46.19,30.34;Chilia,45.43,29.27;Tighina,46.83,29.47;Hotin,48.50,26.50
-SER|Sérvia|110,60,120|Smederevo,44.66,20.93;Kruševac,43.58,21.33;Novo Brdo,42.62,21.43;Prizren,42.21,20.74;Novi Pazar,43.14,20.52
-BOS|Bósnia|80,120,190|Jajce,44.34,17.27;Sarajevo,43.86,18.41;Banja Luka,44.77,17.19;Srebrenica,44.11,19.30
+WAL|Valáquia|160,126,128|Târgoviște,44.93,25.46;Curtea de Argeș,45.14,24.68;Craiova,44.32,23.80;Brăila,45.27,27.97;Bucareste,44.43,26.10;Buzău,45.15,26.83
+MOL|Moldávia|137,157,24|Suceava,47.65,26.26;Iași,47.16,27.59;Bacău,46.57,26.91;Cetatea Albă,46.19,30.34;Chilia,45.43,29.27;Tighina,46.83,29.47;Hotin,48.50,26.50
+SER|Sérvia|166,72,56|Smederevo,44.66,20.93;Kruševac,43.58,21.33;Novo Brdo,42.62,21.43;Prizren,42.21,20.74;Novi Pazar,43.14,20.52
+BOS|Bósnia|239,167,132|Jajce,44.34,17.27;Sarajevo,43.86,18.41;Banja Luka,44.77,17.19;Srebrenica,44.11,19.30
 HRZ|Herzegovina|200,130,90|Blagaj,43.26,17.88;Trebinje,42.71,18.34;Foča,43.51,18.78
 ZET|Zeta|90,160,170|Cetinje,42.39,18.92,40
 RAG|Ragusa|230,230,200|Ragusa,42.65,18.09,35
-ALB|Albânia|190,50,50|Lezhë,41.78,19.64;Krujë,41.51,19.79
-ATH|Atenas|150,150,200|Atenas,37.98,23.73;Tebas,38.32,23.32
+ALB|Albânia|180,1,21|Lezhë,41.78,19.64;Krujë,41.51,19.79
+ATH|Atenas|107,108,92|Atenas,37.98,23.73;Tebas,38.32,23.32
 EPI|Epiro|210,200,120|Arta,39.16,20.98,40
 NAX|Naxos|60,80,160|Naxos,37.10,25.38,40
-BYZ|Império Bizantino|140,60,160|Constantinopla,41.01,28.98,50;Mistrá,37.07,22.37;Patras,38.25,21.74;Corinto,37.94,22.93
+BYZ|Império Bizantino|147,43,101|Constantinopla,41.01,28.98,50;Mistrá,37.07,22.37;Patras,38.25,21.74;Corinto,37.94,22.93
 
 # ---------------------------------------------------------------- Rússia e estepe
-MOS|Moscóvia|60,120,80|Moscou,55.76,37.62;Vladimir,56.13,40.41;Níjni Novgorod,56.33,44.00;Tula,54.19,37.62;Kaluga,54.51,36.26;Kolomna,55.08,38.78;Murom,55.57,42.05;Velikiy Ustiug,60.76,46.30,150;Vologda,59.22,39.89,120;Kostroma,57.77,40.93
-RYA|Riazã|150,100,90|Riazã,54.63,39.74;Yelets,52.62,38.50
-YAR|Iaroslavl|120,150,120|Iaroslavl,57.63,39.87;Rostov,57.19,39.41
+MOS|Moscóvia|205,182,97|Moscou,55.76,37.62;Vladimir,56.13,40.41;Níjni Novgorod,56.33,44.00;Tula,54.19,37.62;Kaluga,54.51,36.26;Kolomna,55.08,38.78;Murom,55.57,42.05;Velikiy Ustiug,60.76,46.30,150;Vologda,59.22,39.89,120;Kostroma,57.77,40.93
+RYA|Riazã|146,133,78|Riazã,54.63,39.74;Yelets,52.62,38.50
+YAR|Iaroslavl|131,141,140|Iaroslavl,57.63,39.87;Rostov,57.19,39.41
 GAL|Galich|170,130,170|Galich,58.38,42.35,110
 BEL|Beloozero|160,90,190|Beloozero,60.03,37.79,90;Kirillov,59.86,38.38,60
-TVE|Tver|110,100,170|Tver,56.86,35.90;Rzhev,56.26,34.33
-PER|Grande Perm|200,150,90|Cherdyn,60.40,56.50,250;Solikamsk,59.63,56.77,150
+TVE|Tver|137,159,183|Tver,56.86,35.90;Rzhev,56.26,34.33
+PER|Grande Perm|236,159,91|Cherdyn,60.40,56.50,250;Solikamsk,59.63,56.77,150
 VYA|Viatka|130,170,200|Viatka,58.60,49.66,170
-NOV|Novgorod|215,215,235|Novgorod,58.52,31.27,120;Staraya Ladoga,60.00,32.30,100;Olonets,61.00,32.90,110;Arcangel,64.54,40.54,200;Onega,63.90,38.10,150;Kem,64.96,34.60,150;Kola,68.88,33.03,250;Kargopol,61.50,38.90,120;Ust-Tsilma,65.44,52.20,250
-PSK|Pskov|230,200,200|Pskov,57.82,28.33
-KAZ|Canato de Cazã|60,170,160|Cazã,55.79,49.12,200;Cheboksary,56.13,47.25,110;Simbirsk,54.31,48.40,130;Ufa,54.73,55.96,200;Yoshkar-Ola,56.63,47.89,90;Saransk,54.18,45.17,120;Penza,53.20,45.00,120
-GRT|Grande Horda|210,180,130|Sarai,48.54,46.18,200;Tsaritsyn,48.70,44.51,150;Azov,47.10,39.42,150;Saratov,51.53,46.03,150;Astracã,46.35,48.04,150
+NOV|Novgorod|97,125,38|Novgorod,58.52,31.27,120;Staraya Ladoga,60.00,32.30,100;Olonets,61.00,32.90,110;Arcangel,64.54,40.54,200;Onega,63.90,38.10,150;Kem,64.96,34.60,150;Kola,68.88,33.03,250;Kargopol,61.50,38.90,120;Ust-Tsilma,65.44,52.20,250
+PSK|Pskov|79,121,94|Pskov,57.82,28.33
+KAZ|Canato de Cazã|98,102,137|Cazã,55.79,49.12,200;Cheboksary,56.13,47.25,110;Simbirsk,54.31,48.40,130;Ufa,54.73,55.96,200;Yoshkar-Ola,56.63,47.89,90;Saransk,54.18,45.17,120;Penza,53.20,45.00,120
+GRT|Grande Horda|193,180,128|Sarai,48.54,46.18,200;Tsaritsyn,48.70,44.51,150;Azov,47.10,39.42,150;Saratov,51.53,46.03,150;Astracã,46.35,48.04,150
 NOG|Horda Nogai|190,200,170|Atyrau,47.10,51.92,350;Emba,48.83,58.13,350;Mangyshlak,43.65,51.17,300;Orenburg,51.77,55.10,300;Aktobe,50.28,57.21,350;Aralsk,46.79,61.02,300;Ural'sk,51.23,51.37,250
-CRI|Canato da Crimeia|215,195,115|Bakhchysarai,44.75,33.86;Perekop,46.12,33.69;Kerch,45.35,36.47;Melitopol,46.85,35.37,100
-CIR|Circássia|160,200,130|Maikop,44.61,40.10,150;Nalchik,43.49,43.62,120;Anapa,44.89,37.32,100
-KRT|Kartli|215,70,90|Tbilisi,41.72,44.79;Telavi,41.92,45.47;Gori,41.98,44.11
+CRI|Canato da Crimeia|59,159,125|Bakhchysarai,44.75,33.86;Perekop,46.12,33.69;Kerch,45.35,36.47;Melitopol,46.85,35.37,100
+CIR|Circássia|42,107,17|Maikop,44.61,40.10,150;Nalchik,43.49,43.62,120;Anapa,44.89,37.32,100
+KRT|Kartli|191,34,36|Tbilisi,41.72,44.79;Telavi,41.92,45.47;Gori,41.98,44.11
 IME|Imereti|200,90,120|Kutaisi,42.27,42.69;Batumi,41.65,41.64
 SAM|Samtskhe|230,110,110|Akhaltsikhe,41.64,42.98,70
 SRV|Shirvan|120,170,170|Shamakhi,40.63,48.64;Baku,40.41,49.87;Derbent,42.07,48.29
 
 # ---------------------------------------------------------------- Anatólia, Levante, Egito, Arábia
-TUR|Império Otomano|75,150,85|Edirne,41.68,26.56;Bursa,40.19,29.06;Ancara,39.93,32.86;Salônica,40.64,22.94;Sófia,42.70,23.32;Filipópolis,42.14,24.75;Serres,41.09,23.55;Escópia,42.00,21.43;Larissa,39.64,22.42;Varna,43.21,27.91;Nicópolis,43.70,24.89;Tarnovo,43.08,25.63;Vidin,43.99,22.88;Niš,43.32,21.90;Esmirna,38.42,27.14;Aydın,37.85,27.84;Muğla,37.22,28.36;Manisa,38.61,27.43;Kütahya,39.42,29.99;Isparta,37.76,30.55;Amásia,40.65,35.83;Sivas,39.75,37.02;Antália,36.89,30.71;Gelibolu,40.41,26.67;Eskişehir,39.77,30.52;Balıkesir,39.65,27.89;Samsun,41.29,36.33;Ioannina,39.67,20.85;Monastir,41.03,21.34;Ohrid,41.12,20.80;Valona,40.47,19.49;Çorum,40.55,34.96;Denizli,37.78,29.09
-KAR|Karaman|180,120,70|Konya,37.87,32.48;Karaman,37.18,33.22;Niğde,37.97,34.68;Kayseri,38.72,35.49;Mersin,36.80,34.64;Aksaray,38.37,34.03
-CND|Candar|140,110,80|Kastamonu,41.38,33.78;Sinop,42.03,35.15;Safranbolu,41.25,32.69
-RAM|Ramazanoğlu|200,140,100|Adana,37.00,35.32
-DUL|Dulkadir|160,150,100|Elbistan,38.20,37.19;Maraş,37.58,36.94;Malatya,38.35,38.31
+TUR|Império Otomano|127,201,121|Edirne,41.68,26.56;Bursa,40.19,29.06;Ancara,39.93,32.86;Salônica,40.64,22.94;Sófia,42.70,23.32;Filipópolis,42.14,24.75;Serres,41.09,23.55;Escópia,42.00,21.43;Larissa,39.64,22.42;Varna,43.21,27.91;Nicópolis,43.70,24.89;Tarnovo,43.08,25.63;Vidin,43.99,22.88;Niš,43.32,21.90;Esmirna,38.42,27.14;Aydın,37.85,27.84;Muğla,37.22,28.36;Manisa,38.61,27.43;Kütahya,39.42,29.99;Isparta,37.76,30.55;Amásia,40.65,35.83;Sivas,39.75,37.02;Antália,36.89,30.71;Gelibolu,40.41,26.67;Eskişehir,39.77,30.52;Balıkesir,39.65,27.89;Samsun,41.29,36.33;Ioannina,39.67,20.85;Monastir,41.03,21.34;Ohrid,41.12,20.80;Valona,40.47,19.49;Çorum,40.55,34.96;Denizli,37.78,29.09
+KAR|Karaman|31,100,131|Konya,37.87,32.48;Karaman,37.18,33.22;Niğde,37.97,34.68;Kayseri,38.72,35.49;Mersin,36.80,34.64;Aksaray,38.37,34.03
+CND|Candar|111,69,100|Kastamonu,41.38,33.78;Sinop,42.03,35.15;Safranbolu,41.25,32.69
+RAM|Ramazanoğlu|130,0,0|Adana,37.00,35.32
+DUL|Dulkadir|234,253,218|Elbistan,38.20,37.19;Maraş,37.58,36.94;Malatya,38.35,38.31
 TRE|Império de Trebizonda|210,160,50|Trebizonda,41.00,39.72;Gümüşhane,40.46,39.48
 KNI|Ordem de São João|230,230,230|Rodes,36.43,28.22,35
-CYP|Chipre|180,100,200|Nicósia,35.17,33.37,60;Famagusta,35.12,33.94;Limassol,34.68,33.04;Paphos,34.76,32.42
+CYP|Chipre|222,188,30|Nicósia,35.17,33.37,60;Famagusta,35.12,33.94;Limassol,34.68,33.04;Paphos,34.76,32.42
 MAM|Mamelucos|200,170,60|Cairo,30.04,31.24,110;Alexandria,31.20,29.92;Damieta,31.42,31.81;Assiut,27.18,31.18,110;Luxor,25.69,32.64,110;Assuã,24.09,32.90,140;Suez,29.97,32.55;Al-Tor,28.24,33.62,120;Gaza,31.50,34.47;Jerusalém,31.77,35.21;Damasco,33.51,36.29;Aleppo,36.20,37.16;Trípoli do Líbano,34.44,35.84;Beirute,33.89,35.50;Homs,34.73,36.72;Hama,35.13,36.75;Safed,32.96,35.50;Acre,32.93,35.08;Karak,31.18,35.70,110;Aqaba,29.53,35.01,110;Antioquia,36.20,36.16;Palmira,34.55,38.27,200;Tabuk,28.38,36.57,200;Tobruk,32.08,23.98,150;Derna,32.77,22.64,150;Bengasi,32.12,20.07,150;Siwa,29.20,25.52,200;Marsa Matruh,31.35,27.24,150
 HEJ|Hejaz|230,190,160|Meca,21.39,39.86,180;Medina,24.47,39.61,180;Jidá,21.54,39.17,120;Yanbu,24.09,38.06,120
 AKK|Aq Qoyunlu|220,230,230|Diyarbakır,37.91,40.24;Mardin,37.31,40.74;Urfa,37.17,38.79;Erzincan,39.75,39.49;Harput,38.74,39.22;Erzurum,39.90,41.27;Bayburt,40.26,40.22
@@ -145,7 +145,7 @@ MSH|Mushasha|170,120,200|Hawizeh,31.46,48.07,90;Basra,30.51,47.78,90;Ahvaz,31.32
 LUR|Luristão|210,200,90|Khorramabad,33.49,48.36,100;Borujerd,33.90,48.75,60
 GIL|Gilan|120,170,90|Lahijan,37.21,50.00,60;Rasht,37.28,49.58,60
 MZD|Mazandaran|200,140,80|Sari,36.56,53.06,80;Amol,36.47,52.35,60;Gorgan,36.84,54.43,80
-QAR|Qara Qoyunlu|60,60,75|Tabriz,38.07,46.29;Van,38.50,43.37;Erevan,40.18,44.51;Bagdá,33.31,44.37,100;Mosul,36.34,43.13;Najaf,32.00,44.34;Kirkuk,35.47,44.39;Ardabil,38.25,48.30;Urmia,37.55,45.07;Ganja,40.68,46.36
+QAR|Qara Qoyunlu|30,49,135|Tabriz,38.07,46.29;Van,38.50,43.37;Erevan,40.18,44.51;Bagdá,33.31,44.37,100;Mosul,36.34,43.13;Najaf,32.00,44.34;Kirkuk,35.47,44.39;Ardabil,38.25,48.30;Urmia,37.55,45.07;Ganja,40.68,46.36
 TIM|Timúridas|200,70,70|Herat,34.34,62.20,200;Meshed,36.30,59.60,200;Isfahan,32.65,51.67,150;Shiraz,29.59,52.58,150;Yazd,31.90,54.37,150;Kerman,30.28,57.07,200;Teerã,35.69,51.39,120;Qom,34.64,50.88;Qazvin,36.27,50.00;Nishapur,36.21,58.80,150;Bushehr,28.97,50.84,100;Birjand,32.87,59.22,200;Urgench,41.55,60.63,150;Samarcanda,39.65,66.96,200;Bucara,39.77,64.42,200;Tashkent,41.30,69.24,150;Balkh,36.71,67.11,150;Hamadã,34.80,48.51,100
 ORM|Ormuz|120,80,150|Ormuz,27.10,56.46,100;Bahrein,26.07,50.55,80;Mascate,23.59,58.38,100
 OMA|Omã|170,100,60|Nizwa,22.93,57.53,150;Sohar,24.35,56.71

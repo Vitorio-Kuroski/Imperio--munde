@@ -613,20 +613,6 @@
 4263;CRI;Nikopol Norte
 3631;CRI;Sevastopol
 
-# CRO — Croácia
-4301;CRO;Karlovac
-4312;CRO;Karlovac Nordeste
-4323;CRO;Prijedor Noroeste
-4302;CRO;Prijedor Sul
-4520;CRO;Rijeka Nordeste
-4318;CRO;Rijeka Nordeste II
-3855;CRO;Slavonski Brod
-4290;CRO;Subotica
-3553;CRO;Zagreb
-4283;CRO;Zagreb Sudeste
-4521;CRO;Šibenik
-4338;CRO;Šibenik Sudeste
-
 # CRR — Crees
 371;CRR;Berens River Oeste
 415;CRR;Brandon
@@ -755,7 +741,6 @@
 3667;ENG;Kingston upon Hull
 4297;ENG;La Rochelle Norte
 3699;ENG;Le Havre
-3788;ENG;Le Mans
 4080;ENG;Leeds
 4107;ENG;Liverpool
 3460;ENG;London
@@ -887,6 +872,7 @@
 4352;GEN;Bastia Sudoeste
 4304;GEN;Dzhankoy
 4316;GEN;Genoa
+4463;GEN;Hios Nordeste
 4336;GEN;Modena Noroeste
 
 # GFS — Gafsa
@@ -1018,6 +1004,8 @@
 3707;HUN;Debrecen
 3896;HUN;Deva
 3801;HUN;Győr
+4301;HUN;Karlovac
+4312;HUN;Karlovac Nordeste
 3825;HUN;Kecskemét
 3702;HUN;Košice
 3950;HUN;Miercurea Cuic
@@ -1027,10 +1015,16 @@
 4261;HUN;Oradea
 4279;HUN;Oradea Norte
 4214;HUN;Prešov Oeste
+4323;HUN;Prijedor Noroeste
+4302;HUN;Prijedor Sul
 3741;HUN;Pécs
 3877;HUN;Reșița
+4520;HUN;Rijeka Nordeste
+4318;HUN;Rijeka Nordeste II
 4291;HUN;Sfintu-Gheorghe Leste
 3771;HUN;Sibiu
+3855;HUN;Slavonski Brod
+4290;HUN;Subotica
 3739;HUN;Szeged
 4255;HUN;Szolnok
 3829;HUN;Szombathely
@@ -1040,6 +1034,10 @@
 4313;HUN;Târgu Jiu
 3780;HUN;Uzhgorod
 4267;HUN;Veszprém
+3553;HUN;Zagreb
+4283;HUN;Zagreb Sudeste
+4521;HUN;Šibenik
+4338;HUN;Šibenik Sudeste
 3870;HUN;Žilina
 
 # IME — Imereti
@@ -1461,13 +1459,6 @@
 1911;LNA;Chiang Rai
 1940;LNA;Mae Hong Son
 1944;LNA;Nan
-
-# LOI — Senhorio das Ilhas
-4510;LOI;Fort William Oeste
-4511;LOI;Fort William Oeste II
-4043;LOI;Fort William Sudoeste
-4040;LOI;Fort William Sudoeste II
-4062;LOI;Greenock Sudoeste
 
 # LOR — Lorena
 4246;LOR;Besançon Sudeste
@@ -2451,6 +2442,7 @@
 # PRO — Provença
 3738;PRO;Angers
 4326;PRO;Grenoble Norte
+3788;PRO;Le Mans
 3784;PRO;Marseille
 
 # PSK — Pskov
@@ -2552,8 +2544,13 @@
 3779;SCO;Edinburgh
 4066;SCO;Edinburgh Nordeste
 3987;SCO;Fort William
+4510;SCO;Fort William Oeste
+4511;SCO;Fort William Oeste II
+4043;SCO;Fort William Sudoeste
+4040;SCO;Fort William Sudoeste II
 3505;SCO;Glasgow
 4068;SCO;Greenock Oeste
+4062;SCO;Greenock Sudoeste
 3945;SCO;Inverness
 4047;SCO;Inverness Leste
 4037;SCO;Wick
@@ -2972,6 +2969,7 @@
 4388;TUR;Bitola Leste
 3731;TUR;Burgas
 3490;TUR;Bursa
+4419;TUR;Chalkida Sul
 3743;TUR;Corum
 3622;TUR;Denizli
 4448;TUR;Denizli Nordeste
@@ -2980,7 +2978,6 @@
 3582;TUR;Eskişehir
 3933;TUR;Giurgiu
 4491;TUR;Hios
-4463;TUR;Hios Nordeste
 3872;TUR;Ioanina
 4439;TUR;Isparta
 4389;TUR;Kavala
@@ -2989,6 +2986,7 @@
 4523;TUR;Komatini
 4532;TUR;Komatini Leste
 4480;TUR;Komatini Leste II
+3992;TUR;Korçë
 4400;TUR;Korçë Leste
 4375;TUR;Kyustendil Norte
 3938;TUR;Lamia
@@ -3077,11 +3075,9 @@
 4527;VEN;Athens Leste
 4300;VEN;Bergamo
 4288;VEN;Bergamo Sudeste
-4419;VEN;Chalkida Sul
 4526;VEN;Ermoupoli Sul II
 4453;VEN;Hania
 3797;VEN;Iraklio
-3992;VEN;Korçë
 4525;VEN;Polygyros Nordeste
 4458;VEN;Sitia
 4531;VEN;Sparti Nordeste

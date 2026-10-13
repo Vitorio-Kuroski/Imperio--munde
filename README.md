@@ -2,7 +2,7 @@
 
 Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
 **Mapa-múndi** com **5270 províncias** (4535 de terra, 735 zonas marítimas), dividido a partir de uma imagem de províncias
-(estilo mapchart.net, 6000x3150 px), e **234 países de 1444** (Europa, Oriente Médio, África, Ásia e Américas).
+(estilo mapchart.net, 6000x3150 px), e **232 países de 1444** (Europa, Oriente Médio, África, Ásia e Américas).
 
 > **Aviso de fidelidade:** os países, capitais e cidades são reais, mas as fronteiras de 1444 são uma
 > **aproximação** (cada província vai para o país com a cidade-âncora mais próxima). Não são os dados
