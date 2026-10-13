@@ -1,7 +1,7 @@
 # Imperium Mundi
 
 Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
-**Mapa-múndi** com **5197 províncias** (4462 de terra, 735 zonas marítimas), dividido a partir de uma imagem de províncias
+**Mapa-múndi** com **5270 províncias** (4535 de terra, 735 zonas marítimas), dividido a partir de uma imagem de províncias
 (estilo mapchart.net, 6000x3150 px), e **234 países de 1444** (Europa, Oriente Médio, África, Ásia e Américas).
 
 > **Aviso de fidelidade:** os países, capitais e cidades são reais, mas as fronteiras de 1444 são uma
@@ -50,6 +50,17 @@ O Godot passa a usar essa pasta automaticamente; para voltar ao mapa de exemplo,
 - Esses arquivos são derivados de dados da Paradox: já estão no `.gitignore`. **Não publique no GitHub nem distribua.**
 - Nomes de países e províncias vêm da localização em inglês; terreno aparece como "—" (ainda não importado).
 - Testado só com uma árvore de arquivos de exemplo no formato do EU4; se algo não bater na sua versão do jogo, me diga a mensagem de erro.
+
+## Dono de cada província (`tools/data/donos_1444.csv`)
+Cada província de terra tem o dono de 1444 definido numa linha da tabela, agrupada por país:
+```
+# BYZ — Império Bizantino
+3456;BYZ;Istanbul
+```
+Para mudar um dono, troque a tag (veja as tags em `tools/data/nations_*.txt`; tag vazia = sem dono) e rode
+`python3 tools/refine_world.py`. A tabela tem prioridade sobre as cidades-âncora, e o script a regrava
+com os nomes atualizados. `--gerar-donos` recria a tabela a partir das âncoras (isso perde as edições).
+`rebuild_europe.py` migra a tabela para os ids novos pela sobreposição das províncias.
 
 ## Refinar o mapa-múndi (sem mudar os ids)
 ```

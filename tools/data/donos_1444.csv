@@ -1,0 +1,5009 @@
+# Dono de cada província em 11/11/1444. Formato: id;TAG;nome da província
+# Troque a TAG para mudar o dono (tags em nations_1444.txt / nations_world_1444.txt);
+# deixe a TAG vazia para "sem dono". O nome serve para conferir o id; não o edite.
+# Depois rode: python3 tools/refine_world.py
+
+# ADA — Adal
+2152;ADA;Assab
+2214;ADA;Berbera
+2176;ADA;Dikhil
+2220;ADA;Dire Dawa
+2199;ADA;Djibouti
+2257;ADA;Goba Sudeste
+2248;ADA;Hargeisa
+
+# AHO — Ahom
+1594;AHO;Dibrugarh
+1609;AHO;Dibrugarh Nordeste
+1583;AHO;Dibrugarh Sudeste
+1586;AHO;Dibrugarh Sudoeste
+1708;AHO;Imphal
+1733;AHO;Imphal Leste
+1635;AHO;Jorhat
+1682;AHO;Kohima Nordeste
+1704;AHO;Kohima Oeste
+1678;AHO;Myitkyina Sudoeste
+1718;AHO;Shillong
+1632;AHO;Tezpur
+
+# AIN — Ainu
+656;AIN;Asahikawa
+612;AIN;Asahikawa Sul
+773;AIN;Hakodate
+3063;AIN;Ilhas Curilas
+665;AIN;Kitami
+663;AIN;Kitami Sudeste
+3062;AIN;Kitami Sudeste II
+605;AIN;Kitami Sudoeste
+675;AIN;Kushiro
+703;AIN;Obihiro Sudoeste
+3064;AIN;Otaru Oeste
+690;AIN;Otaru Sudoeste
+705;AIN;Sapporo
+735;AIN;Tomakomai
+
+# AKK — Aq Qoyunlu
+4455;AKK;Al Hasakah
+3967;AKK;Artvin
+3866;AKK;Ağrı
+3561;AKK;Diyarbakır
+4431;AKK;Elâzığ
+3808;AKK;Erzincan
+3605;AKK;Erzurum
+3518;AKK;Gaziantep
+4449;AKK;Mardin Noroeste
+3599;AKK;Şanlıurfa
+
+# ALB — Albânia
+3979;ALB;Kukës
+3770;ALB;Shkodër
+3529;ALB;Tirana
+
+# ALG — Algonquinos
+572;ALG;Bangor
+726;ALG;Boston
+625;ALG;Burlington
+514;ALG;Chicoutimi
+695;ALG;Concord Sul
+623;ALG;Cornwall
+492;ALG;Dolbeau Oeste
+592;ALG;Drummondville
+545;ALG;Edmundston
+583;ALG;Joliette Leste
+633;ALG;Lewiston Oeste
+706;ALG;Manchester II
+570;ALG;Mont-Laurier
+533;ALG;Mont-Laurier Sudeste
+532;ALG;Mont-Laurier Sudoeste
+645;ALG;Montpelier Leste
+664;ALG;Montpelier Noroeste
+624;ALG;Montréal
+576;ALG;North Bay Nordeste
+604;ALG;Ottawa
+577;ALG;Pembroke
+608;ALG;Pembroke Noroeste
+628;ALG;Portland II
+741;ALG;Providence
+534;ALG;Québec
+503;ALG;Rouyn-Noranda
+557;ALG;Saint-Georges Sudeste
+3065;ALG;Salem Nordeste
+710;ALG;Saratoga Springs Leste
+544;ALG;Shawinigan Sul
+626;ALG;Sherbrooke
+610;ALG;Sherbrooke Leste
+586;ALG;St.-Jerome
+564;ALG;Trois-Rivières
+615;ALG;Waterville
+
+# ALR — Argel
+992;ALR;Algiers
+
+# ARA — Aragão
+4366;ARA;Andorra Oeste
+3813;ARA;Barcelona
+3674;ARA;Cagliari
+4393;ARA;Castello Sudoeste
+3557;ARA;Catania
+4443;ARA;Catania Sudoeste
+4529;ARA;Marsala
+4367;ARA;Mataró
+4395;ARA;Mataró Nordeste
+3690;ARA;Messina
+3943;ARA;Olbia
+4405;ARA;Olbia Norte
+3532;ARA;Palermo
+4432;ARA;Palermo Sudeste
+4428;ARA;Palermo Sudoeste
+4394;ARA;Palma
+4524;ARA;Palma Oeste
+4466;ARA;Palma Oeste II
+4465;ARA;Palma Oeste III
+3785;ARA;Perpignan
+4467;ARA;Ragusa
+3817;ARA;Sassari
+4404;ARA;Sassari Norte
+4358;ARA;Tarbes Noroeste
+3539;ARA;Valencia
+4473;ARA;Vibo Valentia Sudoeste
+4530;ARA;Vibo Valentia Sudoeste II
+3560;ARA;Zaragoza
+4387;ARA;Zaragoza Nordeste
+4386;ARA;Zaragoza Noroeste
+
+# ARD — Ardalan
+1074;ARD;As Sulaymaniyah
+1148;ARD;Kermanshah
+1144;ARD;Qasr-e Shirin
+1021;ARD;Zanjan
+
+# ARK — Arakan
+1905;ARK;Kyaukphyu
+1936;ARK;Magway
+1879;ARK;Sittwe
+1890;ARK;Yaynangyoung
+
+# ARM — Armanhaque
+3913;ARM;Agen
+
+# ASH — Ashikaga
+1116;ASH;Fukui
+1105;ASH;Fukui Leste
+1104;ASH;Fukui Oeste
+1120;ASH;Gifu
+1038;ASH;Kanazawa
+1063;ASH;Kanazawa Nordeste
+1158;ASH;Kyoto
+1141;ASH;Maizuru
+1137;ASH;Matsue
+1100;ASH;Matsue Sul
+1119;ASH;Nagoya
+1187;ASH;Okayama
+997;ASH;Takaoka Sudoeste
+1115;ASH;Tottori
+1129;ASH;Tottori Oeste
+1081;ASH;Tottori Sudeste
+1112;ASH;Tottori Sudoeste
+1093;ASH;Tottori Sudoeste II
+1185;ASH;Ōsaka
+
+# ATH — Atenas
+3466;ATH;Athens
+4462;ATH;Ermoupoli Oeste II
+
+# AUS — Áustria
+4271;AUS;Bolzano
+4272;AUS;Bolzano Sudeste
+4266;AUS;Bregenz
+4241;AUS;Bregenz Sudeste
+3685;AUS;Graz
+4249;AUS;Graz Sudoeste
+3772;AUS;Innsbruck
+4254;AUS;Innsbruck Oeste
+3862;AUS;Klagenfurt
+4259;AUS;Klagenfurt Sudoeste
+4260;AUS;Klagenfurt Sul
+3635;AUS;Linz
+4237;AUS;Linz Leste
+3655;AUS;Ljubljana
+3824;AUS;Maribor
+3893;AUS;Saint Gallen
+3831;AUS;Trento
+4289;AUS;Treviso Sudoeste
+3717;AUS;Trieste
+3476;AUS;Vienna
+4225;AUS;Vienna Sul
+4250;AUS;Wiener Neustadt
+4273;AUS;Zalaegerszeg
+
+# AVA — Ava
+1861;AVA;Mandalay
+1786;AVA;Monywa
+1872;AVA;Myingyan
+1729;AVA;Myitkyina
+1814;AVA;Namtu
+1824;AVA;Namtu Nordeste
+1909;AVA;Naypyidaw
+1810;AVA;Shwebo
+1845;AVA;Taunggyi
+1859;AVA;Taunggyi Sudeste
+1768;AVA;Tengchong Norte
+
+# AYU — Ayutthaya
+2098;AYU;Bangkok
+2311;AYU;Butterworth
+3192;AYU;Dawei Norte
+2277;AYU;Hat Yai
+2283;AYU;Krabi
+1991;AYU;Lampang
+2007;AYU;Mae Sot
+2104;AYU;Myeik
+3199;AYU;Myeik Sudoeste
+2074;AYU;Nakhon Pathom
+2069;AYU;Nakhon Ratchasima
+2015;AYU;Phetchabun
+2037;AYU;Phitsanulok
+2228;AYU;Phuket
+3215;AYU;Ranong Sudoeste
+2139;AYU;Ratchaburi
+2124;AYU;Samut Prakan
+3231;AYU;Satun Sudoeste
+2252;AYU;Surat Thani
+
+# AZT — Aliança Asteca
+2006;AZT;Acapulco
+1978;AZT;Acatlan
+1955;AZT;Ciudad Hidalgo Nordeste
+1858;AZT;Ciudad Valles
+1973;AZT;Coatzacoalcos
+1972;AZT;Iguala
+1956;AZT;Mexico City
+1931;AZT;Nautla
+2004;AZT;Ometepec
+1929;AZT;Pachuca
+1942;AZT;Pachuca Leste
+1902;AZT;Poza Rica de Hidalgo
+1930;AZT;Poza Rica de Hidalgo Nordeste
+1914;AZT;Poza Rica de Hidalgo Oeste
+1892;AZT;Querétaro Sudeste
+1987;AZT;Santiago Tuxtla
+1898;AZT;Tamazunchale
+1897;AZT;Tamazunchale Oeste
+1884;AZT;Tamazunchale Sudeste
+1983;AZT;Tehuacan
+1925;AZT;Toluca
+1881;AZT;Tuxpam Sul
+1959;AZT;Veracruz
+1967;AZT;Veracruz Nordeste
+1949;AZT;Xalapa
+1939;AZT;Zumpango
+
+# BAD — Baden
+4229;BAD;Freiburg Sudeste
+3620;BAD;Karlsruhe
+3601;BAD;Strasbourg
+
+# BAH — Bahmani
+1957;BAH;Ahmednagar
+2014;BAH;Amaravati
+1922;BAH;Aurangabad
+2030;BAH;Guntur
+1996;BAH;Hyderabad
+2002;BAH;Khammam
+2026;BAH;Khammam Oeste
+1962;BAH;Nizamabad
+1988;BAH;Pune
+1954;BAH;Pune Sul
+1979;BAH;Sholapur
+
+# BAV — Baviera
+3630;BAV;Augsburg
+3760;BAV;Ingolstadt
+3499;BAV;Munich
+3932;BAV;Passau
+4213;BAV;Passau Sul
+3757;BAV;Regensburg
+4247;BAV;Rosenheim
+4230;BAV;Rosenheim Sudeste
+
+# BEL — Beloozero
+4025;BEL;Sokol Sudoeste
+
+# BEN — Benim
+2348;BEN;Aba
+2318;BEN;Awka
+2309;BEN;Benin City
+2291;BEN;Enugu
+2294;BEN;Ikare
+2337;BEN;Port Harcourt
+
+# BHD — Bahdinan
+3572;BHD;Urmia
+
+# BIT — Bitlis
+3878;BIT;Muş
+
+# BNG — Bengala
+1737;BNG;Aizawl
+1799;BNG;Asansol
+1707;BNG;Bhagalpur
+1646;BNG;Biratnagar
+1791;BNG;Chattogram
+1763;BNG;Comilla
+1781;BNG;Dhaka
+1784;BNG;Hakha
+1827;BNG;Kolkata
+1712;BNG;Mymensingh
+1754;BNG;Nawabganj Noroeste
+1755;BNG;Rajshahi
+1670;BNG;Rangpur
+1715;BNG;Saidpur Noroeste
+1625;BNG;Siliguri
+1742;BNG;Sylhet
+
+# BOH — Boêmia
+3618;BOH;Brno
+4160;BOH;Cottbus Norte
+3917;BOH;Hof
+4183;BOH;Hof Leste
+3927;BOH;Jihlava
+3844;BOH;Liberec
+4170;BOH;Liberec Leste
+4161;BOH;Liberec Sudeste
+4195;BOH;Olomouc
+3805;BOH;Opole
+3592;BOH;Ostrava
+3834;BOH;Pardubice
+3758;BOH;Pizen
+4198;BOH;Pizen Oeste
+3504;BOH;Prague
+4199;BOH;Prague Norte
+3564;BOH;Wrocław
+4174;BOH;Wrocław Norte
+3814;BOH;Zlín
+3850;BOH;České Budějovice
+4220;BOH;České Budějovice Leste
+
+# BOR — Bornu
+2169;BOR;Damaturu
+2126;BOR;Diffa
+2223;BOR;Garoua
+2143;BOR;Gashua Sul
+2173;BOR;Maiduguri
+2105;BOR;Mao
+2082;BOR;Mao Sudoeste
+2197;BOR;Maroua
+2209;BOR;Mubi
+2153;BOR;N'Djamena
+2088;BOR;Nguigmi Oeste
+
+# BOS — Bósnia
+3712;BOS;Banja Luka
+4328;BOS;Belgrade Noroeste
+4346;BOS;Sarajevo Leste
+4342;BOS;Split
+4522;BOS;Split Leste
+3789;BOS;Tuzla
+
+# BOU — Bourbon
+3705;BOU;Clermont-Ferrand
+4293;BOU;Clermont-Ferrand Oeste
+4276;BOU;Vichy
+
+# BRA — Brandemburgo
+3464;BRA;Berlin
+3839;BRA;Cottbus
+4212;BRA;Fürth Noroeste
+4194;BRA;Hof Norte
+4123;BRA;Magdeburg Sul
+4135;BRA;Potsdam Oeste
+4124;BRA;Szczecin Norte
+3821;BRA;Zielona Góra
+4132;BRA;Zielona Góra Sul
+
+# BRE — Bremen
+3552;BRE;Bremen
+
+# BRI — Bretanha
+3787;BRI;Brest II
+4518;BRI;Brest Sudoeste
+4207;BRI;Brest Sul
+4488;BRI;Lorient
+3602;BRI;Nantes
+3721;BRI;Rennes
+3929;BRI;St.-Brieuc
+4209;BRI;St.-Brieuc Sudeste
+4208;BRI;St.-Brieuc Sudoeste
+
+# BRN — Brunei
+2339;BRN;Bandar Seri Begawan
+2340;BRN;Bandar Seri Begawan Leste
+2367;BRN;Bintulu Nordeste
+2358;BRN;Bintulu Nordeste II
+2324;BRN;Kota Kinabalu
+2355;BRN;Miri
+2334;BRN;Sandakan
+2312;BRN;Sandakan Sudoeste
+2350;BRN;Tawau
+
+# BRU — Brunswick
+4134;BRU;Braunschweig
+4149;BRU;Göttingen
+4115;BRU;Hamburg Nordeste
+3554;BRU;Hanover
+
+# BSK — Biskra
+1179;BSK;Biskra
+
+# BTN — Botan
+3776;BTN;Nusaybin
+
+# BUG — Buganda
+2361;BUG;Arua
+2419;BUG;Bukoba
+2404;BUG;Kampala
+2395;BUG;Kisumu
+2387;BUG;Masindi
+2379;BUG;Mbale
+2460;BUG;Mwanza
+
+# BUR — Borgonha
+3563;BUR;Amsterdam
+4188;BUR;Arlon Sudoeste
+4187;BUR;Arras
+3951;BUR;Auxerre
+4253;BUR;Auxerre Nordeste
+4245;BUR;Auxerre Oeste
+3811;BUR;Besançon
+3484;BUR;Brussels
+4180;BUR;Charleroi
+3751;BUR;Dijon
+4264;BUR;Dijon Noroeste
+3786;BUR;Gent
+3517;BUR;Lille
+3833;BUR;Luxembourg
+4152;BUR;Middelburg
+4179;BUR;Mons
+3494;BUR;The Hague
+
+# BYZ — Império Bizantino
+4477;BYZ;Agrinio Oeste
+3458;BYZ;Istanbul
+4438;BYZ;Kalamata
+3759;BYZ;Patra
+
+# CAS — Castela
+3766;CAS;Albacete
+4427;CAS;Albacete Oeste
+4414;CAS;Albacete Sul
+3796;CAS;Badajoz
+4433;CAS;Badajoz Norte
+3531;CAS;Bilbao
+3962;CAS;Bragança
+4364;CAS;Bragança Sul
+3750;CAS;Burgos
+4371;CAS;Burgos Nordeste
+3677;CAS;Cádiz
+3648;CAS;Córdoba II
+4422;CAS;Córdoba Sul
+3640;CAS;Gijón
+4351;CAS;Gijón Nordeste
+4339;CAS;Gijón Sudeste
+4332;CAS;Gijón Sudoeste
+4399;CAS;Guadalajara Nordeste
+4385;CAS;Guadalajara Sudeste II
+4397;CAS;Guarda Leste
+3909;CAS;Jaén
+3624;CAS;La Coruña
+4345;CAS;La Coruña Sudeste
+4331;CAS;La Coruña Sudeste II
+4344;CAS;La Coruña Sudoeste
+3800;CAS;León II
+4370;CAS;León Norte
+4426;CAS;Linares Sul
+3873;CAS;Lorca
+3461;CAS;Madrid
+3612;CAS;Murcia
+4425;CAS;Mérida II
+4412;CAS;Mérida Sudeste
+3822;CAS;Ourense
+4350;CAS;Oviedo Oeste
+4411;CAS;Portalegre Leste
+3763;CAS;Salamanca
+4398;CAS;Salamanca Norte
+4384;CAS;Salamanca Oeste
+4341;CAS;San Sebastián Sudoeste
+3722;CAS;Santander
+4340;CAS;Santander Sul
+4353;CAS;Santiago de Compostela Leste
+3502;CAS;Seville
+4408;CAS;Toledo
+4413;CAS;Toledo Nordeste
+4403;CAS;Valencia Sudoeste
+3647;CAS;Valladolid
+4382;CAS;Valladolid Leste
+4391;CAS;Valladolid Norte
+3619;CAS;Vigo
+
+# CHA — Champa
+2178;CHA;Biên Hòa
+2154;CHA;Buon Me Thuot
+2044;CHA;Da Nang
+2112;CHA;Lumphat
+2167;CHA;Nha Trang
+2084;CHA;Play Ku
+2075;CHA;Qui Nhon
+2147;CHA;Qui Nhon Noroeste
+
+# CHE — Cherokees
+1150;CHE;Anderson Sudoeste
+950;CHE;Beckley
+1003;CHE;Blacksburg
+985;CHE;Bowling Green
+1151;CHE;Charlotte
+1125;CHE;Chattanooga
+1108;CHE;Chattanooga Oeste
+890;CHE;Cincinnati
+1126;CHE;Greenville
+1109;CHE;Hickory
+1035;CHE;Hickory Sul
+886;CHE;Huntington
+1131;CHE;Huntsville
+1001;CHE;Kingsport Sudoeste
+1002;CHE;Knoxville
+954;CHE;London III
+861;CHE;Louisville
+1000;CHE;Nashville
+1057;CHE;Oak Ridge
+941;CHE;Owensboro
+
+# CHM — Chimor
+2548;CHM;Cajamarca
+2529;CHM;Chota
+2577;CHM;Huaraz
+2586;CHM;Huaraz Sudeste
+2605;CHM;Huánuco
+2517;CHM;Jaén II
+2525;CHM;Moyobamba
+2489;CHM;Piura
+2593;CHM;Tingo María
+2538;CHM;Trujillo
+
+# CIR — Circássia
+4329;CIR;Grozny
+3559;CIR;Krasnodar
+3793;CIR;Nalchik
+3643;CIR;Sochi
+3628;CIR;Stavropol
+3880;CIR;Sukhumi
+4292;CIR;Timashevsk Oeste
+3627;CIR;Vladikavkaz
+4305;CIR;Zelenokumsk
+
+# CLE — Cleves
+3615;CLE;Eindhoven
+3485;CLE;Essen
+
+# CND — Candar
+4396;CND;Bolu Leste
+4378;CND;Kastamonu
+4363;CND;Kastamonu Sul
+3960;CND;Sinop
+3769;CND;Zonguldak
+4368;CND;Zonguldak Sudeste
+3890;CND;Çankırı
+
+# CNN — Connacht
+4113;CNN;Galway
+4094;CNN;Galway Sudoeste
+4085;CNN;Omagh
+4101;CNN;Ros Comain
+3976;CNN;Sligo
+4082;CNN;Sligo Oeste
+
+# CRE — Creeks
+1284;CRE;Albany II
+1214;CRE;Athens II
+1191;CRE;Atlanta
+1240;CRE;Auburn
+1188;CRE;Augusta
+1299;CRE;Beaufort
+1212;CRE;Birmingham II
+1422;CRE;Brunswick
+1218;CRE;Charleston
+1283;CRE;Columbus II
+1163;CRE;Florence II
+1460;CRE;Gainesville
+1452;CRE;Jacksonville
+1213;CRE;Marietta Oeste
+1268;CRE;Mobile
+1339;CRE;Montgomery
+1396;CRE;Panama City II
+1346;CRE;Savannah
+1166;CRE;Spartanburg
+1397;CRE;Tallahassee
+1230;CRE;Tuscaloosa
+
+# CRI — Canato da Crimeia
+4239;CRI;Berdyansk
+4286;CRI;Dzhankoy Sul
+3778;CRI;Kerch
+4285;CRI;Kherson Nordeste
+3767;CRI;Melitopol
+4263;CRI;Nikopol Norte
+3631;CRI;Sevastopol
+
+# CRO — Croácia
+4301;CRO;Karlovac
+4312;CRO;Karlovac Nordeste
+4323;CRO;Prijedor Noroeste
+4302;CRO;Prijedor Sul
+4520;CRO;Rijeka Nordeste
+4318;CRO;Rijeka Nordeste II
+3855;CRO;Slavonski Brod
+4290;CRO;Subotica
+3553;CRO;Zagreb
+4283;CRO;Zagreb Sudeste
+4521;CRO;Šibenik
+4338;CRO;Šibenik Sudeste
+
+# CRR — Crees
+371;CRR;Berens River Oeste
+415;CRR;Brandon
+404;CRR;Dauphin
+292;CRR;Deer Lake
+490;CRR;Fargo
+391;CRR;Kenora
+255;CRR;Lynn Lake
+480;CRR;Minot Sul
+334;CRR;Norway House
+349;CRR;Norway House Oeste
+348;CRR;Norway House Oeste II
+347;CRR;Prince Albert
+408;CRR;Regina
+288;CRR;Shamattawa
+354;CRR;The Pas
+291;CRR;Thompson
+455;CRR;Weyburn
+440;CRR;Winnipeg
+383;CRR;Yorkton
+
+# CSK — Chosokabe
+1209;CSK;Matsuyama
+
+# CYP — Chipre
+4454;CYP;Icel
+3711;CYP;Nicosia
+
+# DAI — Đại Việt
+1886;DAI;Bắc Giang
+1825;DAI;Bắc Kạn
+1807;DAI;Ha Giang
+1901;DAI;Haiphong
+1865;DAI;Hanoi
+1883;DAI;Hong Gai
+1992;DAI;Hà Tĩnh
+1829;DAI;Mengzi
+1899;DAI;Ninh Bình
+1923;DAI;Thanh Hóa
+1966;DAI;Vinh
+1958;DAI;Vinh Oeste
+1943;DAI;Xam Nua Nordeste
+1876;DAI;Yên Bái
+2024;DAI;Đồng Hới
+
+# DAR — Darfur
+2042;DAR;Geneina Sudeste
+2054;DAR;Nyala
+
+# DEB — Debdou
+1290;DEB;Er Rachidia
+3794;DEB;Melilla
+4459;DEB;Melilla Sudoeste
+
+# DEN — Dinamarca
+3816;DEN;Aalborg
+3889;DEN;Esbjerg
+3854;DEN;Flensburg
+4077;DEN;Flensburg Oeste
+4481;DEN;Frederikshavn Nordeste
+3920;DEN;Helsingborg
+4070;DEN;Kristianstad Nordeste
+3513;DEN;København
+3968;DEN;Malmö
+3765;DEN;Odense
+4074;DEN;Sorø
+4063;DEN;Viborg Oeste
+4056;DEN;Viborg Sudoeste
+3974;DEN;Visby
+4492;DEN;Visby Sudeste
+3701;DEN;Århus
+4474;DEN;Århus Nordeste
+4478;DEN;Århus Nordeste II
+
+# DLH — Délhi
+1631;DLH;Agra
+1568;DLH;Bareilly
+1393;DLH;Chandigarh
+1440;DLH;Dandeldhura Sudoeste
+1476;DLH;Dehra Dun Nordeste
+1381;DLH;Dehra Dun Sudeste
+1475;DLH;Delhi
+1554;DLH;Faridabad
+1281;DLH;Gujranwala
+1539;DLH;Hisar
+1606;DLH;Jaipur
+1388;DLH;Lahore
+1432;DLH;Meerut
+1519;DLH;Moradabad
+1333;DLH;Pathankot
+1308;DLH;Pathankot Leste
+1520;DLH;Pilibhit
+1543;DLH;Rohtak
+1324;DLH;Sargodha
+1573;DLH;Shahjahanpur
+1454;DLH;Sirsa
+1458;DLH;Sirsa Sudeste
+
+# DTE — Date
+991;DTE;Iwaki
+967;DTE;Kōriyama Oeste
+3074;DTE;Niigata Sudoeste
+909;DTE;Sendai
+921;DTE;Yamagata
+
+# DUL — Dulkadir
+4441;DUL;Kahramanmaraş Sul
+3594;DUL;Malatya
+
+# ENG — Inglaterra
+3478;ENG;Birmingham
+4086;ENG;Blackpool
+3541;ENG;Bordeaux
+4164;ENG;Bournemouth
+4210;ENG;Caen
+3860;ENG;Calais
+3533;ENG;Cardiff
+3887;ENG;Carlisle
+3907;ENG;Cherbourg
+4485;ENG;Cherbourg Oeste
+4484;ENG;Cherbourg Sudoeste
+4129;ENG;Chester Norte
+4178;ENG;Dieppe
+4102;ENG;Douglas Norte
+4516;ENG;Douglas Sudoeste
+3667;ENG;Kingston upon Hull
+4297;ENG;La Rochelle Norte
+3699;ENG;Le Havre
+3788;ENG;Le Mans
+4080;ENG;Leeds
+4107;ENG;Liverpool
+3460;ENG;London
+3479;ENG;Manchester
+3530;ENG;Newcastle
+3735;ENG;Norwich
+3975;ENG;Penzance
+4493;ENG;Penzance Sudoeste
+3795;ENG;Peterborough
+3695;ENG;Plymouth
+3600;ENG;Portsmouth
+3732;ENG;Reading
+3579;ENG;Rouen
+4217;ENG;Rouen Noroeste
+4114;ENG;Sheffield
+4144;ENG;Southend-on-Sea
+4159;ENG;Swansea Noroeste
+4143;ENG;Swansea Sul
+4128;ENG;Swansea Sul II
+
+# EPI — Epiro
+4528;EPI;Agrinio Oeste II
+4423;EPI;Agrinio Sul
+
+# ETH — Etiópia
+2256;ETH;Addis Ababa
+2100;ETH;Adigrat
+2067;ETH;Adigrat Leste
+2119;ETH;Aksum
+2129;ETH;Aksum Noroeste
+2083;ETH;Asmara
+2195;ETH;Bahir Dar
+2208;ETH;Bati
+2234;ETH;Debre Birhan Sudoeste
+2227;ETH;Debre Markos Noroeste
+2186;ETH;Dese
+2269;ETH;Giyon
+2165;ETH;Gondar
+2151;ETH;Gondar Oeste
+2085;ETH;Kassala
+2043;ETH;Keren
+2071;ETH;Massawa
+3175;ETH;Massawa Sudeste
+2144;ETH;Mekele
+2137;ETH;Mekele Nordeste
+
+# FIR — Florença
+3489;FIR;Florence
+
+# FOI — Foix
+3926;FOI;Andorra
+4354;FOI;Andorra Sudoeste
+4347;FOI;Biarritz
+4333;FOI;Biarritz Sudeste
+3924;FOI;Tarbes
+
+# FRA — França
+3792;FRA;Amiens
+4204;FRA;Amiens Nordeste
+4307;FRA;Bordeaux Sudeste
+3888;FRA;Bourges
+4275;FRA;Bourges Norte
+3923;FRA;Brive
+4308;FRA;Brive Leste
+4319;FRA;Brive Nordeste
+4309;FRA;Clermont-Ferrand Norte
+4320;FRA;Clermont-Ferrand Norte II
+3616;FRA;Grenoble
+4315;FRA;Grenoble Nordeste
+4322;FRA;Grenoble Noroeste
+3883;FRA;La Rochelle
+3777;FRA;Limoges
+3492;FRA;Lyon
+4227;FRA;Melun
+3644;FRA;Montpellier
+4335;FRA;Nîmes
+4325;FRA;Nîmes Sudoeste
+3459;FRA;Paris
+3874;FRA;Poitier
+4269;FRA;Poitier Leste
+4287;FRA;Poitier Noroeste
+3730;FRA;Reims
+4218;FRA;Reims Noroeste
+4197;FRA;Reims Sudeste
+4192;FRA;Reims Sul
+3885;FRA;Roanne
+4310;FRA;Saint-Étienne
+4314;FRA;Saint-Étienne Noroeste
+4321;FRA;Saint-Étienne Norte
+4298;FRA;Saint-Étienne Oeste
+3534;FRA;Toulouse
+4348;FRA;Toulouse Leste
+4334;FRA;Toulouse Sudeste
+3703;FRA;Tours
+3903;FRA;Troyes
+4240;FRA;Troyes Nordeste
+
+# FRI — Frísia
+4122;FRI;Amsterdam Sul
+4091;FRI;Bremerhaven
+4517;FRI;Emden Sudoeste
+4514;FRI;Emden Sudoeste II
+3716;FRI;Groningen
+4515;FRI;Groningen Sul
+4103;FRI;Leeuwarden
+4095;FRI;Leeuwarden Sul
+4108;FRI;Oldenburg
+
+# FRK — Francônia
+3906;FRK;Coburg
+3551;FRK;Nürnberg
+3753;FRK;Würzburg
+
+# FZZ — Fezzan
+1839;FZZ;Djado Sudeste
+1760;FZZ;Djanet Nordeste
+1350;FZZ;Sabha
+
+# GAL — Galich
+4032;GAL;Vologda
+
+# GEL — Gueldres
+4145;GEL;Arnhem
+3827;GEL;Zwolle
+
+# GEN — Gênova
+3925;GEN;Ajaccio
+3952;GEN;Bastia
+4352;GEN;Bastia Sudoeste
+4304;GEN;Dzhankoy
+4316;GEN;Genoa
+4336;GEN;Modena Noroeste
+
+# GFS — Gafsa
+1154;GFS;Gafsa
+
+# GHD — Ghadames
+1237;GHD;El Oued
+
+# GIL — Gilan
+962;GIL;Rasht
+3570;GIL;Rasht Sul
+
+# GON — Gondwana
+1862;GON;Bhilai
+1907;GON;Bhilai Norte
+1803;GON;Bhopal
+1815;GON;Bilaspur Sul
+1935;GON;Chandrapur
+1904;GON;Chandrapur Sudeste
+1806;GON;Jabalpur
+1841;GON;Jabalpur Norte
+1721;GON;Jhansi
+1686;GON;Jhansi Leste
+1888;GON;Nagpur
+
+# GRA — Granada
+4451;GRA;Gibraltar
+3617;GRA;Granada‎
+4437;GRA;Linares Leste
+4452;GRA;Melilla Sul
+4447;GRA;Málaga
+
+# GRT — Grande Horda
+3946;GRT;Akhtubinsk
+4252;GRT;Akhtubinsk Nordeste
+3585;GRT;Astrakhan
+4306;GRT;Astrakhan Noroeste
+4274;GRT;Astrakhan Sudoeste
+3729;GRT;Balakovo
+3853;GRT;Balashov
+3524;GRT;Donetsk
+3835;GRT;Elista
+4256;GRT;Elista Sul
+3810;GRT;Kamyshin
+4221;GRT;Kramatorsk
+3899;GRT;Kropotkin
+3597;GRT;Luhansk
+3590;GRT;Mariupol
+3912;GRT;Mikhaylovka
+4206;GRT;Millerovo Leste
+3991;GRT;Pallasovka
+4172;GRT;Pallasovka Sudeste
+3515;GRT;Rostov
+4281;GRT;Salsk
+3536;GRT;Saratov
+3935;GRT;Shakhty
+4280;GRT;Taganrog
+4185;GRT;Uryupinsk Noroeste
+4196;GRT;Valuyki Nordeste
+3754;GRT;Volgodonsk
+3525;GRT;Volgograd
+4222;GRT;Zhanibek Nordeste
+
+# GUA — Guaranis
+2784;GUA;Asunción
+2790;GUA;Foz do Iguaçu
+2792;GUA;Resistencia
+
+# GUJ — Guzerate
+1797;GUJ;Ahmedabad
+1843;GUJ;Bhavnagar
+1819;GUJ;Bhuj
+1813;GUJ;Gandhinagar Oeste
+1915;GUJ;Mumbai
+1874;GUJ;Nasik
+1855;GUJ;Rajkot
+1805;GUJ;Ratlam Oeste
+1836;GUJ;Surat
+
+# HAK — Hakkari
+4446;HAK;Zakho
+
+# HEJ — Hejaz
+1903;HEJ;Al Qunfudhah
+1844;HEJ;At Taif Sudeste
+1695;HEJ;Buraydah Noroeste
+1612;HEJ;Hail
+1676;HEJ;Hail Norte
+1854;HEJ;Jeddah
+1789;HEJ;Makkah Sudeste
+1714;HEJ;Medina
+1792;HEJ;Medina Nordeste
+1785;HEJ;Medina Norte
+1702;HEJ;Medina Sudeste
+1647;HEJ;Medina Sul
+1921;HEJ;Qal at Bishah
+1871;HEJ;Qal at Bishah Sul
+1724;HEJ;Yanbu al Bahr
+
+# HES — Hesse
+4168;HES;Gießen Sudeste
+4165;HES;Gießen Sudoeste
+3675;HES;Kassel
+
+# HJO — Hojo
+1085;HJO;Kawagoe
+1039;HJO;Maebashi Sudeste
+1078;HJO;Tokyo
+1044;HJO;Utsunomiya
+3082;HJO;Yokohama Noroeste
+
+# HOL — Holstein
+4087;HOL;Bremerhaven Sudeste
+3483;HOL;Hamburg
+3682;HOL;Kiel
+4081;HOL;Kiel Leste
+
+# HRZ — Herzegovina
+3761;HRZ;Mostar
+
+# HUN — Hungria
+3799;HUN;Baia Mare
+3947;HUN;Banská Bystrica
+4231;HUN;Bratislava
+3661;HUN;Brașov
+3487;HUN;Budapest
+3898;HUN;Békéscsaba
+3653;HUN;Cluj-Napoca
+3707;HUN;Debrecen
+3896;HUN;Deva
+3801;HUN;Győr
+3825;HUN;Kecskemét
+3702;HUN;Košice
+3950;HUN;Miercurea Cuic
+3694;HUN;Miskolc
+4303;HUN;Novi Sad
+4242;HUN;Nyíregyháza Leste
+4261;HUN;Oradea
+4279;HUN;Oradea Norte
+4214;HUN;Prešov Oeste
+3741;HUN;Pécs
+3877;HUN;Reșița
+4291;HUN;Sfintu-Gheorghe Leste
+3771;HUN;Sibiu
+3739;HUN;Szeged
+4255;HUN;Szolnok
+3829;HUN;Szombathely
+4268;HUN;Székesfehérvár
+3654;HUN;Timișoara
+3781;HUN;Tirgu Mures
+4313;HUN;Târgu Jiu
+3780;HUN;Uzhgorod
+4267;HUN;Veszprém
+3870;HUN;Žilina
+
+# IME — Imereti
+3742;IME;Kutaisi
+
+# INC — Império Inca
+2654;INC;Abancay
+2788;INC;Abra Pampa
+2663;INC;Achacachi
+2655;INC;Arequipa
+2641;INC;Ayacucho
+2691;INC;Camaná
+2814;INC;Cerrillos Oeste
+2674;INC;Cochabamba
+2660;INC;Coracora
+2649;INC;Cusco
+2739;INC;Cuya
+2442;INC;Guayaquil
+2629;INC;Huancayo
+2651;INC;Ica
+2672;INC;Juliaca
+2696;INC;La Paz
+2861;INC;Mendoza
+2715;INC;Oruro
+2376;INC;Pasto
+2398;INC;Portoviejo
+2689;INC;Puno
+2400;INC;Quito
+2807;INC;Salta
+2867;INC;Santiago
+2820;INC;Santiago del Estero
+2702;INC;Tacna
+2408;INC;Tena
+2816;INC;Tucumán
+2642;INC;Urubamba Oeste
+2834;INC;Valparaíso
+
+# IRO — Iroqueses
+721;IRO;Albany
+803;IRO;Allentown
+822;IRO;Altoona Nordeste
+833;IRO;Baltimore
+647;IRO;Barrie
+639;IRO;Belleville Sul
+736;IRO;Binghamton
+779;IRO;Bridgeport
+688;IRO;Buffalo
+733;IRO;Elmira
+731;IRO;Erie
+838;IRO;Harrisburg
+811;IRO;Harrisburg Sudeste
+772;IRO;New York
+629;IRO;Parry Sound
+824;IRO;Philadelphia
+771;IRO;Pittsburgh
+758;IRO;Poughkeepsie
+694;IRO;Rochester
+681;IRO;Saratoga Springs
+765;IRO;Scranton Leste
+740;IRO;Springfield
+767;IRO;State College
+671;IRO;Syracuse
+683;IRO;Syracuse Sudoeste
+672;IRO;Toronto
+691;IRO;Utica
+657;IRO;Watertown Nordeste
+760;IRO;Wilkes-Barre
+805;IRO;Williamsport Norte
+834;IRO;Wilmington
+845;IRO;Wilmington Oeste
+737;IRO;Worcester
+
+# JAF — Jafna
+2253;JAF;Jaffna
+2263;JAF;Kilinochchi Nordeste
+
+# JIA — Jurchens
+549;JIA;Baicheng
+635;JIA;Changchun
+613;JIA;Changling
+704;JIA;Chongjin
+486;JIA;Daqing
+585;JIA;Harbin
+497;JIA;Hulan Ergi
+501;JIA;Jiamusi
+655;JIA;Jilin
+594;JIA;Jixi
+573;JIA;Mudangiang
+560;JIA;Spassk Dalniy
+519;JIA;Suihua
+669;JIA;Tongliao
+600;JIA;Vladivostok
+660;JIA;Wangqing
+724;JIA;Yanji
+
+# JNP — Jaunpur
+1629;JNP;Bahraich
+1574;JNP;Bhairawa
+1661;JNP;Fatehpur Sudeste
+1746;JNP;Gaya
+1753;JNP;Gaya Leste
+1663;JNP;Gorakhpur
+1668;JNP;Gorakhpur Nordeste
+1630;JNP;Gorakhpur Sudeste
+1653;JNP;Kanpur
+1598;JNP;Kathmandu
+1643;JNP;Lucknow
+1772;JNP;Mirzapur Norte
+1561;JNP;Nepalganj
+1690;JNP;Patna
+1674;JNP;Rajbiraj Noroeste
+1611;JNP;Ramechhap
+1798;JNP;Ranchi
+1794;JNP;Ranchi Oeste
+1728;JNP;Varanasi
+
+# JOL — Jolof
+2107;JOL;Basse Santa Su
+2022;JOL;Bogue
+2051;JOL;Bogue Noroeste
+2134;JOL;Brikama
+2080;JOL;Dakar
+2095;JOL;Diourbel
+2103;JOL;Kaolack
+2035;JOL;Kaédi
+2028;JOL;Rosso
+2056;JOL;Saint-Louis
+2101;JOL;Tambacounda
+2149;JOL;Ziguinchor
+
+# JUL — Jülich
+3548;JUL;Liège
+
+# KAM — Kanem-Bornu Norte
+2159;KAM;Bol
+
+# KAN — Hauçá
+2230;KAN;Abuja
+2164;KAN;Bauchi
+2094;KAN;Birni Nkonni
+2157;KAN;Kano
+2114;KAN;Katsina
+2192;KAN;Kontagora
+2148;KAN;Niamey II
+2136;KAN;Sokoto
+2193;KAN;Zaria
+2087;KAN;Zinder
+
+# KAR — Karaman
+3818;KAR;Karaman
+3571;KAR;Kayseri
+4430;KAR;Kayseri Leste
+4440;KAR;Kayseri Nordeste
+3528;KAR;Konya
+4445;KAR;Konya Oeste
+3858;KAR;Kırıkkale
+3861;KAR;Niğde
+4435;KAR;Niğde Oeste
+4416;KAR;Yozgat
+
+# KAZ — Canato de Cazã
+3734;KAZ;Bakal
+4464;KAZ;Bakal Sudoeste
+3940;KAZ;Cheboksary
+4058;KAZ;Cheboksary Sudoeste
+318;KAZ;Chelyabinsk
+4079;KAZ;Dimitrovgrad
+3565;KAZ;Izhevsk
+4093;KAZ;Kamenka Sudoeste
+3508;KAZ;Kazan
+4060;KAZ;Kungur
+4105;KAZ;Kuznetsk
+3595;KAZ;Naberezhnyye Chelny
+4065;KAZ;Neftekamsk Leste
+3830;KAZ;Oktyabrskiy
+3583;KAZ;Penza
+4054;KAZ;Sovetsk Nordeste
+3519;KAZ;Ufa
+3562;KAZ;Ulyanovsk
+3803;KAZ;Verkhniy Ufaley
+4046;KAZ;Yoshkar Ola
+
+# KHA — Mongóis Khalkha
+526;KHA;Altai
+553;KHA;Arvaikheer
+515;KHA;Arxan Sudoeste
+543;KHA;Baruun-Urt
+449;KHA;Borzya
+451;KHA;Bulgan Sudoeste
+555;KHA;Buyant-Uhaa
+333;KHA;Chita
+475;KHA;Choibalsan
+632;KHA;Dalandzadgad
+606;KHA;Dalandzadgad Sul
+461;KHA;Darkhan
+546;KHA;Deserto de Gobi
+481;KHA;Erdenet
+504;KHA;Erdenet Nordeste
+444;KHA;Gannan
+423;KHA;Gusinoozyorsk
+456;KHA;Hailar
+419;KHA;Manzhouli
+367;KHA;Mogocha Norte
+588;KHA;Montanhas Altai
+441;KHA;Mörön
+410;KHA;Mörön Sudeste
+411;KHA;Orongen Zizhiqi
+454;KHA;Planalto Mongol
+402;KHA;Shilka
+386;KHA;Slyudyanka
+531;KHA;Ulaanbaatar
+389;KHA;Ulan-Ude
+509;KHA;Uliastay
+499;KHA;Öndörkhaan
+
+# KHM — Khmer
+2115;KHM;Aranyaprathet
+2141;KHM;Battambang
+2222;KHM;Can Tho
+2161;KHM;Chanthaburi
+2189;KHM;Ho Chi Minh City
+2131;KHM;Kampong Thum
+2142;KHM;Kracheh
+2183;KHM;Phnom Penh
+2116;KHM;Stoeng Treng
+2050;KHM;Surin
+3206;KHM;Trat
+2070;KHM;Ubon Ratchathani
+
+# KIL — Quíloa
+2550;KIL;Dar es Salaam
+2563;KIL;Kibiti
+2596;KIL;Masasi Sul
+2555;KIL;Mikumi
+2609;KIL;Mtwara
+3313;KIL;Zanzibar
+
+# KLD — Kildare
+3514;KLD;Dublin
+4106;KLD;Kilkenny Sul
+
+# KNI — Ordem de São João
+4486;KNI;Kos
+4487;KNI;Kos Norte
+3916;KNI;Rodos
+
+# KOL — Colônia
+3521;KOL;Cologne
+
+# KON — Congo
+2575;KON;Camabatela
+2544;KON;Camabatela Leste
+2531;KON;Kasongo-Lunda Sudoeste
+2459;KON;Kinkala
+2478;KON;Kinshasa
+2465;KON;Loubomo
+2565;KON;Luanda
+2506;KON;Matadi
+2528;KON;Mbanza-Congo
+2503;KON;Mbanza-Ngungu
+2508;KON;Moanda
+2597;KON;Ndalatando
+2530;KON;Nzeto
+2497;KON;Pointe-Noire
+2607;KON;Quibala
+2614;KON;Sumbe
+2553;KON;Uíge
+
+# KOR — Coreia
+897;KOR;Anbyon Nordeste
+1024;KOR;Andong
+990;KOR;Andong Sudeste
+754;KOR;Baishan
+3081;KOR;Busan
+1069;KOR;Changwon
+1047;KOR;Cheongju
+844;KOR;Chongju
+813;KOR;Chosan Nordeste
+963;KOR;Chuncheon Nordeste
+1077;KOR;Daegu
+1073;KOR;Daejeon
+937;KOR;Gangneung Sudeste
+1111;KOR;Gwangju
+825;KOR;Hamhung
+774;KOR;Hyeson
+931;KOR;Kaesong
+3075;KOR;Nampo Oeste
+906;KOR;Pyongsan
+888;KOR;Pyongyang
+982;KOR;Seoul
+928;KOR;Sokcho
+901;KOR;Sokcho Sul
+868;KOR;Sunchon
+970;KOR;Suwon
+976;KOR;Wonju
+879;KOR;Wonsan
+1114;KOR;Yeosu
+
+# KOT — Kotte
+2274;KOT;Anuradhapura
+2300;KOT;Batticaloa
+2306;KOT;Colombo
+2302;KOT;Kandy
+
+# KOZ — Calicute
+2200;KOZ;Kozhikode
+
+# KRT — Kartli
+4369;KRT;Buynaksk Noroeste
+3511;KRT;Tbilisi
+
+# KSH — Caxemira
+1005;KSH;Gilgit
+1030;KSH;Gilgit Leste
+1064;KSH;Gilgit Sudoeste
+1202;KSH;Leh
+1132;KSH;Leh Sudoeste
+1195;KSH;Rawalpindi
+1266;KSH;Rawalpindi Norte
+1161;KSH;Saidu
+1106;KSH;Saidu Sudeste
+1149;KSH;Srinagar
+1224;KSH;Srinagar Nordeste
+
+# LGH — Laghouat
+1157;LGH;Djelfa
+
+# LIT — Lituânia
+3713;LIT;Babruysk
+3752;LIT;Baranavichy
+4126;LIT;Baranavichy Nordeste
+4084;LIT;Barysaw Sudeste
+4119;LIT;Białystok
+4125;LIT;Białystok Nordeste
+4203;LIT;Bila Tserkva
+3669;LIT;Brest
+4139;LIT;Brest Leste
+4138;LIT;Brest Oeste
+3604;LIT;Bryansk
+4243;LIT;Bălți Leste
+3672;LIT;Cherkasy
+3662;LIT;Chernihiv
+3828;LIT;Daugavpils
+4069;LIT;Daugavpils Noroeste
+3516;LIT;Dnipro
+3919;LIT;Ełk
+3591;LIT;Homyel
+3652;LIT;Hrodna
+4120;LIT;Hrodna Nordeste
+3621;LIT;Kaunas
+4083;LIT;Kaunas Norte
+3491;LIT;Kharkiv
+4216;LIT;Kharkiv Norte
+4090;LIT;Kirov II
+3693;LIT;Kirovohrad
+4121;LIT;Klintsy
+3841;LIT;Konotop
+4163;LIT;Korosten
+3891;LIT;Kovel
+3706;LIT;Kremenchuk
+3558;LIT;Kryvyy Rih
+3881;LIT;Kupyansk
+3608;LIT;Kursk
+3473;LIT;Kyiv
+3849;LIT;Lida
+4061;LIT;Liepaga Leste
+3625;LIT;Mahilyow
+4112;LIT;Mahilyow Nordeste
+4075;LIT;Maladzyechna Sul
+3826;LIT;Mazyr
+3482;LIT;Minsk
+3584;LIT;Mykolayiv
+4177;LIT;Nizhyn
+3523;LIT;Odessa
+3641;LIT;Orel
+3807;LIT;Pinsk
+4148;LIT;Pinsk Leste
+4156;LIT;Pinsk Noroeste
+3879;LIT;Polatsk
+3651;LIT;Poltava
+4184;LIT;Poltava Sudoeste
+3689;LIT;Rivne
+4162;LIT;Rivne Sudeste
+3915;LIT;Roslavl
+4142;LIT;Shostka Oeste
+4140;LIT;Shostka Sudeste
+3649;LIT;Smolensk
+4071;LIT;Sovetsk Sudeste
+3673;LIT;Sumy
+3869;LIT;Uman
+3842;LIT;Velikiye Luki
+3576;LIT;Vilnius
+3634;LIT;Vinnytsya
+3637;LIT;Vitsyebsk
+4244;LIT;Voznesensk Sudoeste
+3922;LIT;Vyazma
+3678;LIT;Zhytomyr
+3804;LIT;Šiauliai
+
+# LIV — Ordem Livoniana
+3986;LIV;Haapsalu
+4039;LIV;Haapsalu Noroeste
+3875;LIV;Liepaga
+3956;LIV;Narva
+4489;LIV;Narva Sudoeste
+4064;LIV;Panevežys
+3948;LIV;Pärnu
+3549;LIV;Riga
+4057;LIV;Riga Leste
+4051;LIV;Rēzekne Sudoeste
+4031;LIV;Tallinn
+3845;LIV;Tartu
+3949;LIV;Ventspils
+4050;LIV;Ventspils Leste
+4045;LIV;Viljandi Norte
+
+# LNA — Lan Na
+1938;LNA;Chiang Mai
+1911;LNA;Chiang Rai
+1940;LNA;Mae Hong Son
+1944;LNA;Nan
+
+# LOI — Senhorio das Ilhas
+4510;LOI;Fort William Oeste
+4511;LOI;Fort William Oeste II
+4043;LOI;Fort William Sudoeste
+4040;LOI;Fort William Sudoeste II
+4062;LOI;Greenock Sudoeste
+
+# LOR — Lorena
+4246;LOR;Besançon Sudeste
+3610;LOR;Metz
+4211;LOR;Metz Oeste
+4235;LOR;Mulhouse
+4224;LOR;Nancy
+4234;LOR;Nancy Noroeste
+4223;LOR;Nancy Oeste
+4219;LOR;Reims Nordeste
+4228;LOR;Troyes Leste
+
+# LUB — Lübeck
+3704;LUB;Lübeck
+
+# LUR — Luristão
+1194;LUR;Arak
+1241;LUR;Ilam
+1264;LUR;Khorramabad
+
+# LXA — Lan Xang
+2012;LXA;Khon Kaen
+1853;LXA;Lao Chi Oeste
+1880;LXA;Louang Namtha
+1945;LXA;Louangphrabang
+1852;LXA;Phongsali
+1941;LXA;Phonsavan
+1980;LXA;Sakhon Nakhon Sul
+2019;LXA;Udon Thani
+1986;LXA;Vientiane
+1869;LXA;Xam Nua
+
+# MAG — Magdeburgo
+3709;MAG;Magdeburg
+
+# MAI — Mogúncia
+4169;MAI;Erfurt Oeste
+3469;MAI;Frankfurt
+4182;MAI;Würzburg Sul
+
+# MAL — Malaca
+2393;MAL;Batu Pahat Noroeste
+2343;MAL;George Town
+2373;MAL;Johor Bahru
+2353;MAL;Kuantan
+2381;MAL;Padangsidempuan Leste
+2388;MAL;Pekanbaru
+3263;MAL;Singapore
+
+# MAM — Mamelucos
+1490;MAM;Al Aqabah
+1443;MAM;Al Aqabah Oeste
+1652;MAM;Al Wajh Leste
+1596;MAM;Al Wajh Sudeste
+3472;MAM;Aleppo
+1370;MAM;Alexandria
+1315;MAM;Amman
+1343;MAM;An Nabk
+1142;MAM;Ar Ramadi
+3744;MAM;Ar Raqqah
+1416;MAM;Arar
+1780;MAM;Aswan
+1590;MAM;Asyut Sudeste
+1280;MAM;Banghazi
+1402;MAM;Bur Said
+1484;MAM;Cairo
+1247;MAM;Damascus
+1269;MAM;Darnah Sudeste
+1361;MAM;Dumyat Sul
+1731;MAM;El Kharga
+1688;MAM;El Kharga Sul
+1411;MAM;El Mansura
+1502;MAM;El Minya
+1379;MAM;Gaza City
+3520;MAM;Hamah
+1181;MAM;Homs
+1444;MAM;Ismaïlia
+3671;MAM;Kahramanmaraş
+3577;MAM;Latakia
+1619;MAM;Luxor
+1355;MAM;Matruh Sudoeste
+1356;MAM;Rashid Sudeste
+1468;MAM;Siwa
+1581;MAM;Tabuk
+1498;MAM;Tabuk Sul
+1147;MAM;Tadmur Sudoeste
+1254;MAM;Tel Aviv
+1291;MAM;Tubruq
+1336;MAM;Tubruq Sudeste
+1169;MAM;Ṭarābulus
+
+# MAN — Mântua
+3636;MAN;Verona
+
+# MAP — Mapuche
+2887;MAP;Bariloche
+2901;MAP;Puerto Montt
+2895;MAP;Temuco
+
+# MAR — Marwar
+1571;MAR;Bikaner
+1684;MAR;Jodhpur
+1593;MAR;Jodhpur Sudoeste
+1535;MAR;Rahim Yar Khan
+1741;MAR;Udaipur Oeste
+
+# MAY — Maias
+2013;MAY;Belize City
+1950;MAY;Campeche
+1989;MAY;Chetumal
+1964;MAY;Chetumal Sudoeste
+1926;MAY;Felipe Carrillo Puerto
+1868;MAY;Motul Sul
+1889;MAY;Mérida
+1984;MAY;Tenosique Sudeste
+1908;MAY;Ticul
+1882;MAY;Tizimín
+1873;MAY;Valladolid II
+
+# MAZ — Mazóvia
+4117;MAZ;Grudziądz Nordeste
+4137;MAZ;Inowrocław Nordeste
+4118;MAZ;Olsztyn Norte
+3486;MAZ;Warsaw
+
+# MEW — Mewar
+1681;MEW;Ajmer
+1685;MEW;Tonk
+1752;MEW;Udaipur
+
+# MGD — Mogadíscio
+2345;MGD;Baydhabo
+2344;MGD;Kismaayo
+2375;MGD;Mogadishu
+
+# MJP — Majapahit
+2560;MJP;Cilacap
+2582;MJP;Denpasar
+2570;MJP;Malang
+2585;MJP;Mataram
+2554;MJP;Pasuruan
+2589;MJP;Praya Leste
+2545;MJP;Semarang
+3321;MJP;Sumenep Nordeste
+2556;MJP;Surabaya
+2558;MJP;Surakarta
+
+# MKL — Mecklemburgo
+4116;MKL;Berlin Sul
+3725;MKL;Rostock
+4104;MKL;Schwerin
+4109;MKL;Schwerin Nordeste
+4096;MKL;Stralsund Norte
+
+# MLI — Mali
+2156;MLI;Bamako
+2025;MLI;Goundam
+2264;MLI;Gueckedou
+2174;MLI;Kankan
+2057;MLI;Kayes
+2128;MLI;Kita
+2158;MLI;Koutiala
+2168;MLI;Labé
+2240;MLI;Mamou
+2062;MLI;Nioro du Sahel
+2212;MLI;Odienné
+2061;MLI;Sokolo
+2122;MLI;Ségou
+2099;MLI;Sélibaby
+2033;MLI;Timbuktu
+2001;MLI;Timbuktu Sudoeste
+
+# MLN — Melinde
+2407;MLN;Garissa
+2421;MLN;Lamu
+2471;MLN;Mombasa
+2440;MLN;Nairobi
+2505;MLN;Tanga
+
+# MLO — Milão
+3467;MLO;Milan
+3756;MLO;Parma
+
+# MLW — Malwa
+1720;MLW;Bhopal Sul
+1864;MLW;Burhanpur Sul
+1820;MLW;Indore
+1725;MLW;Kota
+
+# MNG — Ming
+900;MNG;Alxa Zuoqi Noroeste
+1330;MNG;Ankang
+1327;MNG;Ankang Oeste
+1414;MNG;Anlu
+1391;MNG;Anqing
+1450;MNG;Anqing Oeste
+1648;MNG;Anshun
+1691;MNG;Anshun Nordeste
+896;MNG;Baoding
+878;MNG;Baoding Sudoeste
+887;MNG;Baoding Sul
+1177;MNG;Baoji
+1226;MNG;Baoji Nordeste
+1233;MNG;Baoji Noroeste
+1769;MNG;Baoshan Nordeste
+762;MNG;Baotou
+843;MNG;Baotou Nordeste
+815;MNG;Beijing
+821;MNG;Beijing Sudeste
+1267;MNG;Bengbu
+1257;MNG;Bengbu Leste
+729;MNG;Benxi
+1793;MNG;Bose
+1808;MNG;Bose Nordeste
+1761;MNG;Bose Sudeste
+946;MNG;Buizhou
+956;MNG;Buizhou Sudoeste
+915;MNG;Cangzhou
+1513;MNG;Changde
+1555;MNG;Changde Norte
+1516;MNG;Changde Oeste
+1565;MNG;Changsha
+1644;MNG;Changting
+1052;MNG;Changzhi
+797;MNG;Chengde
+780;MNG;Chengde Oeste
+1420;MNG;Chengdu
+1433;MNG;Chengdu Sudoeste
+1415;MNG;Chengdu Sudoeste II
+1706;MNG;Chenzhou
+1719;MNG;Chenzhou Noroeste
+679;MNG;Chifeng
+707;MNG;Chifeng Oeste
+1455;MNG;Chongqing
+1506;MNG;Chongqing Nordeste
+1511;MNG;Chongqing Nordeste II
+1526;MNG;Chongqing Norte
+1699;MNG;Chuxiong
+1747;MNG;Chuxiong Nordeste
+1764;MNG;Chuxiong Noroeste
+1738;MNG;Chuxiong Oeste
+1649;MNG;Dali
+1709;MNG;Dali Norte
+3073;MNG;Dalian Oeste
+800;MNG;Dandong
+831;MNG;Datong
+1366;MNG;Deyang Sudoeste
+952;MNG;Dezhou
+996;MNG;Dezhou Noroeste
+935;MNG;Dezhou Sudeste
+923;MNG;Dingzhou
+863;MNG;Dingzhou Sudoeste
+684;MNG;Erenhot Noroeste
+1479;MNG;Fulin
+725;MNG;Fuxin Sudeste
+1294;MNG;Fuyang
+1687;MNG;Fuzhou
+1641;MNG;Ganzhou
+1710;MNG;Ganzhou Oeste
+1666;MNG;Ganzhou Sudoeste
+1821;MNG;Gejiu
+1804;MNG;Gejiu Oeste
+1334;MNG;Guangyuan
+1321;MNG;Guangyuan Oeste
+1273;MNG;Guangyuan Sudoeste
+1275;MNG;Guangyuan Sul
+1831;MNG;Guangzhou
+1086;MNG;Guide
+1680;MNG;Guilin Sudoeste
+1608;MNG;Guiyang
+1654;MNG;Guiyang Leste
+1128;MNG;Hancheng Oeste
+1054;MNG;Hancheng Sudoeste
+1032;MNG;Hancheng Sudoeste II
+1029;MNG;Handan
+1020;MNG;Handan Leste
+1481;MNG;Hangzhou
+1279;MNG;Hanzhong
+1068;MNG;Hebi Sudoeste
+1749;MNG;Hechi
+1703;MNG;Hechi Sudoeste
+1357;MNG;Hefei
+955;MNG;Hengshui
+929;MNG;Hengshui Sul
+1637;MNG;Hengyang
+1787;MNG;Heyuan
+1170;MNG;Heze
+1135;MNG;Houma Norte
+1328;MNG;Huainan
+1216;MNG;Huaiyin
+1288;MNG;Huaiyin Nordeste
+924;MNG;Huanghua
+907;MNG;Huanghua Leste
+1487;MNG;Huangshi
+1472;MNG;Huangshi Leste
+1438;MNG;Huangshi Sudoeste
+1818;MNG;Huizhou
+1428;MNG;Huzhou
+1621;MNG;Jian Leste
+1427;MNG;Jianmen
+1140;MNG;Jiaozuo
+1442;MNG;Jiaxing
+1234;MNG;Jieshou Sudeste
+1016;MNG;Jiexiu
+960;MNG;Jiexiu Sudoeste
+980;MNG;Jiexiu Sul
+1013;MNG;Jinan
+1060;MNG;Jinan Norte
+1099;MNG;Jincheng Sul
+1517;MNG;Jingdezhen
+1465;MNG;Jingdezhen Sul
+1480;MNG;Jingzhou Nordeste
+1524;MNG;Jinhua
+790;MNG;Jining
+1124;MNG;Jining Sudoeste
+1497;MNG;Jinshi
+759;MNG;Jinxi
+1501;MNG;Jiujiang Sudoeste
+1123;MNG;Kaifeng
+1726;MNG;Kunming
+1705;MNG;Kunming Sul
+1076;MNG;Laiwu
+860;MNG;Langfang
+855;MNG;Langfang Leste
+1353;MNG;Langzhong
+1386;MNG;Langzhong Leste
+933;MNG;Lanzhou
+1031;MNG;Lanzhou Leste
+1505;MNG;Leshan
+1759;MNG;Lianxian
+1765;MNG;Lianxian Nordeste
+1722;MNG;Lianxian Sudoeste
+1065;MNG;Liaocheng
+1023;MNG;Liaocheng Sudeste
+1547;MNG;Linchuan
+1577;MNG;Linchuan Leste
+1091;MNG;Linfen
+1033;MNG;Linfen Sudoeste
+1055;MNG;Linfen Sul
+728;MNG;Lingyuan
+802;MNG;Lingyuan Noroeste
+1046;MNG;Linqing
+1098;MNG;Linxia
+1164;MNG;Linyi
+1605;MNG;Lishui Norte
+1669;MNG;Liupanshui
+1671;MNG;Liupanshui Nordeste
+1617;MNG;Liupanshui Sudeste
+1782;MNG;Liuzhou
+1778;MNG;Liuzhou Nordeste
+1735;MNG;Liuzhou Sul
+1155;MNG;Longxi
+1302;MNG;Luan
+1383;MNG;Luan Nordeste
+1182;MNG;Luoyang
+1180;MNG;Luoyang Oeste
+1540;MNG;Luzhou
+1828;MNG;Lạng Sơn
+1389;MNG;Maanshan
+1360;MNG;Macheng
+1849;MNG;Maoming
+1739;MNG;Meizhou Sudoeste
+1390;MNG;Mianyang
+1365;MNG;Mianyang Sudeste
+1348;MNG;Mianyang Sudoeste
+1326;MNG;Mianyang Sudoeste II
+1186;MNG;Minxian
+1512;MNG;Nanchang
+1559;MNG;Nanchang Oeste
+1530;MNG;Nanchang Sudoeste
+1429;MNG;Nanchong
+981;MNG;Nangong
+1297;MNG;Nanjing
+1349;MNG;Nanjing Oeste
+1341;MNG;Nanjing Oeste II
+1834;MNG;Nanning
+1842;MNG;Nanning Oeste
+1816;MNG;Nanning Sudeste
+1615;MNG;Nanping
+1345;MNG;Nantong
+1374;MNG;Nantong Nordeste
+1296;MNG;Nanyang
+1222;MNG;Nanyang Sudoeste
+1492;MNG;Neijiang
+1500;MNG;Neijiang Leste
+1616;MNG;Ninde
+1493;MNG;Ningbo
+1448;MNG;Ningbo Sul
+1657;MNG;Panzhihua
+1636;MNG;Panzhihua Sudoeste
+1227;MNG;Pingdingshan
+1228;MNG;Pingdingshan Sul
+947;MNG;Pingdu Sul
+1134;MNG;Pingliang
+1133;MNG;Pingliang Oeste
+1037;MNG;Pingliang Sudeste
+965;MNG;Pingliang Sudeste II
+1019;MNG;Pingliang Sudoeste
+1072;MNG;Pingliang Sul
+1536;MNG;Pingxiang
+1870;MNG;Pingxiang Leste
+1634;MNG;Pingxiang Norte
+1206;MNG;Planalto do Tibete II
+1143;MNG;Puyang
+1103;MNG;Puyang Leste
+1056;MNG;Puyang Sul
+1014;MNG;Qingdao
+1796;MNG;Qingyuan
+1775;MNG;Qingyuan Sudoeste
+1683;MNG;Quanzhou
+1494;MNG;Quzhou Sul
+1136;MNG;Rizhao
+1412;MNG;Rongzhag
+1413;MNG;Rongzhag Leste
+1338;MNG;Rongzhag Sul
+764;MNG;Shangdu
+734;MNG;Shangdu Sudeste
+1399;MNG;Shanghai
+3094;MNG;Shanghai Nordeste
+1196;MNG;Shangqiu
+1203;MNG;Shangqiu Oeste
+1549;MNG;Shangrao
+1745;MNG;Shaoguan
+1743;MNG;Shaoguan Leste
+1762;MNG;Shaoguan Nordeste
+1572;MNG;Shaowu Sul
+1658;MNG;Shaoyang
+1620;MNG;Shaoyang Leste
+1607;MNG;Shaoyang Sudoeste
+732;MNG;Shenyeng
+949;MNG;Shijiazhuang
+1300;MNG;Shiyan
+1358;MNG;Shiyan Norte
+788;MNG;Shizuishan
+852;MNG;Shuozhou
+881;MNG;Shuozhou Noroeste
+873;MNG;Shuozhou Oeste
+841;MNG;Shuozhou Sudoeste
+1198;MNG;Shuyang
+1837;MNG;Simao
+1795;MNG;Simao Sul
+1407;MNG;Suining
+1470;MNG;Suining Nordeste
+1248;MNG;Suzhou
+1092;MNG;Taian
+898;MNG;Taiyuan
+945;MNG;Taiyuan Oeste
+1331;MNG;Taizhou
+829;MNG;Tangshan
+889;MNG;Tianjin
+1176;MNG;Tianshui
+1225;MNG;Tianshui Noroeste
+1162;MNG;Tongchuan
+1156;MNG;Tongchuan Oeste
+1090;MNG;Tongchuan Sudoeste
+1110;MNG;Tongchuan Sul
+1614;MNG;Tongren
+1633;MNG;Tongren Noroeste
+1599;MNG;Tongren Oeste
+1548;MNG;Tongren Sul
+1446;MNG;Wanzhou Noroeste
+993;MNG;Weifang
+1777;MNG;Wenshan Sul
+1534;MNG;Wenzhou
+1417;MNG;Wuhan
+927;MNG;Wuwei Noroeste
+1387;MNG;Wuxi
+1801;MNG;Wuzhou
+1779;MNG;Wuzhou Sudoeste
+1178;MNG;Xian
+978;MNG;Xiangtai Sudoeste
+1603;MNG;Xiangtan
+1368;MNG;Xiangyang
+1359;MNG;Xiangyang Leste
+1478;MNG;Xiantao
+1210;MNG;Xianyang
+1409;MNG;Xiaogan
+1589;MNG;Xichang
+1552;MNG;Xichang Sudeste
+1558;MNG;Xichang Sul
+1693;MNG;Xingyi
+1756;MNG;Xingyi Nordeste
+1711;MNG;Xingyi Sul
+1028;MNG;Xining
+1107;MNG;Xinxiang
+1369;MNG;Xinyang
+1312;MNG;Xinyang Sudoeste
+1301;MNG;Xinyang Sul
+1595;MNG;Xinyu
+894;MNG;Xinzhou
+791;MNG;Xuanhua
+1441;MNG;Xuanzhou
+1456;MNG;Xuanzhou Nordeste
+1238;MNG;Xuchang
+1197;MNG;Xuzhou
+1463;MNG;Yaan
+1271;MNG;Yancheng
+1303;MNG;Yancheng Nordeste
+1243;MNG;Yancheng Sudoeste
+1830;MNG;Yangjiang
+934;MNG;Yangquan
+1322;MNG;Yangzhou
+1533;MNG;Yibin
+1546;MNG;Yibin Oeste
+1447;MNG;Yichang
+1367;MNG;Yichang Sul
+1604;MNG;Yichun
+1544;MNG;Yichun Sul
+940;MNG;Yinchuan Norte
+795;MNG;Yingkow
+1700;MNG;Yishan
+1800;MNG;Yishan Noroeste
+1673;MNG;Yongzhou
+966;MNG;Yuci
+995;MNG;Yuci Nordeste
+1822;MNG;Yulin
+920;MNG;Yulin II
+1835;MNG;Yulin Leste
+905;MNG;Yulin Leste II
+944;MNG;Yulin Norte
+1817;MNG;Yulin Sul
+1252;MNG;Yunxian Sul
+1748;MNG;Yuxi
+1776;MNG;Yuxi Oeste
+1146;MNG;Zaozhuang
+814;MNG;Zhangjiakou
+769;MNG;Zhangjiakou Sul
+745;MNG;Zhangjiakou Sul II
+1692;MNG;Zhangzhou
+1877;MNG;Zhanjiang
+1640;MNG;Zhanyi
+1730;MNG;Zhanyi Norte
+1601;MNG;Zhaotang
+1602;MNG;Zhaotang Sudeste
+1183;MNG;Zhengzhou
+1354;MNG;Zhenjiang
+854;MNG;Zhuozhou
+882;MNG;Zhuozhou Nordeste
+864;MNG;Zhuozhou Oeste
+837;MNG;Zhuozhou Sudoeste
+1034;MNG;Zibo
+1650;MNG;Zixing Sul
+1627;MNG;Zunyi Nordeste
+1584;MNG;Zunyi Oeste
+1563;MNG;Zunyi Sudeste
+
+# MOD — Módena
+4317;MOD;Ferrara
+
+# MOL — Moldávia
+3728;MOL;Bacău
+4251;MOL;Bistrița Sudeste
+3823;MOL;Botoșani
+4284;MOL;Cahul
+3556;MOL;Chișinău
+3646;MOL;Iași
+4296;MOL;Izmayil
+4262;MOL;Piatra-Neamt Oeste
+
+# MON — Monferrato
+4311;MON;Novara
+
+# MOS — Moscóvia
+4076;MOS;Arzamas
+3659;MOS;Cherepovets
+3859;MOS;Ivanovo
+3639;MOS;Kaluga
+3908;MOS;Kotlas
+3457;MOS;Moscow
+3904;MOS;Murom
+3498;MOS;Nizhny Novgorod
+3957;MOS;Sharya
+3588;MOS;Tula
+3972;MOS;Velsk
+3650;MOS;Vladimir
+
+# MRC — Marrocos
+1410;MRC;Agadir
+1200;MRC;Casablanca
+1246;MRC;El Jadida
+1168;MRC;Fez
+1473;MRC;Goulimine
+1167;MRC;Ksar El Kebir
+3894;MRC;Ksar El Kebir Sudeste
+1340;MRC;Marrakesh
+1352;MRC;Marrakesh Leste
+1401;MRC;Marrakesh Norte
+1250;MRC;Meknes
+1342;MRC;Safi
+3547;MRC;Tangier
+
+# MSH — Mushasha
+1351;MSH;Ahvaz
+1335;MSH;Basra
+1337;MSH;Dezful
+1482;MSH;Kuwait City
+
+# MSI — Mossi
+2179;MSI;Bawku
+2185;MSI;Bobo Dioulasso
+2203;MSI;Bolgatanga
+2150;MSI;Dédougou
+2162;MSI;Fada Ngourma Leste
+2125;MSI;Kaya
+2108;MSI;Mopti
+2155;MSI;Ouagadougou
+2109;MSI;Ouahigouya
+2241;MSI;Tamale
+
+# MST — Münster
+4130;MST;Assen Nordeste
+3642;MST;Bielefeld
+4153;MST;Dortmund Leste
+3681;MST;Münster
+4131;MST;Osnabrück
+
+# MUI — Muíscas
+2357;MUI;Armenia
+2327;MUI;Bogota
+2273;MUI;Bucaramanga
+2363;MUI;Florencia
+2319;MUI;Girardot
+2354;MUI;Ibagué
+2347;MUI;Manizales Sudeste
+2278;MUI;Medellín
+2336;MUI;Pereira
+2330;MUI;Quibdó
+2307;MUI;Villavicencio
+
+# MUL — Multan
+1431;MUL;Bahawalpur
+1314;MUL;Dera Ghazi Khan
+1406;MUL;Faisalabad
+1215;MUL;Gardiz
+
+# MUN — Desmond
+3737;MUN;Cork
+3971;MUN;Tralee
+
+# MZB — Mzab
+1193;MZB;Laghouat Leste
+
+# MZD — Mazandaran
+916;MZD;Gonbad-e Kavus Sul
+994;MZD;Gorgan
+987;MZD;Sari
+1036;MZD;Shahrud
+
+# NAM — Nanbu
+806;NAM;Akita
+809;NAM;Morioka
+874;NAM;Morioka Norte
+869;NAM;Sakata
+
+# NAP — Nápoles
+3586;NAP;Bari
+4383;NAP;Bari Leste
+4374;NAP;Barletta Sul
+3856;NAP;Catanzaro
+4415;NAP;Crotone Sudoeste
+3773;NAP;Foggia
+4365;NAP;Foggia Sul
+4373;NAP;L'Aquila
+4355;NAP;L'Aquila Sul
+3762;NAP;Lecce
+3692;NAP;Naples
+3656;NAP;Pescara
+4392;NAP;Potenza
+4406;NAP;Potenza Nordeste
+3526;NAP;Salerno
+3726;NAP;Taranto
+
+# NAV — Navarra
+3790;NAV;Logroño
+4372;NAV;Logroño Nordeste
+4357;NAV;Pamplona
+3632;NAV;San Sebastián
+
+# NAX — Naxos
+4498;NAX;Athens Leste II
+3984;NAX;Ermoupoli
+4501;NAX;Ermoupoli Nordeste
+4502;NAX;Ermoupoli Nordeste II
+4499;NAX;Ermoupoli Oeste
+4497;NAX;Ermoupoli Sul
+4496;NAX;Hios Oeste
+4500;NAX;Kos Sudoeste
+
+# NEV — Nevers
+3942;NEV;Nevers
+
+# NOG — Horda Nogai
+4186;NOG;Aqsay
+4151;NOG;Aqsay Sul
+3686;NOG;Aqtobe
+568;NOG;Aral
+4257;NOG;Astrakhan Sudeste
+426;NOG;Atyrau
+753;NOG;Balkanabat Sul
+448;NOG;Bayghanin Sudoeste
+4127;NOG;Belebey Norte
+571;NOG;Beyneu
+3868;NOG;Buzuluk
+3069;NOG;Celeken
+3456;NOG;Chapaev Leste
+439;NOG;Dombarovskiy
+567;NOG;Fort Shevchenko
+3061;NOG;Fort Shevchenko Sul
+4519;NOG;Fort Shevchenko Sul II
+4191;NOG;Khromtau
+3607;NOG;Magnitogorsk
+3573;NOG;Makhachkala
+4330;NOG;Makhachkala Sul
+648;NOG;Mangyshlak
+496;NOG;Maqat
+470;NOG;Oktyabrsk
+3720;NOG;Oral
+3574;NOG;Orenburg
+3696;NOG;Orsk
+4190;NOG;Pallasovka Leste
+4158;NOG;Pugachev Nordeste
+528;NOG;Qulsary
+3506;NOG;Samara
+4141;NOG;Sibay Nordeste
+4133;NOG;Sibay Oeste
+4173;NOG;Sol-lletsk Noroeste
+3764;NOG;Sterlitamak
+
+# NOR — Noruega
+3981;NOR;Akureyri
+3997;NOR;Alta
+3719;NOR;Bergen
+3963;NOR;Bodø
+4033;NOR;Bærum
+3994;NOR;Egilsstaðir
+4494;NOR;Finnsnes Leste
+3977;NOR;Gjøvik
+4007;NOR;Höfn
+3990;NOR;Kirkwall
+3900;NOR;Kristiansand
+3995;NOR;Leikanger
+4026;NOR;Leikanger Nordeste
+3993;NOR;Lerwick
+4003;NOR;Mo i Rana
+4014;NOR;Molde Leste
+3978;NOR;Narvik
+3537;NOR;Oslo
+3755;NOR;Reykjavík
+4505;NOR;Rørvik Sudeste
+4506;NOR;Rørvik Sudeste II
+4038;NOR;Sandnes Leste
+4006;NOR;Selfoss Leste
+4030;NOR;Skien
+3746;NOR;Stavanger
+3783;NOR;Trondheim
+4479;NOR;Trondheim Oeste
+4509;NOR;Trondheim Oeste II
+3983;NOR;Tórshavn
+4495;NOR;Tórshavn Norte
+4029;NOR;Vossavangen Norte
+3936;NOR;Ålesund
+
+# NOV — Novgorod
+3633;NOV;Archangel
+4469;NOV;Belomorsk Leste
+4490;NOV;Belomorsk Nordeste
+3914;NOV;Borovichi
+4035;NOV;Borovichi Sudeste
+4002;NOV;Kemijärvi Nordeste
+4470;NOV;Kotlas Sudoeste
+4009;NOV;Kuopio
+4042;NOV;Luga Noroeste
+3999;NOV;Mezen
+4468;NOV;Mezen Oeste
+3897;NOV;Murmansk
+4004;NOV;Naryan Mar
+4508;NOV;Naryan Mar Leste
+4507;NOV;Naryan Mar Leste II
+4013;NOV;Onega Noroeste
+3683;NOV;Petrozavodsk
+4022;NOV;Planície do Norte da Europa
+4017;NOV;Planície do Norte da Europa II
+4012;NOV;Planície do Norte da Europa IV
+3989;NOV;Rovaniemi
+3966;NOV;Segezha
+4048;NOV;Staraya Russa Nordeste
+4052;NOV;Staraya Russa Noroeste
+4021;NOV;Svetogorsk Leste
+3902;NOV;Tikhvin
+3843;NOV;Ukhta
+3714;NOV;Velikiy Novgorod
+62;NOV;Vorkuta
+
+# OIR — Oirates
+507;OIR;Altay
+711;OIR;Dunhuang
+674;OIR;Hami
+619;OIR;Hami Sul
+727;OIR;Korla
+433;OIR;Kyzyl Norte
+413;OIR;Olgiy
+678;OIR;Turpan
+783;OIR;Turpan Nordeste
+749;OIR;Turpan Nordeste II
+607;OIR;Turpan Sul
+469;OIR;Ulaangom
+541;OIR;Zaysan
+630;OIR;Ürümqi
+689;OIR;Ürümqi Noroeste
+
+# OMA — Omã
+1697;OMA;Al Fujayrah
+3143;OMA;Hilf
+1893;OMA;Hilf Sudoeste
+1790;OMA;Muscat
+1774;OMA;Seeb
+
+# ORD — Ormond
+3934;ORD;Waterford
+
+# ORI — Orissa
+1885;ORI;Bhubaneswar
+1918;ORI;Brahmapur
+1823;ORI;Jamshedpur
+1848;ORI;Jamshedpur Noroeste
+1856;ORI;Medinipur
+1875;ORI;Puri
+1894;ORI;Raipur Nordeste
+1847;ORI;Raurkela
+
+# ORL — Orleães
+3715;ORL;Orléans
+
+# ORM — Ormuz
+3113;ORM;Al-Qatif Sudeste
+1610;ORM;Dammam
+1667;ORM;Doha
+1664;ORM;Dubai
+1660;ORM;Hofuf
+
+# OUA — Ouarsenis
+1050;OUA;Blida
+
+# OUC — Ouchi
+3084;OUC;Busan Nordeste
+1258;OUC;Fukuoka
+1199;OUC;Hiroshima
+1184;OUC;Hiroshima Sudoeste
+1153;OUC;Matsue Noroeste
+1118;OUC;Matsue Oeste
+1239;OUC;Sasebo
+3086;OUC;Sasebo Sudoeste
+1242;OUC;Shimonoseki
+1211;OUC;Shimonoseki Sudeste
+1207;OUC;Shimonoseki Sudoeste
+1171;OUC;Shimonoseki Sul
+
+# OUJ — Oujda
+3609;OUJ;Oujda Sul
+
+# OYO — Oyo
+2301;OYO;Cotonou
+2232;OYO;Djougou
+2255;OYO;Ilorin
+2270;OYO;Ilorin Leste
+2229;OYO;Kaduna
+2305;OYO;Lagos
+2290;OYO;Ogbomosho
+2233;OYO;Parakou Sudeste
+2268;OYO;Sotouboua Leste
+
+# PAG — Pagaruyung
+2513;PAG;Bandar Lampung
+2463;PAG;Bengkulu
+2431;PAG;Jambi
+2412;PAG;Jambi Sudoeste
+2490;PAG;Kotabumi
+2461;PAG;Lahat Sul
+2402;PAG;Padang
+2374;PAG;Padangsidempuan
+2479;PAG;Palembang
+2452;PAG;Palembang Sul
+2405;PAG;Pekanbaru Nordeste
+2435;PAG;Sungaipenuh
+2369;PAG;Tarutung Leste
+
+# PAL — Palatinado
+3477;PAL;Mannheim
+
+# PAP — Estados Papais
+3848;PAP;Ancona
+3589;PAP;Bologna
+3802;PAP;Ravenna
+3465;PAP;Rome
+4337;PAP;San Marino Sudeste
+
+# PEG — Hanthawaddy
+1968;PEG;Bago
+1975;PEG;Hinthada
+2010;PEG;Mawlamyine
+1971;PEG;Pyu Leste
+2018;PEG;Yangon
+
+# PER — Grande Perm
+3846;PER;Berezniki
+3918;PER;Chusovoy Sudeste
+3847;PER;Glazov
+4027;PER;Kirs Sul
+3522;PER;Perm
+4010;PER;Planície do Norte da Europa III
+4019;PER;Planície do Vychegda
+3708;PER;Syktyvkar
+
+# PLM — Pelym
+117;PLM;Igrim Sul
+191;PLM;Ivdel
+175;PLM;Khanty Mansiysk
+169;PLM;Nyagan
+95;PLM;Pechora
+150;PLM;Peregrebnoye
+227;PLM;Serov
+189;PLM;Uray
+
+# POL — Polônia
+4238;POL;Baia Mare Sudeste
+3626;POL;Bydgoszcz
+4166;POL;Bytom Sul
+4233;POL;Bălți
+3670;POL;Chernivtsi
+4215;POL;Drohobych
+4202;POL;Drohobych Sudoeste
+4136;POL;Inowrocław Noroeste
+3700;POL;Ivano-Frankivsk
+4226;POL;Kamyanets-Podilskyy
+3471;POL;Katowice
+3614;POL;Khmelnytskyy
+3718;POL;Kielce
+4155;POL;Kielce Sudeste
+4189;POL;Kraków
+4200;POL;Kraków Noroeste
+3629;POL;Lublin
+4167;POL;Lublin Nordeste
+3540;POL;Lviv
+4176;POL;Lviv Sul
+3566;POL;Poznań
+4201;POL;Prešov Sul
+3697;POL;Rzeszów
+4175;POL;Rzeszów Sudeste
+4171;POL;Rzeszów Sul
+3698;POL;Ternopil
+4232;POL;Uzhgorod Leste
+4150;POL;Wrocław Sudeste
+4147;POL;Zielona Góra Leste
+3546;POL;Łódź
+
+# POM — Pomerânia
+4089;POM;Gdańsk Oeste
+4078;POM;Gdynia Oeste
+3832;POM;Koszalin
+4098;POM;Koszalin Nordeste
+4110;POM;Koszalin Norte
+3905;POM;Stralsund
+3611;POM;Szczecin
+4097;POM;Szczecin Sudeste
+4088;POM;Szczecin Sul
+
+# POR — Portugal
+3965;POR;Castelo Branco
+4456;POR;Ceuta
+3836;POR;Coimbra
+3969;POR;Guarda
+4407;POR;Leiria
+3470;POR;Lisbon
+4442;POR;Portimão
+3495;POR;Porto
+4418;POR;Santarém II
+4436;POR;Setúbal Nordeste
+3980;POR;Vila Real
+3921;POR;Évora
+
+# PRO — Provença
+3738;PRO;Angers
+4326;PRO;Grenoble Norte
+3784;PRO;Marseille
+
+# PSK — Pskov
+3727;PSK;Pskov
+4059;PSK;Rēzekne
+
+# PUE — Pueblos
+1007;PUE;Albuquerque
+846;PUE;Aurora
+755;PUE;Denver
+998;PUE;Dumas
+953;PUE;Farmington
+971;PUE;Gallup
+895;PUE;Pueblo
+964;PUE;Trinidad
+
+# QAR — Qara Qoyunlu
+4410;QAR;Ahar
+3606;QAR;Ardabil
+1261;QAR;Baghdad
+1059;QAR;Dayr az Zawr
+3665;QAR;Ganca
+4450;QAR;Mahabad
+1172;QAR;Mandali
+943;QAR;Maragheh
+1251;QAR;Najaf
+3857;QAR;Naxcivan
+1127;QAR;Samarra
+3493;QAR;Tabriz
+3623;QAR;Van
+3510;QAR;Yerevan
+959;QAR;Zanjan Sudoeste
+
+# QUI — Quiche
+2076;QUI;Guatemala City
+2038;QUI;Huehuetenango Sul
+2053;QUI;Livingston
+2073;QUI;Quetzaltenango
+2047;QUI;San Luis
+2113;QUI;San Salvador
+2078;QUI;Santa Rosa de Copán
+2016;QUI;Tuxtla Gutiérrez
+1993;QUI;Villahermosa
+
+# RAG — Ragusa
+3555;RAG;Sarajevo
+
+# RAM — Ramazanoğlu
+3497;RAM;Adana
+
+# RYA — Riazã
+3953;RYA;Alekseyevka
+4157;RYA;Borisoglebsk Oeste
+3581;RYA;Lipetsk
+4092;RYA;Morshansk
+4100;RYA;Novomoskovsk Nordeste
+3580;RYA;Ryazan
+3710;RYA;Starsy Oskol
+3668;RYA;Tambov
+3535;RYA;Voronezh
+3931;RYA;Yelets
+
+# SAL — Salzburgo
+4258;SAL;Rosenheim Norte
+3723;SAL;Salzburg
+4248;SAL;Salzburg Leste
+
+# SAM — Samtskhe
+4390;SAM;Kars Sul
+
+# SAV — Saboia
+4299;SAV;Annecy Nordeste
+4294;SAV;Annecy Noroeste
+3964;SAV;Aosta
+3501;SAV;Geneva
+4270;SAV;Geneva Sudoeste
+4277;SAV;Lausanne
+4265;SAV;Neuchâtel
+3527;SAV;Nice
+4295;SAV;Novara Sudoeste
+4282;SAV;Sion Leste
+3488;SAV;Turin
+4327;SAV;Turin Norte
+
+# SAX — Saxônia
+3666;SAX;Chemnitz
+3567;SAX;Dresden
+3724;SAX;Erfurt
+4154;SAX;Erfurt Sul
+3840;SAX;Jena
+3575;SAX;Leipzig
+4146;SAX;Potsdam Norte
+
+# SCO — Escócia
+3736;SCO;Aberdeen
+4512;SCO;Ayr
+4073;SCO;Ayr Norte
+4513;SCO;Douglas
+3779;SCO;Edinburgh
+4066;SCO;Edinburgh Nordeste
+3987;SCO;Fort William
+3505;SCO;Glasgow
+4068;SCO;Greenock Oeste
+3945;SCO;Inverness
+4047;SCO;Inverness Leste
+4037;SCO;Wick
+
+# SER — Sérvia
+3512;SER;Belgrade
+3748;SER;Kragujevac
+4324;SER;Kragujevac Sudeste
+4360;SER;Kyustendil Sudoeste
+4359;SER;Pec Sudoeste
+3593;SER;Pristina
+4349;SER;Čačak Norte
+
+# SIB — Canato de Sibir
+248;SIB;Alapayevsk
+294;SIB;Ishim
+276;SIB;Kamensk Uralskiy
+308;SIB;Kurtamysh
+321;SIB;Petropavlovsk
+296;SIB;Polevskoy
+186;SIB;Surgut
+267;SIB;Tara
+265;SIB;Tobolsk
+220;SIB;Tobolsk Sudeste
+280;SIB;Tyumen
+263;SIB;Yekaterinburg
+
+# SIE — Siena
+3782;SIE;Perugia
+
+# SIO — Sioux
+584;SIO;Aberdeen II
+529;SIO;Bismarck
+590;SIO;Brookings
+698;SIO;Casper
+696;SIO;Chadron
+649;SIO;Cody
+581;SIO;Dickinson Norte
+658;SIO;Douglas Sul
+770;SIO;Fort Collins
+614;SIO;Gillette
+718;SIO;Grand Island
+524;SIO;Jamestown
+520;SIO;Miles City
+502;SIO;Minot
+582;SIO;Pierre
+659;SIO;Pierre Noroeste
+617;SIO;Powell Sudeste
+620;SIO;Rapid City
+757;SIO;Rawlins
+716;SIO;Riverton
+739;SIO;Scottsbluff
+776;SIO;Sidney
+636;SIO;Sioux Falls
+493;SIO;Williston
+700;SIO;Yankton
+
+# SJL — Sijilmassa
+1231;SJL;Béchar
+
+# SMZ — Shimazu
+1332;SMZ;Kagoshima
+3092;SMZ;Kanoya
+1276;SMZ;Kumamoto
+
+# SND — Sindh
+1740;SND;Bhuj Sul
+1656;SND;Karachi
+1638;SND;Larkana Noroeste
+1592;SND;Larkana Oeste II
+1665;SND;Mirpur Khas
+
+# SON — Songai
+2110;SON;Ayorou
+1920;SON;Bourem
+1999;SON;Gao
+2058;SON;Gorom Gorom Sul
+2081;SON;Tillabéri
+2093;SON;Tillabéri Sudeste
+
+# SOR — Soran
+3496;SOR;Mosul
+
+# SRV — Shirvan
+3480;SRV;Baku
+3837;SRV;Derbent
+3985;SRV;Saki
+4421;SRV;Şirvan
+
+# SUL — Sultanato de Sulu
+2046;SUL;Angeles
+2138;SUL;Batangas
+3242;SUL;Lahad Datu Leste
+3240;SUL;Lahad Datu Leste II
+2092;SUL;Manila
+3193;SUL;Naga
+3196;SUL;Naga Noroeste
+2118;SUL;Naga Sul
+3186;SUL;Olongapo Norte
+3204;SUL;Roxas Sudoeste
+3189;SUL;San Pablo Leste
+3229;SUL;Sandakan Sul
+3232;SUL;Zamboanga
+3236;SUL;Zamboanga Noroeste
+3235;SUL;Zamboanga Oeste
+
+# SUN — Sunda
+2532;SUN;Bandung
+2535;SUN;Jakarta
+2551;SUN;Tasikmalaya
+
+# SWE — Suécia
+4024;SWE;Borlänge
+4005;SWE;Escandinávia
+3895;SWE;Gävle
+3578;SWE;Göteborg
+4023;SWE;Hamar Sudeste
+3507;SWE;Helsinki
+3928;SWE;Joensuu
+3852;SWE;Jyväskylä
+3864;SWE;Jönköping
+3959;SWE;Kalmar
+3958;SWE;Karlskrona
+4028;SWE;Karlstad
+3939;SWE;Kokkola
+3911;SWE;Lappeenranta
+4001;SWE;Lapônia
+4044;SWE;Linköping
+4041;SWE;Linköping Oeste
+4000;SWE;Luleå Sul
+4475;SWE;Mariehamn
+4476;SWE;Mariehamn Nordeste
+3982;SWE;Mariestad
+4036;SWE;Norrköping
+3798;SWE;Oulu
+4020;SWE;Pori
+3462;SWE;St.  Petersburg
+4008;SWE;Steinkjer Leste
+3500;SWE;Stockholm
+3884;SWE;Sundsvall
+3688;SWE;Tampere
+3745;SWE;Turku
+3882;SWE;Umeå
+4016;SWE;Vaasa
+4483;SWE;Vaasa Sudoeste
+4034;SWE;Vannersborg
+3910;SWE;Växjö
+3851;SWE;Örebro
+4011;SWE;Örnsköldsvik Sudoeste
+3941;SWE;Östersund
+4018;SWE;Östersund Noroeste
+4015;SWE;Östersund Oeste
+
+# SWI — Suíça
+3679;SWI;Bern
+3954;SWI;Chur
+4278;SWI;Chur Nordeste
+3838;SWI;Lugano
+3988;SWI;Luzern
+3509;SWI;Zürich
+
+# TAI — Taínos
+1932;TAI;Cap-Haïtien
+3155;TAI;Christiansted Sul
+1974;TAI;Kingston
+1951;TAI;Port-au-Prince
+1934;TAI;Puerto Plata Sul
+1976;TAI;San Juan
+1960;TAI;San Pedro de Macorís
+3139;TAI;Sancti Spíritus
+1952;TAI;Santo Domingo
+
+# TAR — Tarascos
+1867;TAR;Aguascalientes
+1928;TAR;Celaya
+1919;TAR;Guadalajara
+1910;TAR;Guadalajara Noroeste
+1891;TAR;Guadalajara Sudeste
+1896;TAR;Guadalajara Sudoeste
+1912;TAR;Irapuato
+1863;TAR;León
+1982;TAR;Lázaro Cárdenas
+1953;TAR;Morelia
+1913;TAR;Querétaro
+1946;TAR;Uruapan
+1933;TAR;Zamora
+
+# TEU — Ordem Teutônica
+3944;TEU;Chernyakhovsk
+4099;TEU;Elbląg
+3550;TEU;Gdańsk
+3603;TEU;Kaliningrad
+3733;TEU;Klaipėda
+3740;TEU;Olsztyn
+4111;TEU;Olsztyn Nordeste
+
+# TGT — Touggourt
+1305;TGT;Ghardaia
+
+# THO — Thomond
+3863;THO;Limerick
+
+# TIB — Tibete
+1398;TIB;Chamdo
+1405;TIB;Chamdo Leste
+1436;TIB;Chamdo Nordeste
+1469;TIB;Chamdo Norte
+1363;TIB;Chamdo Sudeste
+1311;TIB;Chamdo Sudeste II
+1344;TIB;Chamdo Sul
+1575;TIB;Gangtok Sul
+1675;TIB;Guwahati
+1580;TIB;Ilam Sudoeste
+1550;TIB;Itanagar Sul
+1260;TIB;Jyekundo
+1287;TIB;Jyekundo Leste
+1310;TIB;Jyekundo Noroeste
+1232;TIB;Jyekundo Sudeste
+1192;TIB;Jyekundo Sul
+1556;TIB;Kathmandu Sudeste
+1507;TIB;Lhasa
+1489;TIB;Lhasa Sudeste
+1477;TIB;Lhasa Sudoeste
+1510;TIB;Lijiang Sudoeste
+1525;TIB;Lijiang Sul
+1382;TIB;Nagchu
+1262;TIB;Nagchu Sudoeste
+1320;TIB;Nagchu Sul
+1449;TIB;Nyingchi
+1523;TIB;Nyingchi Nordeste
+1419;TIB;Nyingchi Sudoeste
+1364;TIB;Nyingchi Sul
+1464;TIB;Planalto do Tibete
+1347;TIB;Planalto do Tibete III
+1245;TIB;Planalto do Tibete IV
+1532;TIB;Pokhara Sudeste
+1562;TIB;Punakha
+1569;TIB;Punakha Sudeste
+1437;TIB;Rongzhag Noroeste
+1325;TIB;Rongzhag Sudoeste
+1626;TIB;Thimphu
+1613;TIB;Wangdue Prodrang
+1499;TIB;Xigaze
+1515;TIB;Xigaze Oeste
+1430;TIB;Xigaze Sudoeste
+1462;TIB;Xigaze Sul
+
+# TIM — Timúridas
+974;TIM;Amol Sudoeste
+748;TIM;Angren
+912;TIM;Ashgabat
+1067;TIM;Baghlan
+1538;TIM;Bam
+1160;TIM;Bamian
+1542;TIM;Bandar-e-Abbas Sudeste
+1579;TIM;Bandar-e-Abbas Sudoeste
+1424;TIM;Behbehan
+1372;TIM;Behbehan Sul
+1223;TIM;Birjand
+1229;TIM;Birjand Oeste
+948;TIM;Bojnurd
+988;TIM;Bojnurd Noroeste
+804;TIM;Bukhara Sudoeste
+839;TIM;Buzmeyin Sul
+872;TIM;Denow
+877;TIM;Dushanbe
+782;TIM;Fargona
+835;TIM;Fargona Norte
+848;TIM;Fargona Norte II
+1529;TIM;Fasa
+1582;TIM;Fasa Norte
+785;TIM;Guliston
+1145;TIM;Hamadan
+1075;TIM;Hamadan Sudeste
+1175;TIM;Herat
+1255;TIM;Isfahan
+1102;TIM;Kabul
+975;TIM;Kaka
+1220;TIM;Kashan
+1204;TIM;Kashan Leste
+1173;TIM;Kashmar Noroeste
+786;TIM;Kattaqorgon Sul
+1293;TIM;Kerman
+1474;TIM;Kerman Leste
+1485;TIM;Kerman Norte
+823;TIM;Khujand
+922;TIM;Kulob
+1201;TIM;Malayer Oeste
+1495;TIM;Marv Dasht
+1453;TIM;Marv Dasht Sudeste
+1010;TIM;Mashhad
+939;TIM;Mazar-i-Sharif
+1043;TIM;Meymaneh
+1088;TIM;Neyshabur
+713;TIM;Nukus
+738;TIM;Nukus Leste
+794;TIM;Olmaliq
+1083;TIM;Qala i Naw
+1022;TIM;Qazvin
+1174;TIM;Qom
+1306;TIM;Qomsheh
+667;TIM;Qunghirot
+958;TIM;Qurghonteppa
+1080;TIM;Sabzewar
+817;TIM;Samarkand
+1292;TIM;Shahrekord
+871;TIM;Shahrisabz
+951;TIM;Sheberghan
+1504;TIM;Shiraz
+1461;TIM;Sirjan
+1509;TIM;Sirjan Noroeste
+1553;TIM;Sirjan Noroeste II
+722;TIM;Tashkent
+1101;TIM;Tehran
+1062;TIM;Tehran Sul
+908;TIM;Tejen
+761;TIM;Toktogul
+1051;TIM;Torbat-e Jam
+847;TIM;Türkmenabat
+1457;TIM;Yasuj
+1380;TIM;Yasuj Sudeste
+1362;TIM;Yazd
+1425;TIM;Yazd Norte
+1316;TIM;Yazd Oeste
+1295;TIM;Yazd Sudeste
+1270;TIM;Yazd Sul
+1152;TIM;Yazdan
+1259;TIM;Yazdan Nordeste
+1265;TIM;Zabol
+1309;TIM;Zabol Sudoeste
+1434;TIM;Zahedan
+1560;TIM;Zahedan Noroeste
+
+# TKD — Takeda
+1113;TKD;Kōfu
+1130;TKD;Kōfu Leste
+1061;TKD;Maebashi
+1121;TKD;Shizuoka
+
+# TLA — Tlaxcala
+1948;TLA;Puebla
+
+# TLE — Tlemcen
+1026;TLE;Chlef
+1008;TLE;Chlef Sul
+4457;TLE;Melilla Sudeste
+3455;TLE;Mostaganem Sul
+1095;TLE;Oran
+3542;TLE;Oran Sudoeste
+1087;TLE;Oujda
+
+# TRE — Império de Trebizonda
+4402;TRE;Giresun Norte
+4381;TRE;Giresun Sudeste
+3545;TRE;Trabzon
+
+# TRI — Trier
+4181;TRI;Diekirch Sul
+4193;TRI;Grevenmacher Leste
+3658;TRI;Koblenz
+3544;TRI;Saarbrücken
+
+# TUN — Tunis (Hafsidas)
+1096;TUN;Batna
+973;TUN;Bizerte
+957;TUN;Bizerte Sudoeste
+986;TUN;Béja
+984;TUN;Béjaïa
+1041;TUN;Constantine
+1058;TUN;Jendouba
+4471;TUN;Mahdia
+4472;TUN;Mahdia Oeste
+1307;TUN;Misrata
+3475;TUN;Nabeul Oeste
+1097;TUN;Qairouan
+1219;TUN;Sfax
+1009;TUN;Skikda
+969;TUN;Skikda Sul
+3645;TUN;Sousse
+1377;TUN;Surt Sudeste
+1053;TUN;Sétif
+1285;TUN;Tripoli
+1272;TUN;Tripoli Sudeste
+1042;TUN;Tunis
+
+# TUP — Tupinambás
+2594;TUP;Aracaju
+2763;TUP;Barbacena
+2786;TUP;Campinas
+2774;TUP;Campos
+2742;TUP;Caratinga
+2753;TUP;Conselheiro Lafaiete
+2769;TUP;Juiz de Fora
+2752;TUP;Passos
+2765;TUP;Poços de Caldas
+2789;TUP;Rio de Janeiro
+2794;TUP;Rio de Janeiro Norte
+2611;TUP;Salvador
+2799;TUP;São José dos Campos Nordeste
+2801;TUP;São Paulo
+2782;TUP;Taubaté
+2754;TUP;Vitória
+
+# TUR — Império Otomano
+4380;TUR;Adapazarı Sul
+3768;TUR;Afyon
+4434;TUR;Afyon Nordeste
+4482;TUR;Alexandroupoli
+4461;TUR;Alexandroupoli Noroeste
+4533;TUR;Alexandroupoli Oeste
+3463;TUR;Ankara
+3543;TUR;Antalya
+4444;TUR;Aydın
+3687;TUR;Balıkesir
+3871;TUR;Bitola
+4388;TUR;Bitola Leste
+3731;TUR;Burgas
+3490;TUR;Bursa
+3743;TUR;Corum
+3622;TUR;Denizli
+4448;TUR;Denizli Nordeste
+4343;TUR;Drobeta-Turnu Severin Noroeste
+3812;TUR;Edirne
+3582;TUR;Eskişehir
+3933;TUR;Giurgiu
+4491;TUR;Hios
+4463;TUR;Hios Nordeste
+3872;TUR;Ioanina
+4439;TUR;Isparta
+4389;TUR;Kavala
+4534;TUR;Kavala Nordeste
+4379;TUR;Khaskovo
+4523;TUR;Komatini
+4532;TUR;Komatini Leste
+4480;TUR;Komatini Leste II
+4400;TUR;Korçë Leste
+4375;TUR;Kyustendil Norte
+3938;TUR;Lamia
+3809;TUR;Larissa
+4361;TUR;Lovec Noroeste
+4377;TUR;Lüleburgaz Sudeste
+4429;TUR;Manisa
+3970;TUR;Mitilini
+3691;TUR;Niš
+3774;TUR;Ordu
+3820;TUR;Pleven
+3638;TUR;Plovdiv
+4420;TUR;Polatlı
+4424;TUR;Polatlı Nordeste
+3955;TUR;Ruse
+3568;TUR;Samsun
+4376;TUR;Seres Sul
+3684;TUR;Sivas
+4417;TUR;Sivas Leste
+3587;TUR;Skopje
+4362;TUR;Sliven
+3503;TUR;Sofia
+3791;TUR;Stara Zagora
+3815;TUR;Tekirdağ
+3538;TUR;Thessaloniki
+4401;TUR;Tokat
+3930;TUR;Turnovo
+3775;TUR;Uşak
+3657;TUR;Varna
+3865;TUR;Vlorë
+4409;TUR;Volos
+3937;TUR;Vratsa
+3867;TUR;Çanakkale
+3474;TUR;İzmir
+3676;TUR;İzmit
+
+# TVE — Tver
+3961;TVE;Bezhetsk
+3973;TVE;Nelidovo
+4067;TVE;Obninsk Sudoeste
+3901;TVE;Rzhev
+3613;TVE;Tver
+4053;TVE;Vyshnniy Volochek
+
+# UES — Uesugi
+979;UES;Nagano
+977;UES;Nagaoka
+891;UES;Niigata
+1006;UES;Toyama
+983;UES;Toyama Sul
+
+# ULS — Ulster
+3598;ULS;Belfast
+4072;ULS;Donegal Sul
+3876;ULS;Londonderry/Derry
+
+# UZB — Canato Usbeque
+505;UZB;Aqadyr
+421;UZB;Arqalyq
+479;UZB;Atasu
+483;UZB;Ayakoz Oeste
+646;UZB;Burylbaytal
+340;UZB;Erymentau
+406;UZB;Esil
+650;UZB;Kentau Sul
+352;UZB;Kokshetau
+338;UZB;Kulunda
+450;UZB;Nur-Sultan Noroeste
+363;UZB;Oostanay
+384;UZB;Pavlodar
+422;UZB;Qaraghandy
+702;UZB;Qaratau
+651;UZB;Qaratau Sul
+621;UZB;Qaratau Sul II
+488;UZB;Qarqaraly Norte
+597;UZB;Qyzylorda
+609;UZB;Qyzylorda Sudeste
+443;UZB;Semey
+662;UZB;Taraz Sul
+337;UZB;Troitsk
+429;UZB;Zhaltyr Norte
+472;UZB;Zhezqazghan
+474;UZB;Zhezqazghan Sul
+
+# VEN — Veneza
+4527;VEN;Athens Leste
+4300;VEN;Bergamo
+4288;VEN;Bergamo Sudeste
+4419;VEN;Chalkida Sul
+4526;VEN;Ermoupoli Sul II
+4453;VEN;Hania
+3797;VEN;Iraklio
+3992;VEN;Korçë
+4525;VEN;Polygyros Nordeste
+4458;VEN;Sitia
+4531;VEN;Sparti Nordeste
+3819;VEN;Udine
+3680;VEN;Venice
+3892;VEN;Zadar
+
+# VIJ — Vijayanagar
+2065;VIJ;Ballari
+2130;VIJ;Bengaluru
+2146;VIJ;Chennai
+2191;VIJ;Coimbatore
+2111;VIJ;Davangere
+2097;VIJ;Hosapete
+2039;VIJ;Hubballi
+2096;VIJ;Hubballi Nordeste
+2235;VIJ;Kochi
+2034;VIJ;Kolhapur
+2048;VIJ;Kurnool
+2231;VIJ;Madurai
+2132;VIJ;Mangaluru
+2175;VIJ;Mangaluru Nordeste
+2188;VIJ;Mysuru Oeste
+2068;VIJ;Nellore
+2060;VIJ;Panaji
+2160;VIJ;Salem
+2254;VIJ;Thiruvananthapuram
+2181;VIJ;Tiruchirappalli
+2090;VIJ;Tirupati
+2127;VIJ;Tumakuru
+
+# VYA — Viatka
+3596;VYA;Kirov
+
+# WAL — Valáquia
+3481;WAL;Bucharest
+3806;WAL;Buzău
+3664;WAL;Constanța
+3663;WAL;Craiova
+3886;WAL;Călărași
+3660;WAL;Galați
+3749;WAL;Pitești
+
+# WUR — Württemberg
+4205;WUR;Heidelberg Leste
+3468;WUR;Stuttgart
+4236;WUR;Stuttgart Norte
+3747;WUR;Ulm
+
+# YAR — Iaroslavl
+4055;YAR;Kimry
+3569;YAR;Yaroslavl
+
+# YEM — Iêmen
+2064;YEM;'Ataq Sudoeste
+1990;YEM;Abha
+2133;YEM;Aden
+2120;YEM;Al Bayda
+2102;YEM;Al Hudaydah
+2117;YEM;Ibb
+2045;YEM;Marib
+1985;YEM;Najran
+2027;YEM;Sadah
+2055;YEM;Sanaa
+2123;YEM;Zabīd
+
+# ZAP — Zapotecas
+2008;ZAP;Huajuapan de León
+2003;ZAP;Minatitlán
+2020;ZAP;Oaxaca
+2032;ZAP;Pochutla
+2021;ZAP;Salina Cruz
+1998;ZAP;Tehuacan Nordeste
+
+# ZET — Zeta
+4356;ZET;Podgorica
+
+# ZIM — Zimbábue
+2727;ZIM;Beira
+2757;ZIM;Beitbridge
+2733;ZIM;Bulawayo
+2695;ZIM;Chinhoyi
+2768;ZIM;Chiredzi Noroeste
+2767;ZIM;Francistown
+2705;ZIM;Gweru
+2708;ZIM;Harare
+2684;ZIM;Hwange
+2751;ZIM;Massangena
+2750;ZIM;Masvingo
+2737;ZIM;Mutare
+2720;ZIM;Mutare Sul
+2699;ZIM;Tete Noroeste
+2791;ZIM;Thohoyandou
+2781;ZIM;Xai-Xai
+
+# sem dono
+2446;;Abaetetuba
+336;;Abakan
+2601;;Abau Sul
+2321;;Abengourou
+2322;;Abidjan
+1771;;Abu Dhabi
+2325;;Accra
+298;;Achinsk
+2198;;Ad Damazīn
+2874;;Adelaide
+1423;;Adrar
+2031;;Agadez
+3188;;Agana
+1408;;Ajdabiya
+789;;Akron
+715;;Aksu
+1551;;Al Ahmadi Norte
+2040;;Al Ghaydah
+3185;;Al Hudaydah Norte
+1694;;Al Jawf
+2072;;Al Mukalla
+1751;;Al Quwayiyah
+1802;;Al Quwayiyah Noroeste
+2023;;Al-Ubayyid
+3008;;Alasca
+2873;;Albany III
+230;;Aldan Oeste
+2740;;Alice Springs
+562;;Almaty
+3406;;Alofi
+2606;;Alotau
+3353;;Alotau Leste
+3357;;Alotau Nordeste
+3340;;Alotau Sudeste
+3337;;Alotau Sudeste II
+3334;;Alotau Sul
+640;;Alpena
+2509;;Alta Floresta
+2948;;Alta Sudoeste
+2455;;Altamira
+714;;Alxa Zuoqi
+3298;;Amahai Leste
+3301;;Amahai Nordeste
+1117;;Amarillo
+2971;;Ambarchik
+2704;;Ambatondrazaka
+2701;;Ambatondrazaka Oeste
+2475;;Ambon
+3297;;Ambon Oeste
+2483;;Ambon Oeste II
+2785;;Americana
+599;;Amherst
+428;;Amos
+1371;;An Nasiriyah
+110;;Anadyr
+131;;Anadyr Noroeste
+168;;Anchorage
+163;;Aniak
+2728;;Antananarivo
+2796;;Antofagasta
+2640;;Antsiranana
+2598;;Anápolis
+3380;;Apia
+3377;;Apia Oeste
+661;;Appleton
+1618;;Arak II
+2526;;Arawa
+2;;Arctic Bay
+536;;Argentia Oeste
+2610;;Aripuanã
+1767;;Arlit
+3362;;Arquipélago das Ilhas Salomão
+3408;;Arquipélago de Tuamotu
+3407;;Arquipélago de Tuamotu II
+3249;;Arquipélago malaio
+70;;Arquipélago Ártico Canadense
+2975;;Arquipélago Ártico Canadense II
+2980;;Arquipélago Ártico Canadense III
+171;;Arquipélago Ártico Canadense IV
+2973;;Arquipélago Ártico Canadense IX
+2982;;Arquipélago Ártico Canadense V
+2977;;Arquipélago Ártico Canadense VI
+69;;Arquipélago Ártico Canadense VII
+2970;;Arquipélago Ártico Canadense VIII
+85;;Arquipélago Ártico Canadense X
+2954;;Arquipélago Ártico Canadense XI
+3;;Arquipélago Ártico Canadense XII
+30;;Arquipélago Ártico Canadense XIII
+2935;;Arquipélago Ártico Canadense XIV
+25;;Arquipélago Ártico Canadense XIX
+90;;Arquipélago Ártico Canadense XV
+18;;Arquipélago Ártico Canadense XVI
+83;;Arquipélago Ártico Canadense XVII
+2956;;Arquipélago Ártico Canadense XVIII
+2944;;Arquipélago Ártico Canadense XX
+0;;Arquipélago Ártico Canadense XXI
+1;;Arquipélago Ártico Canadense XXII
+17;;Arquipélago Ártico Canadense XXIII
+2945;;Arquipélago Ártico Canadense XXIV
+2940;;Arquipélago Ártico Canadense XXV
+2939;;Arquipélago Ártico Canadense XXVI
+3095;;Arrecife
+1860;;Artemisa
+1089;;Asadabad Sudeste
+1084;;Asadabad Sul
+2903;;Ashburton
+3026;;Atka
+3027;;Atka Leste
+3030;;Atka Oeste
+3036;;Atka Oeste II
+3033;;Atka Oeste III
+3023;;Atka Oeste IV
+3005;;Atka Sudeste
+3001;;Atka Sudeste II
+325;;Attawapiskat
+372;;Attawapiskat Sudeste
+2888;;Auckland
+1385;;Austin
+2297;;Awasa
+324;;Ayan Norte
+3067;;Açores
+3066;;Açores II
+2476;;Bacabal
+2213;;Bacolod
+552;;Baddeck Sul
+2328;;Bafang
+2313;;Bafia
+312;;Bagdarin
+1970;;Baguio
+827;;Balkanabat
+2534;;Balsas
+1486;;Baluchistão
+2247;;Bambari
+2296;;Bamenda
+2342;;Banda Aceh
+3227;;Banda Aceh Sudoeste
+3238;;Banda Aceh Sul
+2450;;Bandjarmasin
+2480;;Bandundu
+397;;Banff
+2287;;Bangassou
+2333;;Bangui
+1698;;Baoshan
+286;;Barabinsk
+2756;;Barcaldine
+2218;;Barcelona II
+1139;;Barlett
+323;;Barnaul
+2246;;Barquisimeto
+2656;;Barra do Garças
+2210;;Barranquilla
+2602;;Barreiras
+2981;;Barren Grounds
+2979;;Barren Grounds II
+2986;;Barren Grounds III
+2984;;Barren Grounds IV
+1049;;Barstow Sul
+3160;;Basseterre
+3156;;Basseterre Sul
+81;;Batagay
+48;;Batagay Sudeste
+3201;;Batangas Noroeste
+540;;Bathurst
+521;;Bathurst Sudoeste
+2512;;Baubau
+3307;;Baubau Leste
+3314;;Baubau Leste II
+3305;;Baubau Oeste
+2773;;Bauru
+876;;Belleville Leste
+2721;;Belo Horizonte
+364;;Belogorsk
+2430;;Belém
+642;;Bend
+3309;;Bengkulu Norte
+2332;;Berbérati
+129;;Beringovskiy
+2338;;Bertoua
+2700;;Besalampy
+137;;Bethel
+205;;Bethel Noroeste
+2846;;Bhisho
+3277;;Biak
+3283;;Biak Leste
+3289;;Biak Norte
+3287;;Biak Oeste
+322;;Big Beaver House
+495;;Bikin
+66;;Bilibino
+67;;Bilibino Noroeste
+60;;Bilibino Sudeste
+548;;Billings
+2077;;Bilwi
+3254;;Binjai Oeste
+446;;Birobidzhan
+261;;Biryusinsk Sul
+709;;Bishkek
+3207;;Bissau
+370;;Biysk
+430;;Blagoveshchensk
+2675;;Blantyre
+2905;;Blenheim
+2843;;Bloemfontein
+858;;Bloomington
+2285;;Bo
+2331;;Boa Vista
+2258;;Bocas del Toro
+252;;Bodaybo
+231;;Bodaybo Sudeste
+268;;Bogotol
+666;;Boise
+2182;;Boké
+2226;;Bongor
+2391;;Bontang
+2392;;Bontang Oeste
+2204;;Boosaaso
+2262;;Bossangoa
+2286;;Bouaké
+2780;;Boulia
+603;;Bozeman
+554;;Brainerd
+2682;;Brasília
+277;;Bratsk
+2883;;Bredasdorp Noroeste
+2415;;Breves
+3191;;Bridgetown
+2802;;Brisbane
+221;;Brochet
+2709;;Broome
+506;;Buchans Noroeste
+3056;;Buchans Norte
+2866;;Buenos Aires
+2595;;Bukama
+2580;;Bukama Sul
+2380;;Bukavu
+3271;;Bukittinggi Oeste
+2868;;Bunbury
+1689;;Buraydah
+1696;;Buraydah Nordeste
+1597;;Buraydah Sul
+2677;;Burketown
+3392;;Burketown Sudoeste
+3388;;Burketown Sul
+317;;Burns Lake Sudeste
+156;;Burwash Landing Sul
+589;;Butte
+2251;;Butuan
+3181;;Cabanatuan Leste
+2202;;Cabimas
+3210;;Cacheu Noroeste
+2216;;Cadiz Leste
+2265;;Cagayan de Oro
+2707;;Cairns
+2259;;Calabozo
+2718;;Calama
+2170;;Calbayog Sudeste
+682;;Caldwell
+403;;Calgary
+2362;;Cali
+3203;;Caluula Sudeste
+1857;;Camagüey
+3142;;Camagüey Oeste
+29;;Cambridge Bay
+2746;;Campo Grande
+1400;;Cananea
+3144;;Cancún
+2872;;Cape Town
+2574;;Capenda-Camulemba
+2590;;Capenda-Camulemba Noroeste
+3179;;Capitol Hill
+3183;;Capitol Hill Noroeste
+2221;;Caracas
+2804;;Carnarvon
+867;;Carson City
+351;;Cartwright
+2809;;Cascavel
+2908;;Castro
+2838;;Caxias do Sul
+2237;;Cebu
+3218;;Cebu Noroeste
+712;;Cedar Rapids
+2857;;Ceduna
+2211;;Ceerigaabo
+1622;;Chabahar
+1624;;Chabahar Sudoeste
+217;;Chagda
+188;;Chagda Sudoeste
+3304;;Chake Chake
+862;;Charleston II
+899;;Charlottesville
+3053;;Charlottetown Sudeste
+565;;Charlottetown Sul
+382;;Chegdomyn
+63;;Chersky
+75;;Chersky Noroeste
+720;;Chicago
+830;;Chico Sudeste
+473;;Chicoutimi Sul
+283;;Chignik
+3006;;Chignik Sudeste
+1418;;Chihuahua
+2634;;Chipata
+2714;;Chiramba Norte
+36;;Chokurdakh
+38;;Chokurdakh Oeste
+19;;Chokurdakh Sudoeste
+12;;Chokurdakh Sul
+2911;;Christchurch
+3158;;Christiansted
+3154;;Christiansted Sul II
+302;;Chumikan
+335;;Chumikan Nordeste
+360;;Chumikan Noroeste
+3014;;Chumikan Sudeste
+3216;;Chumphon Nordeste
+238;;Churchill
+366;;Churchill Falls
+2279;;Ciudad Guayana
+1298;;Ciudad Juárez
+1514;;Ciudad Obregon
+1750;;Ciudad Victoria
+743;;Cleveland
+601;;Cody Noroeste
+478;;Coeur d'Alene
+961;;Coffeyville
+2906;;Coihaique
+313;;Cold Bay
+875;;Columbia
+778;;Columbus
+2912;;Comodoro Rivadavia
+1895;;Compostela
+2250;;Conakry
+2828;;Concordia
+3433;;Constitución Oeste
+1070;;Conway
+692;;Coos Bay
+122;;Coral Harbour
+119;;Coral Harbour Sudoeste
+49;;Cordilheira Verkhoyansk
+202;;Cordova
+218;;Cordova Leste
+2996;;Cordova Nordeste
+457;;Corner Brook
+2698;;Corumbá
+2288;;Cotabato
+2891;;Cranbourne
+434;;Cranbrook
+2510;;Crato
+2837;;Criciúma
+485;;Crookston
+2652;;Cuamba
+2643;;Cubal
+2458;;Cuenca
+2664;;Cuiabá
+1645;;Culiacán
+850;;Cumberland
+2815;;Curitiba
+2847;;Córdoba
+668;;Dalandzadgad Noroeste
+925;;Dalian
+1190;;Dallas
+1459;;Dandeldhura Sul
+2576;;Daru
+3347;;Daru Noroeste
+2638;;Darwin
+2628;;Darwin Sul
+2293;;Davao
+125;;Dawson City
+777;;Dayton
+264;;Dease Lake Norte
+139;;Denali Park
+2669;;Derby
+701;;Des Moines
+751;;Detroit
+1527;;Dhangarhi
+2713;;Diamantina
+3331;;Dili Leste
+3332;;Dili Leste II
+2571;;Dili Sudeste
+3326;;Dili Sudeste II
+201;;Dillingham
+2762;;Doctor Pedro P. Peña
+2504;;Dodoma
+1766;;Doha Nordeste
+438;;Dolbeau
+113;;Doline
+123;;Doline Leste
+112;;Doline Leste II
+1916;;Dongola
+2163;;Dosso
+2086;;Dosso Sul
+2351;;Douala
+2743;;Dourados
+893;;Dover Norte
+2826;;Dubbo
+1048;;Dulan
+859;;Dulan Sul
+551;;Duluth
+2914;;Dunedin
+851;;Dunhuang Norte
+1723;;Durango
+2845;;Durban
+3373;;Dzaoudzi
+3367;;Dzaoudzi Oeste
+385;;Eastmain
+398;;Eastmain Nordeste
+409;;Eastmain Norte
+3028;;Eastmain Oeste
+575;;Eau Claire
+2366;;Ebebiyín
+339;;Edmonton
+2365;;Edéa
+2966;;Egilsstaðir Sudeste
+59;;Egvekinot
+91;;Egvekinot Oeste
+2964;;Egvekinot Sudeste
+47;;Egvekinot Sul
+2320;;El Dorado
+746;;Elko
+775;;Ely
+2795;;Emerald
+99;;Escudo Canadense
+359;;Escudo Canadense II
+3134;;Escuinapa Noroeste
+708;;Esik Leste
+3346;;Espórades Equatoriais
+3247;;Espórades Equatoriais II
+2907;;Esquel Oeste
+637;;Eugene
+781;;Eureka
+917;;Evansville
+2187;;Eyl
+94;;Fairbanks
+326;;False Pass
+3018;;False Pass Nordeste
+2770;;Farafangana
+3111;;Fasa Norte II
+1066;;Fayetteville
+1421;;Fengjie
+1483;;Fengjie Norte
+2244;;Ferkessédougou Leste
+2755;;Fianarantsoa
+3398;;Fiji
+2730;;Filadelfia
+1122;;Flagstaff
+685;;Flint
+2827;;Florianópolis
+203;;Fort Chipewyan
+258;;Fort McMurray
+149;;Fort Nelson
+257;;Fort St. John
+793;;Fort Wayne
+4049;;Fort William Oeste III
+3184;;Fort-de-France
+2477;;Fortaleza
+412;;Forteau
+2922;;Fox Bay
+2923;;Fox Bay Nordeste
+2414;;Franceville
+595;;Fredericton
+566;;Fredericton Sudeste
+1496;;Freeport
+932;;Fresno
+1969;;Frontera
+1289;;Ft.  Worth
+510;;Fujin
+1508;;Fulin Oeste
+2282;;Gaalkacyo
+2803;;Gaborone
+97;;Galena
+151;;Gambell Nordeste
+2994;;Gambell Norte
+458;;Gander
+476;;Gander Leste
+522;;Gander Noroeste
+517;;Gander Norte
+3077;;Gangneung Leste
+1701;;Ganzhou Nordeste
+1278;;Gar
+1373;;Gar Nordeste
+1221;;Gar Sudeste
+903;;Garden City
+747;;Gary
+477;;Gaspé
+2029;;Gedaref
+2892;;Geelong
+2091;;Geneina
+3243;;General Santos Nordeste
+3244;;General Santos Nordeste II
+3148;;George Town II
+3146;;George Town Sudeste
+2315;;Georgetown
+2710;;Georgetown Noroeste
+2824;;Geraldton
+452;;Geraldton II
+445;;Geraldton Sudoeste
+1208;;Ghazni
+989;;Gilgit Sul
+3327;;Gizo
+2579;;Gizo Nordeste
+2546;;Gizo Sul
+61;;Gjoa Haven Noroeste
+2974;;Gjoa Haven Oeste
+2978;;Gjoa Haven Oeste II
+484;;Glasgow II
+857;;Glenwood Springs Sudoeste
+2314;;Goba
+2839;;Gold Coast
+3431;;Gold Coast Sul
+1018;;Golmud
+3151;;Gonaïves Oeste
+436;;Gorno Altaysk Norte
+2397;;Gorontalo
+2706;;Governador Valadares
+22;;Govorovo
+45;;Govorovo Leste
+39;;Govorovo Leste II
+42;;Govorovo Nordeste
+2853;;Graaff Reinet
+865;;Grand Junction
+297;;Grand Prairie
+687;;Grand Rapids
+580;;Green Bay
+1004;;Greensboro
+1079;;Greenville II
+2863;;Griffith
+27;;Groenlândia
+53;;Groenlândia II
+2731;;Grootfontein
+2931;;Grytviken
+3451;;Grytviken Noroeste
+1727;;Guilin
+1716;;Guilin Leste
+1672;;Guilin Sul
+2552;;Gurupi
+37;;Gyda Oeste
+31;;Gyda Sudeste
+2961;;Gyda Sudoeste
+2957;;Gyda Sudoeste II
+2959;;Gyda Sul
+2946;;Gyda Sul II
+3136;;Güines Nordeste
+3135;;Güines Norte
+2166;;Hadiboh
+1591;;Hafar al Batin Norte
+856;;Hagerstown
+1924;;Haikou
+1937;;Haikou Oeste
+1623;;Hail Nordeste
+616;;Halifax
+65;;Hall Beach Leste
+2697;;Halls Creek
+2894;;Hamilton
+282;;Happy Valley - Goose Bay
+2329;;Harper
+1329;;Hattiesburg
+1812;;Havana
+516;;Havre
+482;;Havre Sudeste
+161;;Hay River
+816;;Hays
+392;;Hearst Sul
+539;;Helena
+2881;;Hermanus Oeste
+1394;;Hermosillo
+1642;;Hidalgo del Parral
+1917;;Hilo
+357;;Hinton
+2902;;Hobart
+1878;;Holguín
+13;;Holman Sudoeste
+2999;;Homer Noroeste
+2603;;Honiara
+3333;;Honiara Leste
+3344;;Honiara Leste II
+2617;;Honiara Nordeste
+3338;;Honiara Oeste
+3339;;Honiara Sudeste
+2572;;Honiara Sudoeste
+3133;;Honolulu
+3138;;Honolulu Sudeste
+270;;Hoonah
+190;;Hooper Bay
+2991;;Hooper Bay Sudoeste
+2885;;Horsham
+3072;;Horta
+3071;;Horta Sudeste
+3070;;Horta Sudeste II
+3068;;Horta Sul
+930;;Hotan
+914;;Hotan Noroeste
+578;;Houlton
+1439;;Houston
+2632;;Huambo
+305;;Hydaburg
+677;;Idaho Falls
+654;;Idaho Falls Oeste
+2573;;Ifakara
+2812;;Iguape
+2778;;Ihosy
+232;;Il'pyrskiy
+244;;Il'pyrskiy Noroeste
+249;;Il'pyrskiy Norte
+21;;Ilha Victoria
+2936;;Ilha Victoria II
+2938;;Ilha Victoria III
+2937;;Ilha Victoria IV
+2963;;Ilha de Baffin
+23;;Ilha de Baffin II
+3035;;Ilhas Aleutas
+3024;;Ilhas Aleutas II
+3034;;Ilhas Aleutas III
+3038;;Ilhas Aleutas IV
+3029;;Ilhas Aleutas IX
+3021;;Ilhas Aleutas V
+3039;;Ilhas Aleutas VI
+3037;;Ilhas Aleutas VII
+3032;;Ilhas Aleutas VIII
+3025;;Ilhas Aleutas X
+3217;;Ilhas Carolinas
+3239;;Ilhas Carolinas II
+3226;;Ilhas Carolinas III
+3336;;Ilhas Cook do Norte
+3348;;Ilhas Cook do Norte II
+3047;;Ilhas Curilas II
+3050;;Ilhas Curilas III
+3059;;Ilhas Curilas IV
+3057;;Ilhas Curilas IX
+3052;;Ilhas Curilas V
+3054;;Ilhas Curilas VI
+3055;;Ilhas Curilas VII
+3058;;Ilhas Curilas VIII
+3411;;Ilhas Mascarenhas
+3300;;Ilhas Molucas
+2522;;Ilhas Molucas II
+3320;;Ilhas Molucas III
+3310;;Ilhas Molucas IV
+3329;;Ilhas Molucas V
+3316;;Ilhas Molucas VI
+2564;;Ilhas Molucas VII
+3106;;Ilhas Nanpō
+3222;;Ilhas Nicobar
+3223;;Ilhas Nicobar II
+3386;;Ilhas Tonga
+11;;Ilhas da Nova Sibéria
+3121;;Ilhas das Baamas
+3132;;Ilhas das Baamas II
+3127;;Ilhas das Baamas III
+3128;;Ilhas das Baamas IV
+3126;;Ilhas das Baamas V
+2969;;Ilulissat Sudoeste
+2514;;Imperatriz
+820;;Indianapolis
+4460;;Indiga
+2439;;Inongo
+2448;;Inongo Norte
+4504;;Inta Sul
+491;;International Falls
+174;;Inukjuak
+3002;;Inukjuak Noroeste
+55;;Inuvik
+2976;;Inuvik Oeste
+2726;;Ipatinga
+20;;Iqaluit
+2745;;Iquique
+2524;;Iringa
+353;;Irkutsk
+1244;;Irvine
+2346;;Isiro
+2492;;Itaituba
+2797;;Itapeva
+2943;;Ittoqqortoormiit Sudeste
+2941;;Ittoqqortoormiit Sudeste II
+34;;Ittoqqortoormiit Sudoeste
+32;;Ittoqqortoormiit Sudoeste II
+2962;;Ittoqqortoormiit Sul
+5;;Ittoqqortoormiit Sul II
+177;;Ivugivik Noroeste
+152;;Ivugivik Sudeste
+157;;Ivugivik Sul
+2990;;Ivugivik Sul II
+1319;;Jackson
+365;;Jasper
+2474;;Jayapura
+2447;;Jayapura Oeste
+1235;;Jeju
+2584;;Ji-Paraná
+784;;Jiayuguan Sul
+3171;;Jizan
+3164;;Jizan Sudoeste
+2805;;Johannesburg
+832;;Johnstown
+756;;Joliet
+1040;;Jonesboro
+1045;;Jonesboro Sudoeste
+1773;;Juan Aldama
+1503;;Jumla
+1404;;Jumla Sudeste
+1445;;Jumla Sul
+241;;Juneau
+272;;Juneau Norte
+2280;;Juradó
+2341;;Kaabong Sudeste
+2518;;Kabinda
+2511;;Kahemba
+2910;;Kaiapoi Sudeste
+3429;;Kalbarri Sudoeste
+2515;;Kalemie
+2840;;Kalgoorlie
+494;;Kalispell
+394;;Kamloops Sul
+1403;;Kandahar
+2184;;Kandi
+2958;;Kangersuatsiaq Noroeste
+2960;;Kangersuatsiaq Norte
+219;;Kangirsuk Leste
+3093;;Kanoya Noroeste
+883;;Kansas City
+1783;;Kaohsiung
+462;;Kapuskasing
+593;;Karamay
+242;;Karluk Sudoeste
+2668;;Karumba
+2592;;Kasama
+787;;Kashgar
+828;;Kashgar Noroeste
+2650;;Katherine
+3376;;Katherine Leste
+3378;;Katherine Leste II
+2671;;Katima Mulilo
+3295;;Kavieng
+3285;;Kavieng Sudoeste
+2569;;Kawambwa
+1713;;Keelung
+3120;;Keelung Leste
+2810;;Keetmanshoop
+432;;Kelowna
+289;;Kemerovo
+208;;Kenai
+2995;;Kenai Noroeste
+2493;;Kendari
+3296;;Kendari Leste
+2500;;Kendari Noroeste
+2473;;Kendari Sudoeste
+569;;Kennewick
+2542;;Kerema
+2000;;Keren Sul
+260;;Ketchikan
+435;;Khabarovsk
+120;;Khandyga
+166;;Khandyga Norte
+2063;;Khartoum
+8;;Khatanga Sul
+374;;Khilok Sul
+926;;Khorugh
+1017;;Khorugh Nordeste
+885;;Khorugh Sudeste
+1770;;Kiffa
+2437;;Kigali
+2498;;Kigoma
+2486;;Kikwit
+3328;;Kilindoni
+2523;;Kimbe
+380;;Kindersley
+2469;;Kindu
+233;;King Salmon
+2819;;Kingoonya
+3190;;Kingstown
+3197;;Kingstown Noroeste
+253;;Kirensk Sudeste
+3234;;Kiribati
+3261;;Kiritimati
+3090;;Kitty Hawk Leste
+693;;Klamath Falls
+742;;Klamath Falls Nordeste
+2825;;Klerksdorp
+306;;Klyuchi Noroeste
+2879;;Knysna
+273;;Kodiak
+266;;Kodiak Sul
+211;;Kodinskiy Sul
+236;;Kodinskiy Sul II
+1995;;Kolhapur Sudoeste
+246;;Kolpashevo
+387;;Komsomolsk na Amure Sul
+2487;;Kongolo
+192;;Korf
+223;;Korf Noroeste
+2224;;Korhogo
+3228;;Koror
+2317;;Kota Baharu
+51;;Kotzebue
+109;;Koyuk
+50;;Krasino Noroeste
+287;;Krasnoyarsk
+2335;;Kuala Terengganu
+2428;;Kualakapuas
+3252;;Kuantan Leste
+3255;;Kuantan Nordeste
+2386;;Kuching
+2406;;Kuching Nordeste
+3258;;Kuching Sudoeste
+64;;Kugluktuk
+2987;;Kugluktuk Nordeste
+2985;;Kugluktuk Nordeste II
+2620;;Kuito
+2988;;Kulusuk Leste
+2310;;Kumasi
+2662;;Kununurra
+2588;;Kupang
+3350;;Kupang Noroeste
+763;;Kuqa Norte
+2823;;Kuruman
+262;;Kuujjuaq Nordeste
+293;;Kuujjuarapik
+3007;;Kuujjuarapik Sudoeste
+3004;;Kuujjuarapik Sudoeste II
+3003;;Kuujjuarapik Sudoeste III
+377;;Kyzyl
+3212;;La Asunción Oeste
+3211;;La Asunción Sudoeste
+3205;;La Asunción Sudoeste II
+2049;;La Ceiba
+676;;La Crosse
+1537;;La Paz II
+3153;;La Paz Norte
+256;;La Ronge Sul
+3044;;La Scie Leste
+1600;;Laayoune
+2703;;Labasa
+234;;Labrador
+320;;Lac La Biche
+2835;;Ladysmith
+2537;;Lae
+3311;;Lae Sudeste
+1395;;Lafayette
+2243;;Lafia
+2836;;Lajes
+1025;;Lake Havasu City
+2352;;Langsa Noroeste
+396;;Lansdowne House
+3152;;Laoag Sudeste
+3150;;Laoag Sudeste II
+3149;;Laoag Sul
+3147;;Laoag Sul II
+2425;;Laranjal do Jari
+2426;;Laranjal do Jari Leste
+1578;;Laredo
+1522;;Larkana Oeste
+1531;;Larkana Sudoeste
+3102;;Las Palmas
+870;;Las Vegas
+1317;;Lashkar Gah
+3354;;Lata
+3364;;Lata Nordeste
+3345;;Lata Sudeste
+3391;;Lautoka
+2989;;Lavrentiya Nordeste
+2171;;Legazpi Norte
+1256;;Leh Norte
+199;;Lensk
+375;;Les Laurentides
+393;;Les Laurentides II
+251;;Lesosibirsk
+489;;Lethbridge Nordeste
+556;;Lewiston
+2207;;Liberia
+2389;;Libreville
+2616;;Lichinga
+3129;;Lihue
+3131;;Lihue Sudoeste
+1639;;Lijiang
+1576;;Lijiang Sudeste
+2608;;Likasi
+407;;Lillooet
+2619;;Lilongwe
+2623;;Lima
+2236;;Limón
+2735;;Linhares
+653;;Linxi
+1138;;Little Rock
+2680;;Livingstone
+2636;;Lobito
+2368;;Lodwar
+2349;;Lodwar Sudeste
+2298;;Lomé
+697;;London II
+2800;;Londrina
+3088;;Long Beach
+2787;;Longreach
+3291;;Lorengau
+3114;;Loreto Sul
+3085;;Los Angeles
+1588;;Los Mochis
+2666;;Lubango
+1274;;Lubbock
+2613;;Lubumbashi
+2559;;Lucapa
+2618;;Luena
+1378;;Lufkin
+2681;;Luganville
+3385;;Luganville Nordeste
+3381;;Luganville Sul
+3379;;Luganville Sul II
+3375;;Luganville Sul III
+2612;;Lundazi
+2653;;Lusaka
+173;;Lutselke Norte
+2434;;Luwuk
+3280;;Luwuk Nordeste
+3290;;Luwuk Nordeste II
+2453;;Luwuk Nordeste III
+2429;;Luwuk Sudeste
+3275;;Luwuk Sudoeste
+2281;;Mabaruma
+2284;;Mabaruma Leste
+2295;;Mabaruma Noroeste
+2372;;Macapá
+2413;;Macapá Norte
+2749;;Mackay
+2520;;Madang
+3308;;Madang Leste
+2501;;Madang Oeste
+719;;Madison
+184;;Magadan
+2998;;Magadan Norte
+327;;Magdagachi
+368;;Magdagachi Norte
+3124;;Magong Sul
+2657;;Mahajanga
+2783;;Mahalapye
+2723;;Maintirano
+2438;;Majene
+2485;;Makassar
+3315;;Makassar Nordeste
+3248;;Malabo
+2180;;Malakal
+2591;;Malanje
+3245;;Malé
+2364;;Malé Noroeste
+3256;;Malé Noroeste II
+3251;;Malé Norte
+2383;;Malé Norte II
+3262;;Malé Norte III
+2410;;Malé Norte IV
+3318;;Malé Norte IX
+3286;;Malé Norte V
+3303;;Malé Norte VI
+3306;;Malé Norte VII
+2527;;Malé Norte VIII
+3323;;Malé Norte X
+3241;;Malé Sudoeste
+3237;;Malé Sudoeste II
+2323;;Malé Sul
+2266;;Man
+2390;;Manado
+3259;;Manado Sudeste
+3257;;Manado Sul
+2145;;Managua
+2738;;Mananjary
+2304;;Manaus
+2665;;Mandritsara
+2627;;Mangochi
+147;;Manily
+2880;;Manjimup
+2433;;Manokwari
+3279;;Manokwari Leste
+3292;;Manokwari Norte
+2541;;Manono Oeste
+2813;;Maputo
+2884;;Mar del Plata
+2443;;Marabá
+2172;;Maracaibo
+466;;Marathon
+3051;;Marathon Nordeste
+3048;;Marathon Sudoeste
+2793;;Mariental
+537;;Marquette
+2444;;Martapura Sudeste
+2844;;Maseru
+3173;;Massawa Sudeste II
+2106;;Matagalpa
+3079;;Matsue Sul II
+2238;;Maturín
+2587;;Maumere
+3325;;Maumere Sul
+2732;;Maun
+2658;;Mavinga
+2777;;Maxixe
+2547;;Mbeya
+2808;;Mbombela
+2499;;Mbuji-Mayi
+818;;McCook
+299;;Meadow Lake
+2360;;Medan
+686;;Medford
+424;;Medicine Hat
+467;;Medicine Hat Noroeste
+226;;Mekoryuk
+3409;;Melanésia
+3359;;Melanésia II
+3410;;Melanésia III
+3416;;Melanésia IV
+3432;;Melanésia IX
+3360;;Melanésia V
+3370;;Melanésia VI
+2772;;Melanésia VII
+2747;;Melanésia VIII
+2886;;Melbourne
+3224;;Melekeok
+1165;;Memphis
+2533;;Mendi Noroeste
+2536;;Mendi Oeste
+2543;;Merauke
+3358;;Merauke Noroeste
+2567;;Merauke Oeste
+2557;;Merauke Sudoeste
+2299;;Mereeg
+1304;;Meridian
+1947;;Merowe
+1585;;Miami
+3157;;Micronésia
+2967;;Mikhalkino
+2968;;Mikhalkino Oeste
+2821;;Mildura
+3165;;Mindelo
+3166;;Mindelo Leste
+3172;;Mindelo Leste II
+3168;;Mindelo Sudeste
+3163;;Mindelo Sul
+463;;Mingan
+388;;Mingan Sul
+631;;Minneapolis
+3161;;Mirbat Sudeste
+1977;;Mirbat Sudeste II
+138;;Mirny
+172;;Mirny Noroeste
+542;;Missoula
+420;;Mistassini Leste
+460;;Mistassini Oeste
+414;;Mistassini Sudeste
+425;;Mistassini Sul
+405;;Mistassini Sul II
+2549;;Moba
+2683;;Mocuba
+350;;Mogocha
+2693;;Mohembo
+587;;Moncton
+2089;;Mongo
+2194;;Mongo Noroeste
+2630;;Mongu
+1263;;Monroe
+2308;;Monrovia
+344;;Montanhas Saian Orientais
+1655;;Monterrey
+2242;;Montería
+2667;;Montes Claros
+2856;;Montevideo
+416;;Moosonee
+2771;;Mopipi Norte
+2521;;Morogoro
+3425;;Morombe Noroeste
+2744;;Morondava
+3361;;Moroni
+3369;;Moroni Nordeste
+2482;;Moshi
+2882;;Mossel Bay Norte
+2748;;Mount Isa
+2673;;Moçâmedes
+2615;;Mpika
+2488;;Mt.  Hagen
+766;;Mt. Shasta
+768;;Mt. Shasta Leste
+76;;Mukhomornoye
+101;;Mukhomornoye Norte
+72;;Mukhomornoye Sudeste
+58;;Mukhomornoye Sudoeste
+968;;Muskogee
+2539;;Mwene-Ditu
+1587;;Myitkyina Sul
+2467;;Nabire
+2494;;Nabire Nordeste
+2466;;Nabire Oeste
+2647;;Nacala
+104;;Nadym
+3091;;Nagasaki
+3109;;Naha
+3117;;Naha Oeste
+3112;;Naha Sudoeste
+3107;;Naha Sul
+3105;;Naha Sul II
+303;;Nain
+35;;Nakhodka
+2396;;Nakuru
+2678;;Nampula
+464;;Nanaimo
+2382;;Nanyuki
+3118;;Naples Norte
+2066;;Nara
+1717;;Nassau
+3119;;Nassau Leste
+3123;;Nassau Leste II
+3122;;Nassau Nordeste
+3125;;Nassau Nordeste II
+3115;;Nassau Sudeste
+3116;;Nassau Sul
+3108;;Nassau Sul II
+2519;;Natal
+2491;;Natal II
+43;;Natara
+52;;Natara Leste
+442;;Natashquan
+1392;;Natchez
+88;;Naujaat Sul
+2581;;Nchelenge
+2646;;Ndola
+3402;;Neiafu
+2261;;Nekemte
+2904;;Nelson
+1994;;Nema
+121;;Nenana
+225;;Neryungri
+2896;;Neuquén
+3060;;Nevelsk Noroeste
+598;;New Glasgow
+525;;New Liskeard
+513;;New Liskeard Sul
+1376;;New Orleans
+2897;;New Plymouth
+2854;;Newcastle II
+2686;;Newcastle Waters
+2687;;Newcastle Waters Leste
+2997;;Newhalen Nordeste
+2775;;Newman
+2271;;Ngaoundéré
+2135;;Niamey
+345;;Nikolayevsk na Amure
+487;;Nipigon
+2292;;Nkawkaw Sul
+1277;;Nogales
+7;;Noginsk
+114;;Nome
+82;;Norman Wells
+111;;Norman Wells Nordeste
+2862;;Norseman
+358;;North Battleford
+559;;North Bay
+2859;;Northam
+1887;;Nouakchott
+2766;;Nouméa
+3422;;Nouméa Leste
+3426;;Nouméa Nordeste
+3418;;Nouméa Sudeste
+331;;Novokuznetsk
+295;;Novosibirsk
+33;;Novy Port
+77;;Novy Urengoy
+3419;;Nuku'alofa
+3421;;Nuku'alofa Norte
+3414;;Nuku'alofa Sudeste
+3413;;Nuku'alofa Sudeste II
+3412;;Nuku'alofa Sul
+4;;Nuuk
+127;;Nuuk Leste
+148;;Nuuk Nordeste
+143;;Nuuk Nordeste II
+135;;Nuuk Norte
+193;;Nyac Leste
+281;;Nyukzha
+2915;;Oban Noroeste
+3449;;Oban Norte
+1282;;Odessa II
+361;;Okha
+343;;Okha Sul
+229;;Okhotsk
+245;;Okhotsk Leste
+972;;Oklahoma City
+54;;Olenyok Sudeste
+187;;Olyokminsk
+181;;Olyokminsk Sudeste
+744;;Omaha
+300;;Omsk
+87;;Omsukchan
+132;;Omsukchan Sudoeste
+2685;;Ongwediva
+2716;;Ongwediva Norte
+3417;;Onslow
+627;;Ontario
+2711;;Opuwo
+2177;;Oranjestad
+3195;;Oranjestad Sul
+1567;;Orlando
+453;;Oskemen
+2417;;Owando
+634;;Owen Sound
+133;;Oymyakon
+197;;Paamiut Nordeste
+3293;;Padang Noroeste
+2436;;Padang Oeste
+3269;;Padangsidempuan Noroeste
+1015;;Paducah
+2275;;Pagadian
+3382;;Pago Pago
+3383;;Pago Pago Leste
+176;;Pakhachi
+167;;Pakhachi Sudeste
+228;;Palana
+2422;;Palangkaraya
+2409;;Palangkaraya Sudeste
+183;;Palatka Sudoeste
+3230;;Palikir
+1236;;Palm Springs Leste
+155;;Palmer
+2900;;Palmerston North Sul
+2457;;Palopo
+2418;;Palu
+2249;;Panama City
+3221;;Panama City Nordeste
+2449;;Pangkalpinang
+2983;;Pangnirtung Sul
+3395;;Papeete
+3396;;Papeete Norte
+3390;;Papeete Oeste
+3389;;Papeete Oeste II
+3341;;Papeete Sudeste
+3356;;Papeete Sudoeste
+2378;;Parintins
+2917;;Patagônia
+250;;Peace River
+2864;;Pelotas
+2626;;Pemba
+98;;Península de Chukotka
+93;;Península de Chukotka II
+26;;Península de Iamal
+284;;Península de Kamchatka
+2851;;Perth
+1205;;Peshawar
+596;;Petoskey
+2561;;Petrolina
+307;;Petropavlovsk-Kamchatsky
+1189;;Phoenix
+1466;;Piedras Negras
+1159;;Pine Bluff
+2631;;Pine Creek Sudeste
+3363;;Pine Creek Sudeste II
+2712;;Pirapora
+141;;Planalto Central Siberiano
+254;;Planalto Central Siberiano II
+240;;Planalto Central Siberiano III
+196;;Planalto Central Siberiano IV
+115;;Planalto Central Siberiano IX
+126;;Planalto Central Siberiano V
+180;;Planalto Central Siberiano VI
+170;;Planalto Central Siberiano VII
+105;;Planalto Central Siberiano VIII
+652;;Planalto Mongol II
+1318;;Planalto do Tibete V
+1027;;Planalto do Tibete VI
+179;;Planície da Sibéria Ocidental
+116;;Planície da Sibéria Ocidental II
+2950;;Planície da Sibéria Setentrional
+128;;Podkamennaya Tunguska
+3176;;Pointe-à-Pitre
+3174;;Pointe-à-Pitre Sudeste
+1528;;Pokhara
+185;;Pokrovsk
+3384;;Polinésia
+3374;;Polinésia II
+3368;;Polinésia III
+3365;;Polinésia IV
+3355;;Polinésia IX
+3372;;Polinésia V
+3371;;Polinésia VI
+3366;;Polinésia VII
+3351;;Polinésia VIII
+3424;;Polinésia X
+3343;;Polinésia XI
+3335;;Polinésia XII
+3420;;Polinésia XIII
+3330;;Polinésia XIV
+3423;;Polinésia XV
+3427;;Polinésia XVI
+3428;;Polinésia XVII
+3430;;Polinésia XVIII
+3078;;Ponta Delgada
+3076;;Ponta Delgada Sul
+2645;;Pontes e Lacerda
+2401;;Pontianak
+2427;;Pontianak Nordeste
+3282;;Pontianak Norte
+2568;;Popondetta
+3448;;Port Alfred Nordeste
+3187;;Port Blair
+3213;;Port Blair Noroeste
+3219;;Port Blair Norte
+3208;;Port Blair Sudoeste
+235;;Port Burwell
+2993;;Port Burwell Sudoeste
+194;;Port Burwell Sul
+2670;;Port Douglas
+2869;;Port Elizabeth
+431;;Port Hardy
+3031;;Port Hope Simpson Nordeste
+3434;;Port Lincoln Oeste
+2759;;Port Louis
+2566;;Port Moresby
+1758;;Port Sudan
+3394;;Port Vila
+3401;;Port Vila Nordeste
+3137;;Port-De-Paix Sul
+2411;;Port-Gentil
+2215;;Port-of-Spain
+561;;Portland
+2850;;Porto Alegre
+2692;;Porto Seguro
+2451;;Poso Nordeste
+2729;;Potosí
+417;;Powell River Sul
+2201;;Prachuap Khiri Khan
+3177;;Praia
+3180;;Praia Sudoeste
+3178;;Praia Sul
+535;;Presque Isle
+550;;Presque Isle Leste
+2841;;Prieska
+342;;Prince George
+311;;Prince George Sul
+315;;Prince Rupert
+3017;;Prince Rupert Sudoeste
+2633;;Principe da Beira
+3415;;Proserpine Nordeste
+100;;Provideniya
+812;;Provo
+2578;;Pucallpa
+3444;;Puerto Aisén Oeste
+2913;;Puerto Aisén Sudoeste
+3278;;Puerto Baquerizo Moreno
+2052;;Puerto Barrios
+2217;;Puerto Cabello
+2059;;Puerto Lempira
+2326;;Puerto López
+2909;;Puerto Madryn Leste
+2925;;Puerto Natales Noroeste
+2245;;Puerto Princesa
+2260;;Puerto Princesa Noroeste
+2219;;Puerto Princesa Sudeste
+2741;;Puerto Suárez Noroeste
+1906;;Puerto Vallarta
+2424;;Puerto Villamil
+3284;;Puerto Villamil Nordeste
+3274;;Puerto Villamil Sul
+3452;;Puerto Williams Leste
+3453;;Puerto Williams Nordeste
+2933;;Puerto Williams Noroeste
+3454;;Puerto Williams Norte
+2920;;Punta Arenas
+2928;;Punta Arenas Noroeste
+2929;;Punta Arenas Noroeste II
+2932;;Punta Arenas Norte
+3099;;Punta Prieta Oeste
+1927;;Qal at Bishah Nordeste
+1286;;Qalat
+206;;Qaqortoq Nordeste
+212;;Qaqortoq Nordeste II
+216;;Qaqortoq Nordeste III
+198;;Qaqortoq Oeste
+57;;Qeqertasuaq Norte
+2972;;Qeqertasuaq Oeste
+2965;;Qeqertasuaq Sul
+2690;;Quelimane
+2722;;Quelimane Noroeste
+3441;;Quellón Norte
+319;;Quesnel
+379;;Quesnel Noroeste
+1435;;Quetta
+842;;Quiemo
+919;;Quiemo Leste
+195;;Quinhagak
+2041;;Quảng Trị
+2583;;Raba
+2507;;Rabaul
+2496;;Rabaul Leste
+328;;Radisson
+3020;;Radisson Oeste
+1518;;Rafha Norte
+1082;;Raleigh
+16;;Rankin Inlet
+2562;;Recife
+378;;Red Deer
+810;;Reno
+418;;Revelstoke
+2761;;Ribeirão Preto
+918;;Richmond
+942;;Richmond Leste
+427;;Ridder Sudeste
+330;;Rigolet Sudeste
+500;;Rimouski
+2926;;Rio Grande
+1809;;Rio Verde
+2842;;Rivera
+1732;;Riyadh
+1677;;Riyadh Sul
+938;;Roanoke
+3170;;Roatán Sul
+1011;;Rocky Mount
+2760;;Roebourne
+2817;;Roma
+3182;;Roseau
+2196;;Roxas
+395;;Rubtsovsk
+2688;;Rundu
+3996;;Rusanovo
+3998;;Rusanovo Nordeste
+6;;Rusanovo Sul
+3324;;Ruteng Sul
+3319;;Ruteng Sul II
+3100;;Ryūkyū
+3103;;Ryūkyū II
+3098;;Ryūkyū III
+2860;;Río Cuarto
+2927;;Río Verde Noroeste
+2924;;Río Verde Oeste
+911;;Sacramento
+3202;;Saint George's
+3209;;Saint George's Nordeste
+618;;Saint John
+3169;;Saint John's
+3167;;Saint John's Sudoeste
+3162;;Saint John's Sul
+3159;;Saint John's Sul II
+2009;;Salalah
+3437;;Saldanha Oeste
+2889;;Sale
+106;;Salekhard Noroeste
+602;;Salem Leste
+2992;;Salluit Leste
+622;;Salmon
+752;;Salt Lake City
+1651;;Saltillo
+2416;;Samarinda
+2432;;Sampit
+2441;;Sampit Oeste
+2423;;Sampit Sul
+1451;;San Antonio
+1094;;San Bernardino
+2289;;San Cristóbal
+910;;San Francisco
+2239;;San José
+2833;;San Juan II
+1384;;San Marcos
+3194;;San Pablo Nordeste
+2079;;San Pedro Sula
+3096;;San Quintín Oeste
+2316;;San-Pedro
+3011;;Sand Point
+3013;;Sand Point Leste
+3016;;Sand Point Nordeste
+3012;;Sand Point Oeste
+369;;Sandspit
+346;;Sandspit Sudoeste
+1488;;Sanford
+78;;Sangar
+142;;Sangar Nordeste
+146;;Sangar Noroeste
+2635;;Santa Ana
+3083;;Santa Barbara
+1826;;Santa Clara
+2679;;Santa Cruz
+3276;;Santa Cruz II
+3268;;Santa Cruz Sul
+3264;;Santa Cruz Sul II
+3104;;Santa Cruz de Tenerife Oeste
+1541;;Santa Cruz de Tenerife Sudoeste
+3101;;Santa Cruz de Tenerife Sudoeste II
+3097;;Santa Cruz de Tenerife Sudoeste III
+3089;;Santa Cruz de Tenerife Sul
+2830;;Santa Fe
+2848;;Santa Maria
+2206;;Santa Marta
+826;;Santa Rosa
+2878;;Santa Rosa II
+2877;;Santa Vitória do Palmar Norte
+2456;;Santarém
+2272;;Santiago II
+3225;;Santiago Oeste
+1900;;Santiago de Cuba
+1963;;Sanya
+2190;;Sarh
+381;;Saskatoon
+24;;Saskylakh
+2949;;Saskylakh Sudeste
+14;;Saskylakh Sudoeste
+3233;;Satun Oeste
+558;;Sault Ste. Marie
+2600;;Saurimo
+2036;;Saywun
+329;;Schefferville
+279;;Schefferville Oeste
+3440;;Scottsdale Sudeste
+498;;Seattle
+2140;;Sennar
+376;;Sept-Îles
+437;;Severo Kurilsk
+3043;;Severo Kurilsk Noroeste
+3045;;Severo Kurilsk Noroeste II
+3046;;Severo Kurilsk Noroeste III
+3041;;Severo Kurilsk Sudoeste
+301;;Severobaykalsk
+214;;Seward Norte
+3342;;Seychelles
+853;;Shache
+274;;Shamattawa Sul
+2694;;Shamva Sul
+1734;;Shantou
+2005;;Shendi
+2481;;Shinyanga
+3087;;Shizuoka Nordeste
+1313;;Shreveport
+673;;Shu
+2394;;Sibolga Noroeste
+3260;;Sibolga Oeste
+2370;;Sibu
+2399;;Sibu Norte
+158;;Sibéria
+204;;Sibéria II
+362;;Sibéria III
+400;;Sibéria IV
+73;;Sibéria IX
+40;;Sibéria V
+210;;Sibéria VI
+355;;Sibéria VII
+96;;Sibéria VIII
+44;;Sibéria X
+102;;Sibéria XI
+79;;Sibéria XII
+56;;Sibéria XIII
+1566;;Sierra Mojada
+2516;;Sikonge
+1851;;Simao Noroeste
+1811;;Simao Oeste
+3322;;Singaraja Sudeste
+3317;;Singaraja Sul
+2384;;Singkawang
+89;;Sisimiut
+278;;Sitka
+290;;Sitka Nordeste
+3009;;Sitka Nordeste II
+356;;Slavgorod
+1467;;Slidell
+309;;Smithers
+275;;Smithers Sudeste
+310;;Smithers Sul
+3439;;Smithton Sudoeste
+2625;;Solwezi
+2806;;Sorocaba
+2420;;Sorong
+2454;;Sorong Noroeste
+3281;;Sorong Oeste
+3272;;Sorong Sudoeste
+3273;;Sorong Sudoeste II
+750;;South Bend
+401;;Sovetskaya Gavan
+680;;Spencer
+512;;Spokane
+2832;;Springbok
+999;;Springfield II
+798;;Springfield III
+71;;Srednekolymsk
+86;;Srednekolymsk Nordeste
+84;;Srednekolymsk Norte
+74;;Srednekolymsk Oeste
+399;;St-Augustin
+3040;;St. Anthony
+3042;;St. Anthony Norte
+792;;St. Charles
+527;;St. Cloud
+892;;St. George
+538;;St. John's
+523;;St. John's Sudoeste
+819;;St. Joseph
+796;;St. Joseph Sudeste
+904;;St. Louis
+2776;;St.-Denis
+2921;;Stanley
+390;;Stettler
+134;;Stony Rapids
+162;;Strelka
+2724;;Sucre
+563;;Sudbury
+3349;;Sukabumi Norte
+1545;;Sukkur
+2540;;Sumbawanga
+3294;;Sungaipenuh Noroeste
+164;;Suntar
+153;;Suntar Leste
+136;;Suntar Sudoeste
+2267;;Sunyani
+160;;Susuman
+118;;Susuman Sul
+2725;;Suva
+3397;;Suva Leste
+3400;;Suva Nordeste
+3405;;Suva Nordeste II
+3399;;Suva Noroeste
+3404;;Suva Norte
+3393;;Suva Sudeste
+468;;Swift Current Norte
+2876;;Sydney
+579;;Sydney II
+2758;;São José do Rio Preto
+2858;;São Lourenço do Sul Leste
+3266;;São Tomé
+3220;;Sóc Trăng Nordeste
+2470;;Tabora
+530;;Tacheng
+2205;;Tacloban
+3214;;Tacloban Leste
+2017;;Tahoua
+1757;;Taipei
+3130;;Taitung
+3141;;Taitung Norte
+3145;;Taitung Norte II
+1659;;Tajarhi
+269;;Taksimo
+3435;;Talcahuano Oeste
+508;;Taldyqorghan
+1846;;Tamanrasset Noroeste
+1521;;Tampa
+1840;;Tampico
+144;;Tanacross Nordeste
+103;;Tanana Leste
+2472;;Tanjung Pandan
+3288;;Tanjung Pandan Sudeste
+3267;;Tanjungpinang Norte
+2371;;Tarakan
+2734;;Tarija
+2622;;Tarma
+2893;;Tauranga
+2462;;Tchibanga
+2121;;Tegucigalpa
+3246;;Telukbutun
+3253;;Telukbutun Nordeste
+3250;;Telukbutun Noroeste
+1744;;Tengchong
+1679;;Tengchong Sul
+2717;;Tennant Creek
+1866;;Tepic
+2468;;Teresina
+3265;;Ternate
+2385;;Ternate Sudeste
+2377;;Ternate Sudeste II
+2637;;Terra de Arnhem
+341;;Terrace
+2661;;Tete
+1253;;Texarkana
+1217;;Texarkana Oeste
+3436;;Thames
+3049;;Thunder Bay
+2403;;Tidore Nordeste
+3270;;Tidore Norte
+2445;;Tidore Norte II
+28;;Tiksi
+2502;;Timika
+471;;Timmins
+2464;;Timon
+2659;;Toamasina
+3000;;Togiak Norte
+1961;;Tokar
+717;;Tokmak
+2798;;Toliara
+3438;;Toltén Sudoeste
+670;;Tomah
+247;;Tomsk
+1570;;Tongren Sudeste
+902;;Tonopah
+1662;;Torreón
+3403;;Townsville
+643;;Traverse City
+2898;;Trelew
+465;;Trout River Sul
+2764;;Tshabong
+3312;;Tuban Sudeste
+1997;;Tuguegarao
+2011;;Tuguegarao Norte
+1981;;Tuguegarao Sul
+2599;;Tukuyu
+1071;;Tulsa
+4503;;Tundra de Bol’shezemel’skaya
+213;;Tununak Nordeste
+1249;;Tupelo Noroeste
+1628;;Turbat
+1564;;Turbat Sul
+1850;;Tuxpan
+1323;;Tyler
+314;;Tynda
+2811;;Tôlanaro
+2919;;Tôlanaro Nordeste
+2918;;Tôlanaro Nordeste II
+3450;;Tôlanaro Nordeste III
+3445;;Tôlanaro Norte
+3446;;Tôlanaro Norte II
+3447;;Tôlanaro Norte III
+3387;;Tômbua Oeste
+2736;;Uberlândia
+2871;;Uitenhage
+2855;;Umtata
+3019;;Unalaska
+2942;;Upernavik Oeste
+2831;;Upington
+237;;Uranium City
+799;;Urbana
+2930;;Ushuaia
+2934;;Ushuaia Noroeste
+41;;Ust Kuyga
+46;;Ust Kuyga Leste
+15;;Ust Kuyga Sudeste
+9;;Ust Kuyga Sudeste II
+10;;Ust Kuyga Sudeste III
+332;;Ust' Ordynskiy
+243;;Ust-Ilimsk
+239;;Ust-Ilimsk Sul
+271;;Ust-Kamchatsk
+304;;Ust-Kamchatsk Leste
+3015;;Ust-Kamchatsk Leste II
+3010;;Ust-Kamchatsk Nordeste
+3022;;Ust-Kamchatsk Nordeste II
+259;;Ust-Kut
+200;;Ust-Maya
+92;;Ust-Nera
+165;;Valdez
+459;;Vancouver
+2849;;Vanhynsdorp
+2852;;Vanhynsdorp Leste
+140;;Verkhnevilyuysk
+80;;Verkhoyansk
+801;;Vernal
+2890;;Victor Harbor Noroeste
+511;;Victoria
+3302;;Victoria II
+3299;;Victoria Sudeste
+2276;;Vila Velha
+2648;;Vilhena Nordeste
+2916;;Villa O'Higgins
+130;;Vilyuysk
+145;;Vilyuysk Norte
+518;;Virginia
+1012;;Virginia Beach
+1965;;Vishakhapatnam
+222;;Vitim
+207;;Vitim Oeste
+2676;;Vitória da Conquista
+2947;;Vorontsovo Sudeste
+2951;;Vorontsovo Sudeste II
+2952;;Vorontsovo Sudoeste
+2955;;Vorontsovo Sul
+2953;;Vorontsovo Sul II
+2818;;Vryheid
+1375;;Waco
+2870;;Wagga Wagga
+3140;;Wailuku
+2604;;Waingapu
+3442;;Waitangi
+3443;;Waitangi Norte
+2356;;Wajir
+2621;;Waku Kungo
+2719;;Walvis Bay
+1426;;Wanzhou
+1471;;Wanzhou Norte
+884;;Washington,  D.C.
+2495;;Watampone
+215;;Watson Lake
+124;;Watson Lake Sudoeste
+2225;;Wau
+591;;Wausau
+936;;Weihai
+2624;;Weipa
+2639;;Weipa Nordeste
+3352;;Weipa Sul
+2829;;Welkom
+2899;;Wellington
+3110;;West Palm Beach Sudeste
+2484;;Wewak
+808;;Wheeling
+913;;White Sulphur Springs
+182;;Whitehorse
+2865;;Whyalla
+638;;Wiarton
+866;;Wichita
+3198;;Willemstad
+3200;;Willemstad Sudeste
+373;;Williams Lake
+574;;Willmar
+2779;;Windhoek
+730;;Winnemucca
+2875;;Worcester II
+285;;Wrangell Sudoeste
+849;;Wuwei
+723;;Wuyuan Sul
+2822;;Xapeco
+1557;;Xichang Sudoeste
+611;;Xilinhot
+699;;Xilinhot Norte
+547;;Yakima
+224;;Yakutat
+154;;Yakutsk
+159;;Yakutsk Leste
+2359;;Yaoundé
+2303;;Yei
+107;;Yellowknife
+209;;Yeniseysk Oeste
+178;;Yerema
+836;;Yinchuan
+644;;Yining
+3080;;Yokohama
+807;;Yuba City
+880;;Yulin Oeste
+840;;Yumen
+447;;Yuzhno Sakhalinsk
+1838;;Zacatecas
+1832;;Zacatecas Leste
+1491;;Zahedan Leste
+2644;;Zambezi
+316;;Zeya
+641;;Zharkent
+1736;;Zhongli
+1833;;Zouar
+1788;;Zouirat
+108;;Zyryanka
+68;;Zyryanka Sudoeste

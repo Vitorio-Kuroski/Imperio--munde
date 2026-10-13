@@ -5,6 +5,7 @@ Uso (a partir da pasta do projeto):
   python3 tools/refine_world.py              # donos, costa e nomes (mantém o terreno salvo)
   python3 tools/refine_world.py --terreno    # também recalcula o terreno (baixa ~60 MB na 1ª vez)
   python3 tools/refine_world.py --previa previa.png [--modo terreno|cultura]
+  python3 tools/refine_world.py --gerar-donos   # recria tools/data/donos_1444.csv pelas âncoras
 
 - Donos de 1444: cada âncora de tools/data/nations_*.txt cresce pelo grafo de vizinhança
   (Dijkstra a partir da província da âncora). O custo de uma província é a distância em linha
@@ -316,6 +317,52 @@ for ai, (a_lat, a_lon, reach, ni, first) in enumerate(anchors):
         print("  capital de %s movida para a província vizinha %d" % (nations[ni]["tag"], s))
     owner[s] = ni
     capital[ni] = s
+
+# ------------------------------------------------------------------ tabela de donos (província -> tag)
+# tools/data/donos_1444.csv define o dono de cada província de terra (id;TAG;nome). Ela tem
+# prioridade sobre as âncoras; províncias fora da tabela continuam vindo das âncoras.
+# --gerar-donos reescreve a tabela a partir das âncoras (use depois de mudar os ids).
+OWNERS_CSV = os.path.join(DATA, "donos_1444.csv")
+gen_table = "--gerar-donos" in args or not os.path.exists(OWNERS_CSV)
+tag_idx = {n["tag"]: k for k, n in enumerate(nations)}
+if not gen_table:
+    table, stale, unknown = {}, [], set()
+    for ln, line in enumerate(open(OWNERS_CSV, encoding="utf-8"), start=1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        f = (line.split(";") + ["", ""])[:3]
+        pid, tag, nome = int(f[0]), f[1].strip().upper(), f[2].strip()
+        if pid >= nl or (nome and P[pid]["name"] != nome):
+            stale.append(ln)
+            continue
+        if tag and tag not in tag_idx:
+            unknown.add(tag)
+            continue
+        table[pid] = tag
+    if unknown:
+        sys.exit("donos_1444.csv: tags que não existem em nations_*.txt: %s" % ", ".join(sorted(unknown)))
+    if len(stale) > 0.05 * nl:
+        sys.exit("donos_1444.csv não bate com o mapa (%d linhas com id/nome diferente; os ids mudaram?).\n"
+                 "Gere de novo com: python3 tools/refine_world.py --gerar-donos" % len(stale))
+    if stale:
+        print("  aviso: %d linhas de donos_1444.csv ignoradas (id/nome não confere): linhas %s"
+              % (len(stale), stale[:10]))
+    for pid, tag in table.items():
+        owner[pid] = tag_idx[tag] if tag else -1
+    # capital que não é mais do país: província do país mais perto da âncora da capital
+    for ai, (a_lat, a_lon, reach, ni, first) in enumerate(anchors):
+        if first and ni in capital and owner[capital[ni]] != ni:
+            mine = np.nonzero(owner[:nl] == ni)[0]
+            if len(mine):
+                capital[ni] = int(mine[np.argmin(haversine(a_lat, a_lon, lat[mine], lon[mine]))])
+            else:
+                del capital[ni]
+    for ni in range(len(nations)):          # país só na tabela (sem âncora de capital válida)
+        mine = np.nonzero(owner[:nl] == ni)[0]
+        if ni not in capital and len(mine):
+            capital[ni] = int(mine[0])
+    print("  donos pela tabela:", len(table), " pelas âncoras:", nl - len(table))
 lost = [nations[ni]["tag"] for ni in range(len(nations)) if ni not in capital]
 print("  países:", len(capital), " sem dono:", int((owner[:nl] < 0).sum()), " sem capital em terra:", lost)
 
@@ -495,6 +542,20 @@ for i, p in enumerate(P):
             p["base_development"] = base
             p["development"] = max(1, int(round(base * DEV_MULT.get(terrain[i], 1.0))))
 data["countries"] = countries
+if True:                                  # sempre regrava (nomes atualizados, ordenada por país)
+    by_tag = {}
+    for i in range(nl):
+        by_tag.setdefault(nations[owner[i]]["tag"] if owner[i] >= 0 else "", []).append(i)
+    with open(OWNERS_CSV, "w", encoding="utf-8") as f:
+        f.write("# Dono de cada província em 11/11/1444. Formato: id;TAG;nome da província\n"
+                "# Troque a TAG para mudar o dono (tags em nations_1444.txt / nations_world_1444.txt);\n"
+                "# deixe a TAG vazia para \"sem dono\". O nome serve para conferir o id; não o edite.\n"
+                "# Depois rode: python3 tools/refine_world.py\n")
+        for tag in sorted(by_tag, key=lambda t: (t == "", t)):
+            f.write("\n# %s\n" % ("%s — %s" % (tag, nations[tag_idx[tag]]["name"]) if tag else "sem dono"))
+            for i in sorted(by_tag[tag], key=lambda i: names[i]):
+                f.write("%d;%s;%s\n" % (i, tag, names[i]))
+    print("tabela de donos gravada:", os.path.relpath(OWNERS_CSV, ROOT))
 data["cultures"] = [c for ci, c in enumerate(cultures) if (culture[:nl] == ci).any()]
 with open(MAP_JSON, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))

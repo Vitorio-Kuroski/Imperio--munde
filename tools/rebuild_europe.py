@@ -359,6 +359,37 @@ for it in range(8):
     seg = remap[seg]
     print("  fusão %d: %d províncias pequenas" % (it + 1, merged))
 seg, n_new = relabel(seg)
+# uma província nunca atravessa o mar: cada pedaço de terra separado vira província própria;
+# pedaços muito pequenos (ilhotas) vão para a província vizinha por terra, se houver
+nxt = n_new + 1
+islets = 0
+for i, sl in enumerate(ndimage.find_objects(seg), start=1):
+    if sl is None:
+        continue
+    comp, nc = ndimage.label(seg[sl] == i, structure=np.ones((3, 3)))
+    if nc < 2:
+        continue
+    sizes = np.bincount(comp.ravel())[1:]
+    for k in range(1, nc + 1):
+        if k == np.argmax(sizes) + 1:
+            continue
+        seg[sl][comp == k] = nxt
+        nxt += 1
+        islets += 1
+seg, n_new = relabel(seg)
+area = np.bincount(seg.ravel(), minlength=n_new + 1)
+best = {}
+for key, cc in adjacency(seg).items():
+    a_, b_ = divmod(key, 1_000_000)
+    for s_, o in ((a_, b_), (b_, a_)):
+        if area[s_] < 25 and cc > best.get(s_, (0, 0))[0]:
+            best[s_] = (cc, o)
+remap = np.arange(n_new + 1)
+for i_, (cc, o) in best.items():
+    if area[o] >= 25:
+        remap[i_] = o
+seg, n_new = relabel(remap[seg])
+print("  pedaços separados pelo mar viraram províncias próprias:", islets)
 print("províncias novas na Europa:", n_new)
 
 # ------------------------------------------------------------------ monta o mapa novo
@@ -444,6 +475,31 @@ for c in data["countries"]:
 data["provinces"] = provinces
 with open(MAP_JSON, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+# a tabela de donos (tools/data/donos_1444.csv) migra para os ids novos: cada província nova
+# fica com o dono da província antiga com que mais se sobrepõe
+OWNERS_CSV = os.path.join(DATA, "donos_1444.csv")
+if os.path.exists(OWNERS_CSV):
+    old_owner = [p.get("owner", "") if not p["sea"] else "" for p in P]
+    for line in open(OWNERS_CSV, encoding="utf-8"):
+        line = line.strip()
+        if line and not line.startswith("#"):
+            f = (line.split(";") + ["", ""])[:3]
+            if int(f[0]) < nl and (not f[2] or P[int(f[0])]["name"] == f[2]):
+                old_owner[int(f[0])] = f[1]
+    land2 = lab2 < new_nl
+    pairs = lab2[land2].astype(np.int64) * N + lab[land2]
+    u, cnt_ = np.unique(pairs, return_counts=True)
+    best_old = {}
+    for key, cc in zip(u, cnt_):
+        nw, od = divmod(int(key), N)
+        if cc > best_old.get(nw, (0, -1))[0]:
+            best_old[nw] = (cc, od)
+    with open(OWNERS_CSV, "w", encoding="utf-8") as f:
+        f.write("# migrada por rebuild_europe.py; refine_world.py reescreve com os nomes\n")
+        for nw in range(new_nl):
+            od = best_old.get(nw, (0, -1))[1]
+            f.write("%d;%s;\n" % (nw, old_owner[od] if od >= 0 and od < nl else ""))
+    print("tabela de donos migrada para os ids novos")
 rgb = np.zeros((H, W, 3), np.uint8)
 rgb[..., 0] = lab2 & 255
 rgb[..., 1] = (lab2 >> 8) & 255

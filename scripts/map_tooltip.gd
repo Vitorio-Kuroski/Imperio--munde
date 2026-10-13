@@ -97,4 +97,6 @@ func _fill(map: MapView, pid: int) -> void:
 		_:
 			var tag: String = p["owner"]
 			_title.text = map.countries[tag]["name"] if map.countries.has(tag) else "Sem dono"
+			if map.countries.has(tag):
+				_sub.text = "%s · %s" % [p["name"], tag]
 			_swatch.color = map.province_color(pid)

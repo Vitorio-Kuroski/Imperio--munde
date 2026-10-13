@@ -4,8 +4,9 @@ Jogo de grand strategy em Godot 4.x (GDScript), inspirado em Europa Universalis 
 Idioma do jogo e dos comentários: português do Brasil.
 
 ## Estado atual
-- Mapa-múndi gerado por `tools/gen_world.py` a partir de uma imagem de províncias do usuário (6000x3150 px, projeção Miller georreferenciada em `tools/data/world_georef.json`): 5197 províncias (4462 terra, 735 mar); as da Europa/Anatólia/Cáucaso foram redesenhadas por `tools/rebuild_europe.py` (watershed sobre relevo, rios e fronteiras administrativas do Natural Earth, sementes em cidades reais). Saída em `data/world/` e `assets/world/`. `MapView` prefere eu4 > world > `data/map.json` (mapa antigo só da Europa, `tools/gen_map.py`).
+- Mapa-múndi gerado por `tools/gen_world.py` a partir de uma imagem de províncias do usuário (6000x3150 px, projeção Miller georreferenciada em `tools/data/world_georef.json`): 5270 províncias (4535 terra, 735 mar); as da Europa/Anatólia/Cáucaso foram redesenhadas por `tools/rebuild_europe.py` (watershed sobre relevo, rios e fronteiras administrativas do Natural Earth, sementes em cidades reais). Saída em `data/world/` e `assets/world/`. `MapView` prefere eu4 > world > `data/map.json` (mapa antigo só da Europa, `tools/gen_map.py`).
 - 234 países de 1444 (`tools/data/nations_1444.txt` + `nations_world_1444.txt`). Fronteiras APROXIMADAS (crescimento contíguo a partir das cidades-âncora), conferidas contra o mapa histórico de referência de 1444 do usuário (R. Ratkus) usado só como fonte de fatos (quem possui o quê), sem copiar o desenho; não são os dados do EU4. Nomes de províncias vêm das cidades do Natural Earth (`ne_10m_populated_places_simple.geojson`) ou, em áreas remotas, das regiões geográficas (`ne_50m_geography_regions.geojson`).
+- Donos de 1444: `tools/data/donos_1444.csv` (`id;TAG;nome`, uma linha por província de terra) é a fonte da verdade; as âncoras de `nations_*.txt` só servem para províncias fora da tabela e para `--gerar-donos`. A tag aparece no painel e na dica do mapa.
 - `tools/refine_world.py` refina `data/world/` sem mudar ids: donos, capitais, costa (`coastal`), nomes e, com `--terreno`, terreno (12 tipos, ETOPO5 + WorldClim baixados em `tools/data/raw/`, fora do git) e `development` ajustado pelo terreno (`base_development` guarda o original).
 - Culturas de 1444 (`tools/data/cultures_1444.txt`, `@Grupo|cor` + `id|Nome|âncoras`): todas as províncias de terra têm `culture`; `map.json` tem a lista `cultures` (id, name, group, color).
 - Modos de mapa político, terreno e cultura (`MapView.set_map_mode`, tecla T alterna); dica ao passar o mouse (`scripts/map_tooltip.gd`). Escolha de país (lista ordenada por tamanho), câmera (WASD/setas/arrastar, zoom), seleção de província, relógio com pausa e 5 velocidades.
@@ -26,7 +27,7 @@ Idioma do jogo e dos comentários: português do Brasil.
 - Dono de província muda por `MapView.set_owner_of(pid, tag)` (atualiza 2 pixels da paleta); nunca pinte pixels em loop.
 - Lógica mensal (economia, eventos, IA) entra em `_on_month_passed` ou conectada a `clock.month_passed`.
 - Prefira novos sistemas em scripts separados em `scripts/` (ex.: `economy.gd`, `army.gd`) em vez de crescer o `main.gd`.
-- Não edite `province_ids.png`/`map.json` na mão; ajuste `nations_*.txt`/`cultures_1444.txt` e rode `tools/refine_world.py` (mantém os ids). Só `gen_world.py`/`gen_map.py`/`rebuild_europe.py` mudam os ids (depois rode `refine_world.py --terreno`).
+- Não edite `province_ids.png`/`map.json` na mão; ajuste `donos_1444.csv` (donos), `nations_*.txt` (países) ou `cultures_1444.txt` e rode `tools/refine_world.py` (mantém os ids). Só `gen_world.py`/`gen_map.py`/`rebuild_europe.py` mudam os ids (depois rode `refine_world.py --terreno`).
 - Nunca commite os dados brutos do WorldClim/ETOPO (`tools/data/raw/`).
 
 ## Como rodar

@@ -195,7 +195,7 @@ func _show_province(pid: int) -> void:
 	else:
 		var owner_name := "Sem dono"
 		if p["owner"] != "":
-			owner_name = map.countries[p["owner"]]["name"]
+			owner_name = "%s (%s)" % [map.countries[p["owner"]]["name"], p["owner"]]
 		txt += "Dono: %s\nTerreno: %s\nDesenvolvimento: %d" % [owner_name, p["terrain"], p["development"]]
 		var cid: String = p.get("culture", "")
 		if map.cultures.has(cid):
