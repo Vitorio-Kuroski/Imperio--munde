@@ -1,8 +1,8 @@
 # Imperium Mundi
 
 Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
-**Mapa-múndi** com **5337 províncias** (4602 de terra, 735 zonas marítimas), dividido a partir de uma imagem de províncias
-(estilo mapchart.net, 6000x3150 px), e **197 países de 1444** (Europa, Oriente Médio, África, Ásia e Américas).
+**Mapa-múndi** com **5197 províncias** (4462 de terra, 735 zonas marítimas), dividido a partir de uma imagem de províncias
+(estilo mapchart.net, 6000x3150 px), e **234 países de 1444** (Europa, Oriente Médio, África, Ásia e Américas).
 
 > **Aviso de fidelidade:** os países, capitais e cidades são reais, mas as fronteiras de 1444 são uma
 > **aproximação** (cada província vai para o país com a cidade-âncora mais próxima). Não são os dados
@@ -73,6 +73,18 @@ Trabalha direto sobre `data/world/map.json` e `assets/world/province_ids.png`, e
   remotas recebem o nome da região geográfica (`tools/data/ne_50m_geography_regions.geojson`, Natural Earth);
   em nomes repetidos a cidade mais populosa fica sem numeral (London × London de Ontário).
 - Depois de editar `tools/data/nations_*.txt` ou `cultures_1444.txt`, rode `refine_world.py` (não precisa do `--terreno`).
+
+## Redesenhar as províncias da Europa
+```
+pip install pillow numpy scipy scikit-image
+python3 tools/rebuild_europe.py [--previa previa.png]
+python3 tools/refine_world.py --terreno
+```
+Redesenha as províncias de terra da Europa, Anatólia e Cáucaso com dados livres (Natural Earth e ETOPO5,
+baixados em `tools/data/raw/`). As sementes são cidades reais, mais densas no Sacro Império e mais
+esparsas no leste e no norte. As divisas seguem cristas de montanha, rios principais e fronteiras
+administrativas, com um micro-relevo para ficarem sinuosas. O resto do mundo e os mares mantêm o
+formato, mas **todos os ids são renumerados**.
 
 ## Regenerar o mapa-múndi
 ```
