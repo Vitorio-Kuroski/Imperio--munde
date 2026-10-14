@@ -8,6 +8,8 @@ const CATS := [["adm", "Administrativa"], ["dip", "Diplomática"], ["mil", "Mili
 const DONE := Color(0.62, 0.85, 0.55)
 const NEXT := Color(1.0, 0.86, 0.45)
 const LATER := Color(0.72, 0.72, 0.70)
+const UNIT_TYPES := [["infantry", "Infantaria"], ["cavalry", "Cavalaria"], ["artillery", "Artilharia"],
+		["heavy_ship", "Naus pesadas"], ["light_ship", "Naus leves"], ["galley", "Galés"], ["transport", "Transportes"]]
 
 var _title: Label
 var _tabs: TabContainer
@@ -76,14 +78,84 @@ func show_for(map: MapView, tag: String) -> void:
 			l.custom_minimum_size.x = 600
 			var mark := "✓" if n <= lvl else ("→" if n == lvl + 1 else "  ")
 			var nm: String = names[n] if n < names.size() else "Tecnologia %s %d" % [cat[1].to_lower(), n]
-			l.text = "%s %d · %d · %s%s" % [mark, n, int(t["year"]), nm, _details(map, t)]
+			l.text = "%s %d · %d · %s%s" % [mark, n, int(t["year"]), nm, _details(map, t, tag)]
 			l.add_theme_color_override("font_color", DONE if n <= lvl else (NEXT if n == lvl + 1 else LATER))
 			list.add_child(l)
+	if not map.units.is_empty():
+		_units_tab(map, tag, lvl)
 	show()
 	reset_size()
 
 
-func _details(map: MapView, t: Dictionary) -> String:
+## Unidades que o país pode ter: as do seu grupo tecnológico + artilharia e navios (sem grupo).
+static func units_for(map: MapView, tag: String) -> Array:
+	var g: String = map.countries.get(tag, {}).get("tech_group", "")
+	var out := []
+	for u in map.units.values():
+		if u.has("level") and (not u.has("unit_type") or u["unit_type"] == g):
+			out.append(u)
+	out.sort_custom(func(a, b):
+		if a["type"] != b["type"]:
+			return a["type"] < b["type"]
+		if int(a["level"]) != int(b["level"]):
+			return int(a["level"]) < int(b["level"])
+		return a["id"] < b["id"])
+	return out
+
+
+## Melhor unidade já liberada de cada tipo ("infantry" -> unidade), a que o país usa em 1444.
+static func current_units(map: MapView, tag: String) -> Dictionary:
+	var lvl := level_of(map, tag)
+	var best := {}
+	for u in units_for(map, tag):
+		if int(u["level"]) <= lvl:
+			best[u["type"]] = u          # a lista vem em ordem de nível
+	return best
+
+
+func _units_tab(map: MapView, tag: String, lvl: int) -> void:
+	var scroll := ScrollContainer.new()
+	scroll.name = "Unidades"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_tabs.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 4)
+	scroll.add_child(list)
+	var all := units_for(map, tag)
+	var cur := current_units(map, tag)
+	for ty in UNIT_TYPES:
+		var head := Label.new()
+		head.text = ty[1]
+		head.add_theme_font_size_override("font_size", 17)
+		list.add_child(head)
+		for u in all:
+			if u["type"] != ty[0]:
+				continue
+			var n := int(u["level"])
+			var l := Label.new()
+			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			l.custom_minimum_size.x = 600
+			var mark := "★" if cur.get(ty[0]) == u else ("✓" if n <= lvl else "  ")
+			l.text = "%s %s %d · %s — %s" % [mark, u["tech"], n, u["name"], unit_stats(u)]
+			l.add_theme_color_override("font_color", NEXT if mark == "★" else (DONE if n <= lvl else LATER))
+			list.add_child(l)
+
+
+## "fogo 1/0 · choque 2/1 · moral 1/1 · manobra 1" (ataque/defesa) ou atributos do navio.
+static func unit_stats(u: Dictionary) -> String:
+	if u.has("hull_size"):
+		var p := ["casco %s" % u["hull_size"], "canhões %s" % u.get("base_cannons", 0),
+				"marinheiros %s" % u.get("sailors", 0), "velocidade %s" % str(u.get("sail_speed", 0)).replace(".", ",")]
+		if u.has("trade_power"):
+			p.append("poder comercial %s" % str(u["trade_power"]).replace(".", ","))
+		return ", ".join(p)
+	return "fogo %s/%s · choque %s/%s · moral %s/%s · manobra %s" % [u.get("offensive_fire", 0),
+			u.get("defensive_fire", 0), u.get("offensive_shock", 0), u.get("defensive_shock", 0),
+			u.get("offensive_morale", 0), u.get("defensive_morale", 0), u.get("maneuver", 0)]
+
+
+func _details(map: MapView, t: Dictionary, tag: String) -> String:
 	var parts := []
 	var labels: Dictionary = _pt.get("efeitos", {})
 	var absolute: Array = _pt.get("absolutos", [])
@@ -104,9 +176,11 @@ func _details(map: MapView, t: Dictionary) -> String:
 	for u in t.get("unlocks", []):
 		if not (u as String).ends_with("_legacy"):
 			lib.append(_pt.get("liberacoes", {}).get(u, Eu4Importer.pretty_key(u)))
-	if not t.get("units", []).is_empty():
-		var nu: int = t["units"].size()
-		lib.append("1 tipo de unidade" if nu == 1 else "%d tipos de unidade" % nu)
+	var g: String = map.countries.get(tag, {}).get("tech_group", "")
+	for uid in t.get("units", []):
+		var u: Dictionary = map.units.get(uid, {})
+		if not u.is_empty() and (not u.has("unit_type") or u["unit_type"] == g):
+			lib.append(u["name"])         # só as unidades do grupo tecnológico do país
 	var txt := ""
 	if not parts.is_empty():
 		txt += "\n     " + ", ".join(parts)

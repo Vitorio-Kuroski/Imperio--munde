@@ -102,7 +102,7 @@ func _rel(p: String) -> String:
 		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
-			"common/buildings/", "common/governments/", "common/technologies/"]:
+			"common/buildings/", "common/governments/", "common/technologies/", "common/units/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -708,6 +708,7 @@ func _import() -> String:
 	var geo := _geography()
 	var tech_groups := []
 	var technologies := _technologies(buildings, tech_groups)
+	var units := _units(technologies)
 	var adjacencies := []
 	if _index.has("map/adjacencies.csv"):
 		for line in _text("map/adjacencies.csv").split("\n"):
@@ -776,7 +777,8 @@ func _import() -> String:
 			"religions": religions, "trade_goods": trade_goods, "trade_nodes": trade_nodes, "buildings": buildings,
 			"terrains": terrains, "areas": geo["areas"], "regions": geo["regions"], "superregions": geo["superregions"],
 			"continents": geo["continents"], "adjacencies": adjacencies, "governments": governments,
-			"technologies": technologies, "tech_groups": tech_groups, "provinces": provinces}))
+			"technologies": technologies, "tech_groups": tech_groups, "units": units,
+			"provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
@@ -1254,6 +1256,37 @@ func _technologies(buildings: Array, groups: Array) -> Dictionary:
 								d["cost_modifier"] = _int_if_whole(float(x[1]))
 						groups.append(d)
 	return techs
+
+
+const UNIT_NUM_KEYS := ["maneuver", "offensive_morale", "defensive_morale", "offensive_fire", "defensive_fire",
+		"offensive_shock", "defensive_shock", "hull_size", "base_cannons", "blockade", "sailors", "sail_speed",
+		"trade_power"]
+
+
+## Unidades (common/units/<id>.txt) com o nível e a árvore da tecnologia que as libera.
+func _units(technologies: Dictionary) -> Array:
+	var unlock := {}
+	for cat in ["mil", "dip"]:
+		for t in technologies.get(cat, []):
+			for u in t["units"]:
+				if not unlock.has(u):
+					unlock[u] = [cat, t["level"]]
+	var out := []
+	for f in _list("common/units/"):
+		var uid := f.get_file().get_basename()
+		var u := {"id": uid, "name": pretty_key(uid), "type": ""}
+		for kv in _parse(_text(f)):
+			if kv[0] == "type" and kv[1] is String:
+				u["type"] = kv[1]
+			elif kv[0] == "unit_type" and kv[1] is String:
+				u["unit_type"] = kv[1]
+			elif kv[0] in UNIT_NUM_KEYS and str(kv[1]).is_valid_float():
+				u[kv[0]] = _int_if_whole(float(kv[1]))
+		if unlock.has(uid):
+			u["tech"] = unlock[uid][0]
+			u["level"] = unlock[uid][1]
+		out.append(u)
+	return out
 
 
 ## Blocos de topo [nome, itens] de um arquivo de script (vazio se o arquivo não existir).

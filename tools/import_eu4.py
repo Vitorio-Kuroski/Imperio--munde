@@ -16,6 +16,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   map/area.txt, map/region.txt, map/superregion.txt, map/continent.txt (geografia; opcionais)
   map/rivers.bmp (rios), map/adjacencies.csv (estreitos); opcionais
   common/technologies/*.txt, common/technology.txt (tecnologias e grupos tecnologicos; opcionais)
+  common/units/*.txt                           (unidades: tipo, grupo, atributos; opcional)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -226,6 +227,35 @@ def eu4_technologies(root, building_ids):
                                 d["cost_modifier"] = to_num(vv)
                         groups.append(d)
     return techs, groups
+
+
+UNIT_NUM_KEYS = ("maneuver", "offensive_morale", "defensive_morale", "offensive_fire", "defensive_fire",
+                 "offensive_shock", "defensive_shock", "hull_size", "base_cannons", "blockade", "sailors",
+                 "sail_speed", "trade_power")
+
+
+def eu4_units(root, technologies):
+    """Unidades (common/units/<id>.txt) com o nivel e a arvore da tecnologia que as libera."""
+    unlock = {}
+    for cat in ("mil", "dip"):
+        for t in technologies.get(cat, []):
+            for u in t["units"]:
+                unlock.setdefault(u, (cat, t["level"]))
+    units = []
+    for uf in sorted(glob.glob(os.path.join(root, "common", "units", "*.txt"))):
+        uid = os.path.splitext(os.path.basename(uf))[0]
+        u = {"id": uid, "name": pretty_key(uid), "type": ""}
+        for k, v in parse_script(read_text(uf)):
+            if k == "type" and isinstance(v, str):
+                u["type"] = v
+            elif k == "unit_type" and isinstance(v, str):
+                u["unit_type"] = v
+            elif k in UNIT_NUM_KEYS and to_num(v) is not None:
+                u[k] = to_num(v)
+        if uid in unlock:
+            u["tech"], u["level"] = unlock[uid]
+        units.append(u)
+    return units
 
 
 def parse_building(bid, items, names):
@@ -822,6 +852,7 @@ def main():
 
     geo = eu4_geography(root)
     technologies, tech_groups = eu4_technologies(root, {b["id"] for b in buildings})
+    units = eu4_units(root, technologies)
     adjacencies = []
     ap_ = os.path.join(root, "map", "adjacencies.csv")
     if os.path.isfile(ap_):
@@ -877,7 +908,8 @@ def main():
                    "buildings": buildings, "terrains": terrains, "areas": geo["areas"], "regions": geo["regions"],
                    "superregions": geo["superregions"], "continents": geo["continents"],
                    "adjacencies": adjacencies, "governments": governments,
-                   "technologies": technologies, "tech_groups": tech_groups, "provinces": provinces},
+                   "technologies": technologies, "tech_groups": tech_groups, "units": units,
+                   "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])

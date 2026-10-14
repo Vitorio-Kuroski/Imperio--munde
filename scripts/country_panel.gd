@@ -27,7 +27,7 @@ func _init() -> void:
 	_label.custom_minimum_size.x = 320
 	vb.add_child(_label)
 	_tech_button = Button.new()
-	_tech_button.text = "Ver tecnologias"
+	_tech_button.text = "Ver tecnologias e unidades"
 	_tech_button.pressed.connect(func(): techs_requested.emit(tag))
 	vb.add_child(_tech_button)
 	if FileAccess.file_exists("res://data/governos_pt.json"):
@@ -66,6 +66,13 @@ func show_country(map: MapView, t: String) -> void:
 			var lv := int(g["start_level"])
 			lines.append("Tecnologia: adm %d · dip %d · mil %d (custo %+d%%)" % [lv, lv, lv,
 					roundi(float(g["cost_modifier"]) * 100.0)])
+	var cur := TechWindow.current_units(map, t) if not map.units.is_empty() else {}
+	var army := []
+	for ty in [["infantry", "infantaria"], ["cavalry", "cavalaria"], ["artillery", "artilharia"]]:
+		if cur.has(ty[0]):
+			army.append("%s: %s" % [ty[1], cur[ty[0]]["name"]])
+	if not army.is_empty():
+		lines.append("Exército: " + "; ".join(army))
 	_tech_button.visible = not map.technologies.is_empty() and map.tech_groups.has(c.get("tech_group", ""))
 	if c.has("primary_culture"):
 		lines.append("Cultura principal: " + _culture(map, c["primary_culture"]))
