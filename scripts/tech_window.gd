@@ -11,6 +11,10 @@ const LATER := Color(0.72, 0.72, 0.70)
 const UNIT_TYPES := [["infantry", "Infantaria"], ["cavalry", "Cavalaria"], ["artillery", "Artilharia"],
 		["heavy_ship", "Naus pesadas"], ["light_ship", "Naus leves"], ["galley", "Galés"], ["transport", "Transportes"]]
 
+var power: MonarchPower           # pontos e níveis atuais (main.gd define)
+var player := ""                  # só o país do jogador ganha o botão "Pesquisar"
+var _map: MapView
+var _tag := ""
 var _title: Label
 var _tabs: TabContainer
 var _pt := {}
@@ -47,21 +51,40 @@ func _init() -> void:
 	hide()
 
 
-## Nível inicial do país em cada árvore (o start_level do grupo tecnológico).
-static func level_of(map: MapView, tag: String) -> int:
+## Nível do país na árvore `cat`: o atual (MonarchPower) ou o inicial do grupo tecnológico.
+static func level_of(map: MapView, tag: String, cat := "mil", pw: MonarchPower = null) -> int:
+	if pw and pw.state.has(tag):
+		return pw.tech(tag, cat)
 	var g: String = map.countries.get(tag, {}).get("tech_group", "")
 	return int(map.tech_groups[g]["start_level"]) if map.tech_groups.has(g) else 0
+
+
+## Redesenha a janela (depois de pesquisar ou quando os pontos mudam).
+func refresh() -> void:
+	if visible and _map:
+		var tab := _tabs.current_tab
+		show_for(_map, _tag)
+		_tabs.current_tab = tab
 
 
 func show_for(map: MapView, tag: String) -> void:
 	if not map.countries.has(tag):
 		return
-	var lvl := level_of(map, tag)
-	_title.text = "Tecnologias — %s (nível %d nas três árvores)" % [map.countries[tag]["name"], lvl]
+	_map = map
+	_tag = tag
+	var lv := {}
+	for cat in CATS:
+		lv[cat[0]] = level_of(map, tag, cat[0], power)
+	_title.text = "Tecnologias — %s (adm %d · dip %d · mil %d)" % [map.countries[tag]["name"], lv["adm"], lv["dip"],
+			lv["mil"]]
+	if power and power.state.has(tag):
+		_title.text += "   pontos: adm %d · dip %d · mil %d" % [power.points(tag, "adm"), power.points(tag, "dip"),
+				power.points(tag, "mil")]
 	for c in _tabs.get_children():
 		_tabs.remove_child(c)
 		c.queue_free()
 	for cat in CATS:
+		var lvl: int = lv[cat[0]]
 		var scroll := ScrollContainer.new()
 		scroll.name = cat[1]
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -70,6 +93,16 @@ func show_for(map: MapView, tag: String) -> void:
 		list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		list.add_theme_constant_override("separation", 6)
 		scroll.add_child(list)
+		if power and tag == player:
+			var cost := power.tech_cost(tag, cat[0])
+			var b := Button.new()
+			b.text = "Pesquisar o nível %d (%d pontos %s; você tem %d)" % [lvl + 1, cost, cat[0], power.points(tag, cat[0])] \
+					if cost >= 0 else "Árvore completa"
+			b.disabled = not power.can_research(tag, cat[0])
+			b.pressed.connect(func():
+				power.research(tag, cat[0])
+				refresh())
+			list.add_child(b)
 		var names: Array = _pt.get("nomes", {}).get(cat[0], [])
 		for t in map.technologies.get(cat[0], []):
 			var n := int(t["level"])
@@ -82,7 +115,7 @@ func show_for(map: MapView, tag: String) -> void:
 			l.add_theme_color_override("font_color", DONE if n <= lvl else (NEXT if n == lvl + 1 else LATER))
 			list.add_child(l)
 	if not map.units.is_empty():
-		_units_tab(map, tag, lvl)
+		_units_tab(map, tag)
 	show()
 	reset_size()
 
@@ -103,17 +136,16 @@ static func units_for(map: MapView, tag: String) -> Array:
 	return out
 
 
-## Melhor unidade já liberada de cada tipo ("infantry" -> unidade), a que o país usa em 1444.
-static func current_units(map: MapView, tag: String) -> Dictionary:
-	var lvl := level_of(map, tag)
+## Melhor unidade já liberada de cada tipo ("infantry" -> unidade), a que o país usa agora.
+static func current_units(map: MapView, tag: String, pw: MonarchPower = null) -> Dictionary:
 	var best := {}
 	for u in units_for(map, tag):
-		if int(u["level"]) <= lvl:
+		if int(u["level"]) <= level_of(map, tag, u.get("tech", "mil"), pw):
 			best[u["type"]] = u          # a lista vem em ordem de nível
 	return best
 
 
-func _units_tab(map: MapView, tag: String, lvl: int) -> void:
+func _units_tab(map: MapView, tag: String) -> void:
 	var scroll := ScrollContainer.new()
 	scroll.name = "Unidades"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -123,7 +155,7 @@ func _units_tab(map: MapView, tag: String, lvl: int) -> void:
 	list.add_theme_constant_override("separation", 4)
 	scroll.add_child(list)
 	var all := units_for(map, tag)
-	var cur := current_units(map, tag)
+	var cur := current_units(map, tag, power)
 	for ty in UNIT_TYPES:
 		var head := Label.new()
 		head.text = ty[1]
@@ -133,6 +165,7 @@ func _units_tab(map: MapView, tag: String, lvl: int) -> void:
 			if u["type"] != ty[0]:
 				continue
 			var n := int(u["level"])
+			var lvl := level_of(map, tag, u["tech"], power)
 			var l := Label.new()
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			l.custom_minimum_size.x = 600

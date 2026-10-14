@@ -10,6 +10,8 @@ const FOCUS := {"ADM": "Administrativo", "DIP": "Diplomático", "MIL": "Militar"
 signal techs_requested(tag: String)
 
 var tag := ""
+var power: MonarchPower           # main.gd define
+var _map: MapView
 var _label: Label
 var _tech_button: Button
 var _pt := {}
@@ -40,6 +42,7 @@ func _init() -> void:
 ## Mostra o país `t` (vazio esconde o painel).
 func show_country(map: MapView, t: String) -> void:
 	tag = t
+	_map = map
 	if t == "" or not map.countries.has(t):
 		hide()
 		return
@@ -63,10 +66,14 @@ func show_country(map: MapView, t: String) -> void:
 				Eu4Importer.pretty_key(c["tech_group"])))
 		if map.tech_groups.has(c["tech_group"]):
 			var g: Dictionary = map.tech_groups[c["tech_group"]]
-			var lv := int(g["start_level"])
-			lines.append("Tecnologia: adm %d · dip %d · mil %d (custo %+d%%)" % [lv, lv, lv,
-					roundi(float(g["cost_modifier"]) * 100.0)])
-	var cur := TechWindow.current_units(map, t) if not map.units.is_empty() else {}
+			lines.append("Tecnologia: adm %d · dip %d · mil %d (custo %+d%%)" % [
+					TechWindow.level_of(map, t, "adm", power), TechWindow.level_of(map, t, "dip", power),
+					TechWindow.level_of(map, t, "mil", power), roundi(float(g["cost_modifier"]) * 100.0)])
+	if power and power.state.has(t):
+		lines.append("Pontos de monarca: adm %d (+%d) · dip %d (+%d) · mil %d (+%d) por mês" % [
+				power.points(t, "adm"), power.gain(t, "adm"), power.points(t, "dip"), power.gain(t, "dip"),
+				power.points(t, "mil"), power.gain(t, "mil")])
+	var cur := TechWindow.current_units(map, t, power) if not map.units.is_empty() else {}
 	var army := []
 	for ty in [["infantry", "infantaria"], ["cavalry", "cavalaria"], ["artillery", "artilharia"]]:
 		if cur.has(ty[0]):
@@ -100,6 +107,12 @@ func show_country(map: MapView, t: String) -> void:
 	_label.text = "\n".join(lines)
 	show()
 	reset_size()
+
+
+## Atualiza o texto (por exemplo, quando os pontos mudam no fim do mês).
+func refresh() -> void:
+	if visible and _map:
+		show_country(_map, tag)
 
 
 func _culture(map: MapView, cid: String) -> String:

@@ -8,6 +8,7 @@ const ZOOM_MAX := 8.0
 
 var map: MapView
 var clock := GameClock.new()
+var power := MonarchPower.new()
 var camera: Camera2D
 var player_tag := ""
 
@@ -35,6 +36,7 @@ func _ready() -> void:
 	map = MapView.new()
 	add_child(map)
 	map.load_map(MAP_SCALE)
+	power.setup(map, clock)
 
 	camera = Camera2D.new()
 	add_child(camera)
@@ -66,7 +68,7 @@ func _build_ui() -> void:
 	top_bar.add_child(hb)
 
 	country_label = Label.new()
-	country_label.custom_minimum_size.x = 340
+	country_label.custom_minimum_size.x = 520
 	hb.add_child(country_label)
 
 	var spacer := Control.new()
@@ -158,7 +160,13 @@ func _build_ui() -> void:
 	country_panel = CountryPanel.new()
 	ui.add_child(country_panel)
 	tech_window = TechWindow.new()
+	tech_window.power = power
 	ui.add_child(tech_window)
+	country_panel.power = power
+	power.changed.connect(func(_t):
+		country_panel.refresh()
+		tech_window.refresh()
+		_refresh_top_bar())
 	country_panel.techs_requested.connect(func(t: String): tech_window.show_for(map, t))
 
 	# Dica do mapa (criada por último para ficar por cima)
@@ -280,6 +288,8 @@ func _poll_import() -> bool:
 
 func _start_game(tag: String) -> void:
 	player_tag = tag
+	power.player = tag
+	tech_window.player = tag
 	start_panel.hide()
 	var cap: int = int(map.countries[tag]["capital"])
 	camera.position = map.province_center(cap)
@@ -296,7 +306,9 @@ func _refresh_top_bar() -> void:
 		var dev := 0
 		for p in mine:
 			dev += int(p["development"])
-		country_label.text = "%s — %d prov., desenv. %d" % [map.countries[player_tag]["name"], mine.size(), dev]
+		country_label.text = "%s — %d prov., desenv. %d   ADM %d · DIP %d · MIL %d" % [
+				map.countries[player_tag]["name"], mine.size(), dev, power.points(player_tag, "adm"),
+				power.points(player_tag, "dip"), power.points(player_tag, "mil")]
 	else:
 		country_label.text = ""
 	date_label.text = clock.date_text()
