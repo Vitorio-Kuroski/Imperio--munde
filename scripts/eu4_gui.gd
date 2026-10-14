@@ -332,7 +332,12 @@ func _element(kind: String, items: Array) -> Control:
 				b.tooltip_text = tip
 			c = b
 			_place(c, items, b.custom_minimum_size)
-		"instanttextboxtype", "textboxtype":
+		"overlappingelementsboxtype":
+			c = HBoxContainer.new()
+			c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			c.add_theme_constant_override("separation", 2)
+			_place(c, items, _vec(items, "size"))
+		"instanttextboxtype", "textboxtype", "edittextboxtype", "editboxtype":
 			var l := Label.new()
 			l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			style_label(l, str(_val(items, "font", "vic_18")))

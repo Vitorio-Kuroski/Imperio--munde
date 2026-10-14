@@ -709,10 +709,15 @@ UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "
 
 
 # telas do EU4 que o jogo monta (scripts/eu4_gui.gd) e sprites extras (botoes dos modos de mapa)
-GUI_FILES = ["topbar", "speed_controls", "minimappanel"]
+GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview"]
 GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic"]
+# icones de terreno da tela da provincia (GFX_combat_terrain_<terreno do EU4>)
+COMBAT_TERRAINS = ["GFX_combat_terrain_" + t for t in (
+    "coastal_desert", "coastline", "desert", "desert_mountain", "drylands", "farmlands", "forest", "glacier",
+    "grasslands", "highlands", "hills", "jungle", "marsh", "mountain", "ocean", "plains", "savannah",
+    "steppe", "woods")]
 SPRITE_KINDS = ["spritetype", "frameanimatedspritetype", "textspritetype", "corneredtilespritetype",
                 "maskedshieldtype", "progressbartype"]
 
@@ -775,7 +780,7 @@ def make_gui(root):
             refs(trees[g])
     if not trees:
         return
-    used.update(GUI_EXTRA_SPRITES)
+    used.update(GUI_EXTRA_SPRITES + COMBAT_TERRAINS)
 
     def kv(items):
         d = {}

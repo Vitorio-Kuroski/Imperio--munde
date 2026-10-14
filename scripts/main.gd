@@ -30,6 +30,7 @@ var info_label: Label
 var prov_icons: HFlowContainer     # ícones da província (produto, religião, construções, instituições)
 var tooltip: MapTooltip
 var eu4_hud: Eu4Hud               # interface montada com os .gui do EU4 (null sem as telas importadas)
+var province_view: Eu4ProvinceView  # tela da província do EU4 (no lugar do painel de texto)
 var country_panel: CountryPanel
 var tech_window: TechWindow
 var ideas_window: IdeasWindow
@@ -107,6 +108,14 @@ func _setup_eu4_hud() -> void:
 	eu4_hud.shield_pressed.connect(func():
 		if player_tag != "":
 			country_panel.show_country(map, player_tag))
+	province_view = Eu4ProvinceView.new()
+	ui.add_child(province_view)
+	ui.move_child(province_view, 1)
+	if province_view.setup(g, map, institutions):
+		province_view.terrain_tip = _terrain_info
+	else:
+		province_view.queue_free()
+		province_view = null
 	eu4_hud.zoom_requested.connect(func(f: float):
 		camera.zoom = (camera.zoom * f).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 		_clamp_camera())
@@ -446,6 +455,12 @@ func _toggle_map_mode() -> void:
 
 
 func _show_province(pid: int) -> void:
+	if province_view and (pid < 0 or not map.provinces[pid]["sea"]):
+		side_panel.hide()
+		province_view.show_province(pid)
+		return
+	if province_view:
+		province_view.hide()
 	if pid < 0:
 		side_panel.hide()
 		return

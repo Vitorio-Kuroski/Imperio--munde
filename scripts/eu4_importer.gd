@@ -1268,7 +1268,16 @@ func _make_ui() -> void:
 
 
 ## Telas do EU4 que o jogo monta (Eu4Gui): interface/<nome>.gui.
-const GUI_FILES := ["topbar", "speed_controls", "minimappanel"]
+const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview"]
+## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
+const COMBAT_TERRAINS := [
+		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",
+		"GFX_combat_terrain_desert_mountain", "GFX_combat_terrain_drylands", "GFX_combat_terrain_farmlands",
+		"GFX_combat_terrain_forest", "GFX_combat_terrain_glacier", "GFX_combat_terrain_grasslands",
+		"GFX_combat_terrain_highlands", "GFX_combat_terrain_hills", "GFX_combat_terrain_jungle",
+		"GFX_combat_terrain_marsh", "GFX_combat_terrain_mountain", "GFX_combat_terrain_ocean",
+		"GFX_combat_terrain_plains", "GFX_combat_terrain_savannah", "GFX_combat_terrain_steppe",
+		"GFX_combat_terrain_woods"]
 ## Sprites usados pelo jogo além dos citados nos .gui (botões dos modos de mapa).
 const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
 		"GFX_mapmode_religion", "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas",
@@ -1360,7 +1369,7 @@ func _make_gui() -> void:
 		_collect_refs(tree, used, used_fonts)
 	if files.is_empty():
 		return
-	for n in GUI_EXTRA_SPRITES:
+	for n in GUI_EXTRA_SPRITES + COMBAT_TERRAINS:
 		used[n] = true
 	_set_status("Lendo as telas do EU4...")
 	var defs := {}
