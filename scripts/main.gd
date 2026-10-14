@@ -72,7 +72,7 @@ func _build_ui() -> void:
 	hb.add_child(spacer)
 
 	mode_button = Button.new()
-	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura, religião, produtos, comércio (T)"
+	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura, religião, produtos, comércio, regiões (T)"
 	mode_button.pressed.connect(_toggle_map_mode)
 	hb.add_child(mode_button)
 
@@ -295,7 +295,7 @@ func _refresh_top_bar() -> void:
 	mode_button.text = "Mapa: %s" % MapView.MAP_MODE_NAMES[map.map_mode]
 
 
-## Alterna político -> terreno -> cultura -> religião -> produtos -> comércio -> político (pula os modos sem dados no mapa).
+## Alterna político -> terreno -> cultura -> religião -> produtos -> comércio -> regiões -> político (pula os modos sem dados no mapa).
 func _toggle_map_mode() -> void:
 	var mode := map.map_mode
 	for i in MapView.MAP_MODE_NAMES.size():
@@ -320,7 +320,8 @@ func _show_province(pid: int) -> void:
 		var owner_name := "Sem dono"
 		if p["owner"] != "":
 			owner_name = "%s (%s)" % [map.countries[p["owner"]]["name"], p["owner"]]
-		txt += "Dono: %s\nTerreno: %s\nDesenvolvimento: %d" % [owner_name, p["terrain"], p["development"]]
+		txt += "Dono: %s\nTerreno: %s%s\nDesenvolvimento: %d" % [owner_name, p["terrain"], _terrain_info(p["terrain"]),
+				p["development"]]
 		if p.has("base_tax"):
 			txt += "\n   imposto %d · produção %d · efetivo %d" % [p["base_tax"], p["base_production"], p["base_manpower"]]
 		var gid: String = p.get("trade_goods", "")
@@ -345,6 +346,7 @@ func _show_province(pid: int) -> void:
 			txt += "\nReligião: %s" % map.religions[rid]["name"] + (" (%s)" % rgrp if rgrp != "" else "")
 		if p.get("coastal", false):
 			txt += "\nCosteira"
+	txt += _geography_info(p)
 	info_label.text = txt
 	side_panel.show()
 	_fit_side_panel.call_deferred()
@@ -354,6 +356,39 @@ func _show_province(pid: int) -> void:
 func _fit_side_panel() -> void:
 	side_panel.reset_size()
 	side_panel.position.y = get_viewport_rect().size.y - side_panel.size.y - 12
+
+
+## " (movimento ×1,25, defesa +1)" a partir de map.terrains (só no mapa do EU4).
+func _terrain_info(label: String) -> String:
+	if not map.terrains.has(label):
+		return ""
+	var t: Dictionary = map.terrains[label]
+	var parts := []
+	if t.has("movement_cost"):
+		parts.append("movimento ×" + _num(t["movement_cost"]))
+	if float(t.get("defence", 0)) != 0.0:
+		parts.append("defesa %+d" % int(t["defence"]))
+	if t.has("supply_limit"):
+		parts.append("suprimento " + _num(t["supply_limit"]))
+	return " (%s)" % ", ".join(parts) if not parts.is_empty() else ""
+
+
+## Linhas de área / região / super-região / continente (mapa do EU4).
+func _geography_info(p: Dictionary) -> String:
+	var txt := ""
+	var aid: String = p.get("area", "")
+	if map.areas.has(aid):
+		txt += "\nÁrea: " + map.areas[aid]["name"]
+	var rid: String = p.get("region", "")
+	if map.regions.has(rid):
+		txt += "\nRegião: " + map.regions[rid]["name"]
+		var sid: String = p.get("superregion", "")
+		if map.superregions.has(sid):
+			txt += " (%s)" % map.superregions[sid]["name"]
+	var cid: String = p.get("continent", "")
+	if map.continents.has(cid):
+		txt += "\nContinente: " + map.continents[cid]["name"]
+	return txt
 
 
 ## Número com vírgula decimal (2.5 -> "2,5"; 3.0 -> "3").

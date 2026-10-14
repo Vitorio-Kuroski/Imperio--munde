@@ -9,7 +9,9 @@ extends RefCounted
 const OUT_DIR := "user://eu4"
 const CUTOFF := 14441111            # 1444.11.11 como AAAAMMDD
 const TOPS := ["map/", "history/", "common/", "localisation/"]
-const MAP_FILES := ["provinces.bmp", "definition.csv", "default.map", "climate.txt", "heightmap.bmp"]
+const MAP_FILES := ["provinces.bmp", "definition.csv", "default.map", "climate.txt", "heightmap.bmp", "terrain.txt",
+		"terrain.bmp", "trees.bmp", "rivers.bmp", "area.txt", "region.txt", "superregion.txt", "continent.txt",
+		"adjacencies.csv"]
 
 var status := ""                    # mensagem de progresso (a interface lê)
 var error := ""                     # vazio = deu certo
@@ -28,7 +30,7 @@ static func has_import() -> bool:
 
 ## Apaga o mapa importado (o jogo volta ao mapa padrão).
 static func remove_import() -> void:
-	for f in ["map.json", "province_ids.png"]:
+	for f in ["map.json", "province_ids.png", "rivers.png"]:
 		if FileAccess.file_exists(OUT_DIR + "/" + f):
 			DirAccess.remove_absolute(OUT_DIR + "/" + f)
 
@@ -434,8 +436,20 @@ func _import() -> String:
 					hcnt[q] += 1
 			has_height = true
 
-	_set_status("Gravando o mapa...")
+	# ---- terreno do próprio EU4 (terrain.txt + terrain.bmp + trees.bmp) e rios
+	var terrains := []
+	var terrain_of := _eu4_terrain(out, w, h, n_prov, terrains)
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
+	if FileAccess.file_exists(OUT_DIR + "/rivers.png"):
+		DirAccess.remove_absolute(OUT_DIR + "/rivers.png")
+	if _index.has("map/rivers.bmp"):
+		_set_status("Lendo os rios (rivers.bmp)...")
+		var rv := _bmp8("map/rivers.bmp")
+		if not rv.is_empty() and rv[0] == w and rv[1] == h:
+			# índice da paleta (< 254 = rio; 254 = terra; 255 = mar), o shader lê direto
+			Image.create_from_data(w, h, false, Image.FORMAT_L8, rv[2]).save_png(OUT_DIR + "/rivers.png")
+
+	_set_status("Gravando o mapa...")
 	var idimg := Image.create_from_data(w, h, false, Image.FORMAT_RGB8, out)
 	if idimg.save_png(OUT_DIR + "/province_ids.png") != OK:
 		return "Não consegui gravar " + OUT_DIR + "/province_ids.png"
@@ -584,6 +598,16 @@ func _import() -> String:
 	var node_of := {}
 	var trade_nodes := _trade_nodes(loc, node_of)
 
+	# ---- geografia (áreas, regiões, super-regiões, continentes) e estreitos
+	var geo := _geography()
+	var adjacencies := []
+	if _index.has("map/adjacencies.csv"):
+		for line in _text("map/adjacencies.csv").split("\n"):
+			var q := line.split(";")
+			if q.size() >= 4 and q[0].is_valid_int() and q[1].is_valid_int() and int(q[0]) > 0 and int(q[1]) > 0:
+				adjacencies.append({"from": int(q[0]), "to": int(q[1]), "type": q[2],
+						"through": int(q[3]) if q[3].is_valid_int() else -1})
+
 	# ---- map.json
 	_set_status("Gravando os dados...")
 	var provinces := []
@@ -608,7 +632,10 @@ func _import() -> String:
 			if has_height and hcnt[pid] > 0:
 				hm = hsum[pid] / hcnt[pid]
 				hs = sqrt(maxf(hsq[pid] / hcnt[pid] - hm * hm, 0.0))
-			prov["terrain"] = _terrain(climates.get(pid, {}), hm, hs)
+			if terrain_of.has(pid) and not climates.get(pid, {}).has("impassable"):
+				prov["terrain"] = terrain_of[pid]
+			else:
+				prov["terrain"] = _terrain(climates.get(pid, {}), hm, hs)
 			prov["development"] = dev.get(pid, 0)
 			prov["base_development"] = prov["development"]
 			prov["culture"] = culture.get(pid, "")
@@ -622,21 +649,25 @@ func _import() -> String:
 				prov["buildings"] = prov_buildings[pid]
 			if cot.has(pid):
 				prov["center_of_trade"] = cot[pid]
-		if node_of.has(pid):
-			prov["trade_node"] = node_of[pid]
 			var coastal := false
 			for q in neigh[pid]:
 				if sea.has(q):
 					coastal = true
 					break
 			prov["coastal"] = coastal
+		if node_of.has(pid):
+			prov["trade_node"] = node_of[pid]
+		for k in ["area", "region", "superregion", "continent"]:
+			if geo[k + "_of"].has(pid):
+				prov[k] = geo[k + "_of"][pid]
 		provinces.append(prov)
 	var f := FileAccess.open(OUT_DIR + "/map.json", FileAccess.WRITE)
 	if f == null:
 		return "Não consegui gravar " + OUT_DIR + "/map.json"
 	f.store_string(JSON.stringify({"width": w, "height": h, "countries": countries, "cultures": cultures,
 			"religions": religions, "trade_goods": trade_goods, "trade_nodes": trade_nodes, "buildings": buildings,
-			"provinces": provinces}))
+			"terrains": terrains, "areas": geo["areas"], "regions": geo["regions"], "superregions": geo["superregions"],
+			"continents": geo["continents"], "adjacencies": adjacencies, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
@@ -843,6 +874,236 @@ func _religions(used: Array, loc: Dictionary) -> Array:
 	keys.sort()
 	for r in keys:
 		out.append({"id": r, "name": nice.call(r), "group": "", "color": hashed_color(r)})
+	return out
+
+
+## BMP de 8 bits (paleta) -> [largura, altura, índices de cima para baixo]; [] se não der.
+func _bmp8(rel: String) -> Array:
+	var b := _bytes(rel)
+	if b.size() < 54 or b[0] != 0x42 or b[1] != 0x4D or b.decode_u16(28) != 8 or b.decode_u32(30) != 0:
+		return []
+	var off := b.decode_u32(10)
+	var bw := b.decode_s32(18)
+	var bh := b.decode_s32(22)
+	var bottom_up := bh > 0
+	bh = absi(bh)
+	var row := ((bw * 8 + 31) / 32) * 4
+	if off + row * bh > b.size():
+		return []
+	var data := PackedByteArray()
+	for y in bh:
+		var src := off + (bh - 1 - y if bottom_up else y) * row
+		data.append_array(b.slice(src, src + bw))
+	return [bw, bh, data]
+
+
+## "ile_de_france_area" -> "Ile De France" (mesma regra do tools/import_eu4.py).
+static func pretty_key(key: String, suffix := "") -> String:
+	if suffix != "" and key.ends_with(suffix):
+		key = key.left(-suffix.length())
+	var words := []
+	for wd in key.split("_", false):
+		words.append(wd.left(1).to_upper() + wd.substr(1))
+	return " ".join(words)
+
+
+## Terreno do EU4: terrain_override do terrain.txt > árvores (trees.bmp, >= 30% da província) >
+## terreno mais comum no terrain.bmp (sem contar água). Amostra a cada 2 px. Preenche `terrains`
+## (rótulo em português, custo de movimento, defesa, limite de suprimento...) e retorna id -> rótulo.
+func _eu4_terrain(ids: PackedByteArray, w: int, h: int, n_prov: int, terrains: Array) -> Dictionary:
+	if not (_index.has("map/terrain.txt") and _index.has("map/terrain.bmp")):
+		return {}
+	_set_status("Lendo o terreno (terrain.bmp)...")
+	var tb := _bmp8("map/terrain.bmp")
+	if tb.is_empty() or tb[0] != w or tb[1] != h:
+		return {}
+	var pt: Dictionary = _json("res://data/geografia_pt.json").get("terrenos", {})
+	var top := {}
+	for kv in _parse(_text("map/terrain.txt")):
+		if kv[0] != "" and not top.has(kv[0]):
+			top[kv[0]] = kv[1]
+	var override := {}
+	var water := {}
+	var seen := {}
+	for c in top.get("categories", []):
+		if not (c[1] is Array) or c[0] == "pti":
+			continue
+		var t := {"id": pt.get(c[0], c[0]), "eu4": c[0]}
+		for kv in c[1]:
+			if kv[0] in ["movement_cost", "defence", "supply_limit", "local_development_cost"] and str(kv[1]).is_valid_float():
+				t[kv[0]] = float(kv[1])
+			elif kv[0] == "is_water" and str(kv[1]) == "yes":
+				water[c[0]] = true
+			elif kv[0] == "terrain_override" and kv[1] is Array:
+				for x in kv[1]:
+					if x[0] == "" and str(x[1]).is_valid_int() and not override.has(int(x[1])):
+						override[int(x[1])] = c[0]
+		if not seen.has(t["id"]) and not water.has(c[0]):
+			seen[t["id"]] = true
+			terrains.append(t)
+	var idx_type := {}
+	for e in top.get("terrain", []):
+		if e[1] is Array:
+			var typ := ""
+			for kv in e[1]:
+				if kv[0] == "type":
+					typ = str(kv[1])
+			for kv in e[1]:
+				if kv[0] == "color" and kv[1] is Array and typ != "":
+					for x in kv[1]:
+						if x[0] == "" and str(x[1]).is_valid_int():
+							idx_type[int(x[1])] = typ
+	var tree_type := {}
+	for e in top.get("tree", []):
+		if e[1] is Array:
+			var typ := ""
+			for kv in e[1]:
+				if kv[0] == "terrain":
+					typ = str(kv[1])
+			if typ in ["forest", "woods", "jungle"]:
+				for kv in e[1]:
+					if kv[0] == "color" and kv[1] is Array:
+						for x in kv[1]:
+							if x[0] == "" and str(x[1]).is_valid_int():
+								tree_type[int(x[1])] = typ
+	# contagem por província (amostra a cada 2 px)
+	var counts := PackedInt32Array()
+	counts.resize(n_prov * 256)
+	var total := PackedInt32Array()
+	total.resize(n_prov)
+	var tdata: PackedByteArray = tb[2]
+	var tree_names: Array = tree_type.values()
+	var tnames := {}
+	for t in tree_names:
+		tnames[t] = true
+	var tree_list: Array = tnames.keys()
+	tree_list.sort()
+	var tree_cnt := []
+	for t in tree_list:
+		var a := PackedInt32Array()
+		a.resize(n_prov)
+		tree_cnt.append(a)
+	var tv := PackedByteArray()
+	var tw := 0
+	var th := 0
+	if _index.has("map/trees.bmp") and not tree_list.is_empty():
+		var tr := _bmp8("map/trees.bmp")
+		if not tr.is_empty():
+			tw = tr[0]
+			th = tr[1]
+			tv = tr[2]
+	var tree_slot := PackedInt32Array()      # índice do trees.bmp -> posição em tree_list (-1 = não é árvore)
+	tree_slot.resize(256)
+	tree_slot.fill(-1)
+	for i in tree_type:
+		tree_slot[i] = tree_list.find(tree_type[i])
+	for y in range(0, h, 2):
+		if y % 256 == 0:
+			_set_status("Lendo o terreno (terrain.bmp)... %d%%" % (100 * y / h))
+		var ty := y * th / h
+		for x in range(0, w, 2):
+			var i := y * w + x
+			var q: int = ids[i * 3] | (ids[i * 3 + 1] << 8)
+			counts[q * 256 + tdata[i]] += 1
+			total[q] += 1
+			if tw > 0:
+				var s: int = tree_slot[tv[ty * tw + x * tw / w]]
+				if s >= 0:
+					tree_cnt[s][q] += 1
+	var sorted_types: Array = []
+	for i in idx_type:
+		if not (idx_type[i] in sorted_types):
+			sorted_types.append(idx_type[i])
+	sorted_types.sort()
+	var out := {}
+	for pid in range(1, n_prov):
+		var cat: String = override.get(pid, "")
+		if cat == "" and tw > 0 and total[pid] > 0:
+			var best := -1
+			var best_f := -1.0
+			for s in tree_list.size():
+				var fr: float = float(tree_cnt[s][pid]) / total[pid]
+				if fr > best_f:
+					best_f = fr
+					best = s
+			if best >= 0 and best_f >= 0.3:
+				cat = tree_list[best]
+		if cat == "":
+			var score := {}
+			for i in idx_type:
+				var c: int = counts[pid * 256 + i]
+				if c > 0 and not water.has(idx_type[i]):
+					score[idx_type[i]] = score.get(idx_type[i], 0) + c
+			var best_s := 0
+			for typ in sorted_types:
+				if score.get(typ, 0) > best_s:
+					best_s = score[typ]
+					cat = typ
+		if cat != "" and not water.has(cat):
+			out[pid] = pt.get(cat, cat)
+	return out
+
+
+## Áreas, regiões, super-regiões e continentes (map/area.txt etc.).
+func _geography() -> Dictionary:
+	var pt := _json("res://data/geografia_pt.json")
+	var g := {"areas": [], "regions": [], "superregions": [], "continents": [],
+			"area_of": {}, "region_of": {}, "superregion_of": {}, "continent_of": {}}
+	var region_of_area := {}
+	var super_of_region := {}
+	for e in _blocks("map/superregion.txt"):
+		if e[0] == "new_world_superregion":
+			continue
+		g["superregions"].append({"id": e[0], "name": pt["superregioes"].get(e[0], pretty_key(e[0], "_superregion"))})
+		for x in e[1]:
+			if x[0] == "" and not super_of_region.has(x[1]):
+				super_of_region[x[1]] = e[0]
+	for e in _blocks("map/region.txt"):
+		if e[0] == "random_new_world_region":
+			continue
+		g["regions"].append({"id": e[0], "name": pt["regioes"].get(e[0], pretty_key(e[0], "_region")),
+				"superregion": super_of_region.get(e[0], "")})
+		for kv in e[1]:
+			if kv[0] == "areas" and kv[1] is Array:
+				for x in kv[1]:
+					if x[0] == "" and not region_of_area.has(x[1]):
+						region_of_area[x[1]] = e[0]
+	for e in _blocks("map/area.txt"):
+		var reg: String = region_of_area.get(e[0], "")
+		var base := hashed_color(reg if reg != "" else e[0])
+		var k := (e[0] as String).md5_buffer()
+		var bc := Color8(base[0], base[1], base[2])
+		var c2 := Color.from_hsv(fposmod(bc.h + (k[0] - 128) / 2600.0, 1.0),
+				clampf(bc.s + (k[1] - 128) / 900.0, 0.3, 1.0), clampf(bc.v + (k[2] - 128) / 700.0, 0.4, 1.0))
+		g["areas"].append({"id": e[0], "name": pretty_key(e[0], "_area"), "region": reg,
+				"color": [int(c2.r * 255), int(c2.g * 255), int(c2.b * 255)]})
+		for x in e[1]:
+			if x[0] == "" and str(x[1]).is_valid_int():
+				var pid := int(x[1])
+				if not g["area_of"].has(pid):
+					g["area_of"][pid] = e[0]
+				if reg != "":
+					if not g["region_of"].has(pid):
+						g["region_of"][pid] = reg
+					if super_of_region.get(reg, "") != "" and not g["superregion_of"].has(pid):
+						g["superregion_of"][pid] = super_of_region[reg]
+	for e in _blocks("map/continent.txt"):
+		if e[0] in ["island_check_provinces", "new_world"]:
+			continue
+		g["continents"].append({"id": e[0], "name": pt["continentes"].get(e[0], pretty_key(e[0]))})
+		for x in e[1]:
+			if x[0] == "" and str(x[1]).is_valid_int() and not g["continent_of"].has(int(x[1])):
+				g["continent_of"][int(x[1])] = e[0]
+	return g
+
+
+## Blocos de topo [nome, itens] de um arquivo de script (vazio se o arquivo não existir).
+func _blocks(rel: String) -> Array:
+	var out := []
+	if _index.has(rel):
+		for kv in _parse(_text(rel)):
+			if kv[0] != "" and kv[1] is Array:
+				out.append(kv)
 	return out
 
 

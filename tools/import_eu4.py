@@ -11,6 +11,10 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   common/tradegoods/*.txt, common/prices/*.txt (produtos, cores e precos; opcional)
   common/tradenodes/*.txt                      (nos de comercio e para onde o comercio corre; opcional)
   common/buildings/*.txt                       (construcoes: custo, tempo, efeitos; opcional)
+  map/terrain.txt, map/terrain.bmp, map/trees.bmp (terreno do proprio EU4; sem eles o terreno e
+                                               estimado pelo heightmap e pelo clima)
+  map/area.txt, map/region.txt, map/superregion.txt, map/continent.txt (geografia; opcionais)
+  map/rivers.bmp (rios), map/adjacencies.csv (estreitos); opcionais
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -206,6 +210,152 @@ def classify_terrain(pid, hmean, hstd, climates):
     return "planície"
 
 
+def pretty_key(key, suffix=""):
+    """"ile_de_france_area" -> "Ile De France" (mesma regra do importador do jogo)."""
+    if suffix and key.endswith(suffix):
+        key = key[:-len(suffix)]
+    return " ".join(w[:1].upper() + w[1:] for w in key.split("_") if w)
+
+
+def eu4_terrain(root, ids, n_prov):
+    """Terreno do proprio EU4: terrain_override do terrain.txt > arvores (trees.bmp, >= 30% da
+    provincia) > terreno mais comum no terrain.bmp (sem contar agua). Amostra a cada 2 px.
+    Retorna ({id: rotulo em portugues}, lista de terrenos com custo de movimento etc.)."""
+    tp, bp = os.path.join(root, "map", "terrain.txt"), os.path.join(root, "map", "terrain.bmp")
+    if not (os.path.isfile(tp) and os.path.isfile(bp)):
+        return {}, []
+    with open("data/geografia_pt.json", encoding="utf-8") as f:
+        pt = json.load(f)["terrenos"]
+    top = dict((k, v) for k, v in parse_script(read_text(tp)) if k)
+    terrains, override, water, seen = [], {}, set(), set()
+    for cat, items in top.get("categories", []):
+        if not isinstance(items, list) or cat == "pti":
+            continue
+        t = {"id": pt.get(cat, cat), "eu4": cat}
+        for k, v in items:
+            if k in ("movement_cost", "defence", "supply_limit", "local_development_cost") and isinstance(v, str):
+                try:
+                    t[k] = float(v)
+                except ValueError:
+                    pass
+            elif k == "is_water" and v == "yes":
+                water.add(cat)
+            elif k == "terrain_override" and isinstance(v, list):
+                for kk, x in v:
+                    if kk is None and x.isdigit():
+                        override.setdefault(int(x), cat)
+        if t["id"] not in seen and cat not in water:
+            seen.add(t["id"])
+            terrains.append(t)
+    idx_type = {}
+    for name, items in top.get("terrain", []):
+        if isinstance(items, list):
+            typ = next((v for k, v in items if k == "type"), None)
+            col = next((v for k, v in items if k == "color" and isinstance(v, list)), [])
+            for kk, x in col:
+                if kk is None and x.isdigit() and typ:
+                    idx_type[int(x)] = typ
+    tree_type = {}
+    for name, items in top.get("tree", []):
+        if isinstance(items, list):
+            typ = next((v for k, v in items if k == "terrain"), None)
+            col = next((v for k, v in items if k == "color" and isinstance(v, list)), [])
+            for kk, x in col:
+                if kk is None and x.isdigit() and typ in ("forest", "woods", "jungle"):
+                    tree_type[int(x)] = typ
+    H, W = ids.shape
+    sid = ids[::2, ::2].ravel().astype(np.int64)
+    tb = np.asarray(Image.open(bp))[::2, ::2].ravel()
+    counts = np.zeros((n_prov, 256), np.int64)
+    np.add.at(counts, (sid, tb.astype(np.int64)), 1)
+    cats = sorted(set(idx_type.values()))
+    total = np.bincount(sid, minlength=n_prov)
+    tree_frac = {}
+    trp = os.path.join(root, "map", "trees.bmp")
+    if os.path.isfile(trp) and tree_type:
+        tr = np.asarray(Image.open(trp))
+        th, tw = tr.shape
+        yy = (np.arange(0, H, 2) * th // H)[:, None]
+        xx = (np.arange(0, W, 2) * tw // W)[None, :]
+        tv = tr[yy, xx].ravel()
+        for typ in set(tree_type.values()):
+            m = np.isin(tv, [i for i, t in tree_type.items() if t == typ])
+            tree_frac[typ] = np.bincount(sid, weights=m, minlength=n_prov) / np.maximum(total, 1)
+    out = {}
+    for pid in range(1, n_prov):
+        cat = override.get(pid)
+        if cat is None and tree_frac:
+            best = max(sorted(tree_frac), key=lambda t: tree_frac[t][pid])
+            if tree_frac[best][pid] >= 0.3:
+                cat = best
+        if cat is None:
+            score = {}
+            for i in np.nonzero(counts[pid])[0]:
+                typ = idx_type.get(int(i))
+                if typ and typ not in water:
+                    score[typ] = score.get(typ, 0) + int(counts[pid, i])
+            if score:
+                cat = max(sorted(score), key=lambda t: score[t])
+        if cat and cat not in water:
+            out[pid] = pt.get(cat, cat)
+    return out, terrains
+
+
+def eu4_geography(root):
+    """Areas, regioes, super-regioes e continentes (map/area.txt etc.)."""
+    with open("data/geografia_pt.json", encoding="utf-8") as f:
+        pt = json.load(f)
+    g = {"areas": [], "regions": [], "superregions": [], "continents": [],
+         "area_of": {}, "region_of": {}, "superregion_of": {}, "continent_of": {}}
+
+    def blocks(name):
+        path = os.path.join(root, "map", name)
+        return [(k, v) for k, v in parse_script(read_text(path)) if k and isinstance(v, list)] \
+            if os.path.isfile(path) else []
+    region_of_area, super_of_region = {}, {}
+    for sname, items in blocks("superregion.txt"):
+        if sname == "new_world_superregion":
+            continue
+        g["superregions"].append({"id": sname, "name": pt["superregioes"].get(sname) or pretty_key(sname, "_superregion")})
+        for kk, x in items:
+            if kk is None:
+                super_of_region.setdefault(x, sname)
+    for rname, items in blocks("region.txt"):
+        if rname == "random_new_world_region":
+            continue
+        g["regions"].append({"id": rname, "name": pt["regioes"].get(rname) or pretty_key(rname, "_region"),
+                             "superregion": super_of_region.get(rname, "")})
+        for k, v in items:
+            if k == "areas" and isinstance(v, list):
+                for kk, x in v:
+                    if kk is None:
+                        region_of_area.setdefault(x, rname)
+    for aname, items in blocks("area.txt"):
+        reg = region_of_area.get(aname, "")
+        base = hashed_color(reg or aname)
+        hh, ss, vv = colorsys.rgb_to_hsv(*(v / 255 for v in base))
+        k = hashlib.md5(aname.encode()).digest()
+        col = [int(c * 255) for c in colorsys.hsv_to_rgb((hh + (k[0] - 128) / 2600) % 1.0,
+               min(1, max(0.3, ss + (k[1] - 128) / 900)), min(1, max(0.4, vv + (k[2] - 128) / 700)))]
+        g["areas"].append({"id": aname, "name": pretty_key(aname, "_area"), "region": reg, "color": col})
+        for kk, x in items:
+            if kk is None and x.isdigit():
+                pid = int(x)
+                g["area_of"].setdefault(pid, aname)
+                if reg:
+                    g["region_of"].setdefault(pid, reg)
+                    if super_of_region.get(reg):
+                        g["superregion_of"].setdefault(pid, super_of_region[reg])
+    for cname, items in blocks("continent.txt"):
+        if cname in ("island_check_provinces", "new_world"):
+            continue
+        g["continents"].append({"id": cname, "name": pt["continentes"].get(cname) or pretty_key(cname)})
+        for kk, x in items:
+            if kk is None and x.isdigit():
+                g["continent_of"].setdefault(int(x), cname)
+    return g
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("eu4", nargs="?", help="pasta de instalacao do Europa Universalis IV")
@@ -318,6 +468,13 @@ def main():
             h_mean = s1 / np.maximum(cnt, 1)
             h_std = np.sqrt(np.maximum(s2 / np.maximum(cnt, 1) - h_mean ** 2, 0))
         del hm
+    terrain_of, terrains = eu4_terrain(root, ids, n_prov)
+    rp = os.path.join(root, "map", "rivers.bmp")
+    if os.path.isfile(rp):
+        riv = Image.open(rp)
+        if riv.mode == "P" and riv.size == (W, H):
+            # indice da paleta do rivers.bmp (< 254 = rio; 254 = terra, 255 = mar), o shader le direto
+            Image.fromarray(np.asarray(riv, dtype=np.uint8), "L").save("assets/eu4/rivers.png", optimize=True)
     del ids
 
     # ---------------------------------------------------------- construcoes (common/buildings)
@@ -557,6 +714,16 @@ def main():
                             node_of.setdefault(int(x), nname)
             trade_nodes.append(node)
 
+    geo = eu4_geography(root)
+    adjacencies = []
+    ap_ = os.path.join(root, "map", "adjacencies.csv")
+    if os.path.isfile(ap_):
+        for line in read_text(ap_).splitlines():
+            q = line.split(";")
+            if len(q) >= 4 and q[0].isdigit() and q[1].isdigit():
+                adjacencies.append({"from": int(q[0]), "to": int(q[1]), "type": q[2],
+                                    "through": int(q[3]) if q[3].lstrip("-").isdigit() else -1})
+
     # ---------------------------------------------------------- map.json
     provinces = []
     for pid in range(n_prov):
@@ -572,7 +739,8 @@ def main():
         prov = {
             "id": pid, "name": nm, "sea": sea,
             "owner": "" if sea else owner.get(pid, ""),
-            "terrain": "mar" if sea else classify_terrain(pid, h_mean, h_std, climates),
+            "terrain": "mar" if sea else (terrain_of.get(pid) if pid in terrain_of and "impassable"
+                                            not in climates.get(pid, ()) else classify_terrain(pid, h_mean, h_std, climates)),
             "development": 0 if sea else dev.get(pid, 0),
             "center": [round(float(cx[pid]), 1), round(float(cy[pid]), 1)],
             "neighbors": sorted(neigh[pid]),
@@ -585,17 +753,23 @@ def main():
                 prov["buildings"] = prov_buildings[pid]
             if pid in cot:
                 prov["center_of_trade"] = cot[pid]
-        if pid in node_of:
-            prov["trade_node"] = node_of[pid]
             prov["base_tax"], prov["base_production"], prov["base_manpower"] = dev_parts.get(pid, (0, 0, 0))
             prov["coastal"] = any(q in sea_ids for q in neigh[pid])
             prov["base_development"] = prov["development"]
+        if pid in node_of:
+            prov["trade_node"] = node_of[pid]
+        for k, d in (("area", geo["area_of"]), ("region", geo["region_of"]), ("superregion", geo["superregion_of"]),
+                     ("continent", geo["continent_of"])):
+            if pid in d:
+                prov[k] = d[pid]
         provinces.append(prov)
 
     with open("data/eu4/map.json", "w", encoding="utf-8") as f:
         json.dump({"width": W, "height": H, "countries": countries, "cultures": cultures,
                    "religions": religions, "trade_goods": trade_goods, "trade_nodes": trade_nodes,
-                   "buildings": buildings, "provinces": provinces},
+                   "buildings": buildings, "terrains": terrains, "areas": geo["areas"], "regions": geo["regions"],
+                   "superregions": geo["superregions"], "continents": geo["continents"],
+                   "adjacencies": adjacencies, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])

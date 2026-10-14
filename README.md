@@ -20,10 +20,10 @@ Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
 | Zoom | Roda do mouse |
 | Pausar / continuar | Espaço |
 | Velocidade | `+` e `-` (1 a 5) |
-| Modo de mapa (político → terreno → cultura → religião* → produtos* → comércio*) | `T` ou botão na barra superior |
-| Ver província, cultura, religião, produto, nó de comércio, dono ou terreno | Passar o mouse sobre o mapa |
+| Modo de mapa (político → terreno → cultura → religião* → produtos* → comércio* → regiões*) | `T` ou botão na barra superior |
+| Ver província, cultura, religião, produto, nó de comércio, área, dono ou terreno | Passar o mouse sobre o mapa |
 
-\* Os modos religião, produtos e comércio só aparecem com o mapa importado do EU4.
+\* Os modos religião, produtos, comércio e regiões só aparecem com o mapa importado do EU4.
 
 ## Estrutura
 - `scripts/main.gd` — câmera, interface, escolha de país e entrada.
@@ -59,7 +59,7 @@ O script lê `map/` (provinces.bmp, definition.csv, default.map, e se houver cli
 `data/eu4/map.json` + `assets/eu4/province_ids.png` (~5000 províncias, mundo todo, ~190 países).
 O Godot passa a usar essa pasta automaticamente (o mapa importado dentro do jogo, em `user://eu4/`, tem prioridade sobre ela); para voltar ao mapa de exemplo, apague `data/eu4` e `assets/eu4`.
 - Esses arquivos são derivados de dados da Paradox: já estão no `.gitignore`. **Não publique no GitHub nem distribua.**
-- Nomes de países e províncias vêm da localização em inglês; o terreno vem do heightmap e do clima do jogo, e a cultura e a religião de cada província também são importadas. As religiões (cores e grupos) vêm de `common/religions`; os nomes ficam em português (`data/religioes_pt.json`) e aparecem no **modo de mapa religião**. Também vêm o produto de cada província (`common/tradegoods` e `common/prices`: cor e preço base; nomes em `data/produtos_pt.json`, **modo de mapa produtos**) e o desenvolvimento separado em imposto, produção e efetivo (mostrado no painel da província). Os 80 nós de comércio (`common/tradenodes`) formam o **modo de mapa comércio**, com setas mostrando para onde o comércio corre e um círculo na sede de cada nó; as construções (`common/buildings`: custo, tempo e efeitos) e as que já existem em 1444 (fortes, estaleiros) e o nível de centro de comércio aparecem no painel da província.
+- Nomes de países e províncias vêm da localização em inglês; o terreno vem do heightmap e do clima do jogo, e a cultura e a religião de cada província também são importadas. As religiões (cores e grupos) vêm de `common/religions`; os nomes ficam em português (`data/religioes_pt.json`) e aparecem no **modo de mapa religião**. Também vêm o produto de cada província (`common/tradegoods` e `common/prices`: cor e preço base; nomes em `data/produtos_pt.json`, **modo de mapa produtos**) e o desenvolvimento separado em imposto, produção e efetivo (mostrado no painel da província). Os 80 nós de comércio (`common/tradenodes`) formam o **modo de mapa comércio**, com setas mostrando para onde o comércio corre e um círculo na sede de cada nó; as construções (`common/buildings`: custo, tempo e efeitos) e as que já existem em 1444 (fortes, estaleiros) e o nível de centro de comércio aparecem no painel da província. Com a pasta `map/` completa (`terrain.txt`, `terrain.bmp`, `trees.bmp`, `rivers.bmp`, `area.txt`, `region.txt`, `superregion.txt`, `continent.txt`, `adjacencies.csv`) vêm também o terreno exato do EU4 (com custo de movimento, defesa e limite de suprimento), os rios desenhados no mapa, áreas/regiões/super-regiões/continentes (**modo de mapa regiões**) e os estreitos.
 - Testado só com uma árvore de arquivos de exemplo no formato do EU4; se algo não bater na sua versão do jogo, me diga a mensagem de erro.
 
 ## Dono de cada província (`tools/data/donos_1444.csv`)
