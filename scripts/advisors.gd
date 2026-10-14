@@ -42,9 +42,12 @@ func enabled() -> bool:
 	return not types.is_empty()
 
 
+## Salário mensal: nível² × (1 + advisor_cost), +0,5% por ano desde 1444 e a inflação do país.
 func salary(tag: String, a: Dictionary) -> float:
 	var s := int(a["skill"])
-	return s * s * maxf(0.1, 1.0 + power.modifier(tag, "advisor_cost"))
+	var years := maxi(0, clock.year - 1444)
+	var infl := economy.inflation_of(tag) / 100.0 if economy else 0.0
+	return s * s * maxf(0.1, 1.0 + power.modifier(tag, "advisor_cost")) * (1.0 + 0.005 * years) * (1.0 + infl)
 
 
 func total_salary(tag: String) -> float:

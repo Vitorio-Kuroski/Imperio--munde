@@ -55,6 +55,9 @@ func _ready() -> void:
 	power.institutions = institutions
 	map.inst_view = institutions
 	diplomacy.setup(map)
+	economy.diplomacy = diplomacy
+	economy._recount()
+	power.economy = economy
 	map.diplo_view = diplomacy
 
 	camera = Camera2D.new()

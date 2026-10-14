@@ -541,11 +541,31 @@ class Progress extends Control:
 
 
 ## Barra deslizante do EU4 (scrollbarType horizontal): setas nas pontas, trilho e o botão na
-## posição do valor (0 a 1). Só mostra o valor (o jogo ainda não tem o que ela regularia).
+## posição do valor (0 a 1). Com `editable`, clicar ou arrastar muda o valor (sinal value_changed).
 class ScrollBar2 extends Control:
+	signal value_changed(v: float)
 	var _knob: Control
 	var _track_w := 0.0
 	var value := 0.0
+	var editable := false
+
+	func _gui_input(e: InputEvent) -> void:
+		if not editable:
+			return
+		var drag: bool = e is InputEventMouseMotion and (e.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0
+		var click: bool = e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT
+		if drag or click:
+			var arrow: float = get_meta("arrow", 0.0)
+			var v := clampf((e.position.x - arrow) / maxf(1.0, _track_w), 0.0, 1.0)
+			if click and e.position.x < arrow:
+				v = value - 0.1
+			elif click and e.position.x > size.x - arrow:
+				v = value + 0.1
+			v = snappedf(clampf(v, 0.0, 1.0), 0.01)
+			if v != value:
+				set_value(v)
+				value_changed.emit(v)
+			accept_event()
 
 	func setup(g: Eu4Gui, sz: Vector2, track: String, knob: String, left: String, right: String) -> void:
 		mouse_filter = Control.MOUSE_FILTER_PASS

@@ -31,6 +31,7 @@ var _mods_cache := {}            # tag -> modificadores somados
 var _slots_at := PackedInt32Array() # vagas de grupos de ideias por nível adm (acumulado)
 var advisors: Advisors           # conselheiros somam nível aos pontos e efeitos aos modificadores
 var institutions: Institutions   # instituições não adotadas encarecem tecnologias; adotadas dão bônus
+var economy: Economy             # falência encarece tecnologias, ideias e conselheiros
 
 
 func setup(m: MapView, c: GameClock) -> void:
@@ -69,6 +70,14 @@ func gain(tag: String, cat: String) -> int:
 ## Esquece a soma de efeitos guardada (ideias ou conselheiros mudaram).
 func invalidate(tag: String) -> void:
 	_mods_cache.erase(tag)
+	if economy:
+		economy.invalidate(tag)
+
+
+## Avisa a interface que os pontos do país mudaram (só para o jogador).
+func notify(tag: String) -> void:
+	if tag == player:
+		changed.emit(tag)
 
 
 ## Custo do próximo nível da árvore `cat` (-1 se não houver próximo).
@@ -205,6 +214,8 @@ func _sum_mods(tag: String) -> Dictionary:
 		add.call(advisors.modifiers(tag))
 	if institutions:
 		add.call(institutions.modifiers(tag))
+	if economy:
+		add.call(economy.modifiers(tag))
 	return out
 
 

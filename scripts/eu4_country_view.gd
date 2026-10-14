@@ -168,6 +168,21 @@ func _txt(root: Control, n: String, text: String, tip := "") -> void:
 			l.mouse_filter = Control.MOUSE_FILTER_PASS
 
 
+## Texto de um botão do EU4 (rótulo "Text" por cima; criado se o .gui não tiver).
+func _set_button_text(b: Control, text: String) -> void:
+	var l := b.get_node_or_null("Text") as Label
+	if l == null:
+		l = Label.new()
+		l.name = "Text"
+		l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		gui.style_label(l, "vic_18")
+		b.add_child(l)
+	l.text = text
+
+
 func _on_tab(t: String) -> void:
 	match t:
 		"court", "gov":

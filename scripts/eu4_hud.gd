@@ -24,7 +24,7 @@ const HIDDEN := ["player_shield_glow", "great_power_button_base", "great_power_b
 		"menubar_modifiers_button", "menu_button", "ledger_button", "button_goto", "button_pick_shortcut", "closebutton",
 		"OPENbutton", "category_button_political", "category_button_map", "category_button_geographical",
 		"category_button_economical", "custom_mapmode_overlay", "custom_mapmode_10", "brown_bg", "topbar_1",
-		"topbar_2", "topbar_3", "icon_corruption", "text_corruption"]
+		"topbar_2", "topbar_3"]
 
 var gui: Eu4Gui
 var map: MapView
@@ -83,6 +83,7 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock, pw: MonarchPower, eco: Economy) 
 	_tip("icon_DIP", "Pontos diplomáticos")
 	_tip("icon_MIL", "Pontos militares")
 	_tip("icon_score", "Desenvolvimento total e posição entre os países")
+	_tip("icon_corruption", "Corrupção")
 	refresh()
 	return true
 
@@ -138,11 +139,14 @@ func refresh() -> void:
 	if not has:
 		for n in ["text_gold", "text_manpower", "text_sailors", "text_stability", "text_prestige", "text_ADM",
 				"text_DIP", "text_MIL", "text_score", "text_score_rank", "text_merchants", "text_settlers",
-				"text_diplomats", "text_missionaries"]:
+				"text_diplomats", "text_missionaries", "text_corruption"]:
 			_text(n, "")
 		return
 	_text("text_gold", str(int(economy.money(player))))
-	_tip("text_gold", "Saldo: %s ducados/mês" % AdvisorsWindow._n(economy.balance(player), true))
+	_tip("text_gold", "Saldo: %s ducados/mês · %d empréstimo(s) · inflação %s%%%s" % [
+			AdvisorsWindow._n(economy.balance(player), true), economy.loan_count(player),
+			AdvisorsWindow._n(economy.inflation_of(player)), " · EM FALÊNCIA" if economy.is_bankrupt(player) else ""])
+	_text("text_corruption", AdvisorsWindow._n(economy.corruption_of(player)))
 	for cat in ["adm", "dip", "mil"]:
 		_text("text_" + cat.to_upper(), str(power.points(player, cat)))
 	# ainda não simulados no jogo
