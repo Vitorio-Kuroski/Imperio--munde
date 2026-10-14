@@ -16,7 +16,7 @@ const HIDE := ["secondary_religion_icon", "religious_school_icon", "countryshiel
 		"num_relations_value", "num_relations_icon", "reputation_bg", "reputation_icon", "reputation_value",
 		"personality_icons_strip", "policies_icon", "policies_value", "revanchism_icon", "revanchism_value",
 		"spy_icon", "spy_value", "land_forcelimit_value", "land_forcelimit_icon", "naval_forcelimit_value",
-		"naval_forcelimit_icon", "manpower_value", "manpower_icon", "stability_icon", "stability_value",
+		"naval_forcelimit_icon", "stability_icon", "stability_value",
 		"prestige_icon", "prestige_value", "techgroup_icon", "election_info", "label_enemies", "enemies_box",
 		"label_rivals", "rivals_box", "label_rivals_not_possible", "sort_search", "sort_search_edit", "sort_name",
 		"sort_opinion", "sort_opinion_1", "sort_opinion_2", "sort_opinion_3", "sort_opinion_4", "sort_opinion_5",
@@ -125,6 +125,9 @@ func fill(tag: String) -> void:
 		view._txt(root, "ideas_value", str(n), Loc.s("Ideias compradas", "Ideas bought"))
 	view._txt(root, "cultures_value", str(1 + c.get("accepted_cultures", []).size()),
 			Loc.t("HINT_ACCEPTCULTURE_TITLE", "Culturas aceitas"))
+	if view.manpower:
+		view._txt(root, "manpower_value", Manpower.fmt(view.manpower.of(tag)), Loc.s("Efetivo: %s de %s",
+				"Manpower: %s of %s") % [Manpower.fmt(view.manpower.of(tag)), Manpower.fmt(view.manpower.max_of(tag))])
 	if view.economy:
 		view._txt(root, "score_value", str(int(view.economy.development(tag))), Loc.t("DEVELOPMENT_TEXT", "Desenvolvimento"))
 		view._txt(root, "corruption_value", (("%.1f" % view.economy.corruption_of(tag)).replace(".", Loc.dec)),

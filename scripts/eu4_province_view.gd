@@ -27,6 +27,7 @@ const HIDE_WINDOWS := ["state_window", "buildings_window", "change_culture_view"
 ## ícones (positionType development_value_vertical_position_not_exploitable).
 const DEV_VALUE_Y := 68.0
 
+var manpower: Manpower             # main.gd define (efetivo das províncias)
 var gui: Eu4Gui
 var map: MapView
 var institutions: Institutions
@@ -214,7 +215,12 @@ func show_province(id: int) -> void:
 	_show("hre_icon", p.get("hre", false))
 	_tip("hre_icon", Loc.t("HINT_HRE_TITLE", "Sacro Império Romano"))
 	# militar
-	_txt("manpower_value", str(bm * 250))
+	if manpower:          # o que a província dá ao efetivo máximo do país (núcleo +75%, quartéis...)
+		_txt("manpower_value", str(roundi(manpower.province_manpower(p) * 1000.0)))
+		_tip("manpower_value", Loc.s("Efetivo base %d × 250 × (1 + núcleo + construções)",
+				"Base manpower %d × 250 × (1 + core + buildings)") % bm)
+	else:
+		_txt("manpower_value", str(bm * 250))
 	var sup := 0.0
 	for t in map.terrains.values():
 		if t.get("id", "") == p["terrain"]:

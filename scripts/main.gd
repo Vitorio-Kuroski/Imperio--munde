@@ -15,6 +15,7 @@ var institutions := Institutions.new()
 var trade := Trade.new()
 var religion := Religion.new()
 var construction := Construction.new()
+var manpower := Manpower.new()
 var diplomacy := Diplomacy.new()
 var diplo := DiploActions.new()
 var camera: Camera2D
@@ -65,6 +66,7 @@ func _ready() -> void:
 	economy.trade = trade
 	religion.setup(map, clock, power, economy)
 	construction.setup(map, clock, power, economy)
+	manpower.setup(map, clock, power)
 	economy.religion = religion
 	trade.recompute()
 	economy._recount()
@@ -135,6 +137,7 @@ func _setup_eu4_hud() -> void:
 	g.res_height = int(gui_design_height)      # layout padrão em qualquer tela
 	eu4_hud = Eu4Hud.new()
 	eu4_hud.religion = religion
+	eu4_hud.manpower = manpower
 	ui.add_child(eu4_hud)
 	ui.move_child(eu4_hud, 0)            # atrás dos painéis e janelas
 	if not eu4_hud.setup(g, map, clock, power, economy):
@@ -150,6 +153,7 @@ func _setup_eu4_hud() -> void:
 	ui.add_child(province_view)
 	ui.move_child(province_view, 1)
 	if province_view.setup(g, map, institutions):
+		province_view.manpower = manpower
 		province_view.terrain_tip = _terrain_info
 	else:
 		province_view.queue_free()
@@ -165,6 +169,7 @@ func _setup_eu4_hud() -> void:
 		country_view.religion = religion
 		country_view.diplomacy = diplomacy
 		country_view.diplo = diplo
+		country_view.manpower = manpower
 		diplo.changed.connect(func(_t): country_view.refresh())
 		country_view.fmt_mods = ideas_window.fmt_mods
 		country_view.techs_requested.connect(func(t: String):

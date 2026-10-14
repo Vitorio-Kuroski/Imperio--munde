@@ -33,6 +33,7 @@ var clock: GameClock
 var power: MonarchPower
 var economy: Economy
 var religion: Religion             # opcional (missionários na barra)
+var manpower: Manpower             # opcional (efetivo na barra)
 var player := ""
 var _flag_tag := ""
 var _dev_version := -1
@@ -91,6 +92,7 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock, pw: MonarchPower, eco: Economy) 
 	_tip("icon_score", Loc.s("Desenvolvimento total e posição entre os países", "Total development and rank among countries"))
 	_tip("icon_corruption", Loc.t("corruption", "Corrupção"))
 	_tip("icon_missionary", Loc.t("HINT_MISSIONARY_TITLE", "Missionários"))
+	_tip("icon_manpower", Loc.t("HINT_MANPOWER_TITLE", "Efetivo"))
 	_tip("icon_merchant", Loc.t("HINT_MERCHANT_TITLE", "Mercadores"))
 	_tip("icon_settler", Loc.t("HINT_COLONIST_TITLE", "Colonos"))
 	_tip("icon_diplomat", Loc.t("HINT_DIPLOMAT_TITLE", "Diplomatas"))
@@ -165,6 +167,10 @@ func refresh() -> void:
 	for n in ["text_manpower", "text_sailors", "text_stability", "text_prestige", "text_merchants", "text_settlers",
 			"text_diplomats", "text_missionaries"]:
 		_text(n, "—")
+	if manpower:          # efetivo atual (dica: máximo e recuperação por mês)
+		_text("text_manpower", Manpower.fmt(manpower.of(player)))
+		_tip("text_manpower", Loc.s("Efetivo: %s de %s (+%s por mês)", "Manpower: %s of %s (+%s per month)") % [
+				Manpower.fmt(manpower.of(player)), Manpower.fmt(manpower.max_of(player)), Manpower.fmt(manpower.monthly(player))])
 	# enviados como no EU4: livres/total (mercadores, colonos, diplomatas, missionários)
 	var base: Dictionary = map.trade_rules.get("base_values", {})
 	var tv: Trade = map.trade_view

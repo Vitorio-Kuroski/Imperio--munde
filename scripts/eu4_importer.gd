@@ -1000,12 +1000,13 @@ func _buildings() -> Array:
 ## Constantes de comércio do common/defines.lua e modificadores estáticos usados no comércio.
 const TRADE_DEFINES := ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCHANT_PRESENT",
 		"TRADE_ADDED_VALUE_MODIFER", "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
-		"MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST"]
+		"MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST",
+		"BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER"]
 const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_power"],
 		["development", "local_missionary_strength", "dev_missionary_strength"],
 		["coastal", "province_trade_power_modifier", "coastal_trade_power"],
 		["mercantilism", "global_prov_trade_power_modifier", "mercantilism_trade_power"],
-		["base_values", "merchants", "base_merchants"]]
+		["base_values", "merchants", "base_merchants"], ["core", "local_manpower_modifier", "core_manpower"]]
 
 
 ## [centros de comércio, regras de comércio] (mesma saída do import_eu4.py).

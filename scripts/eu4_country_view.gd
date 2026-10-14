@@ -62,6 +62,7 @@ var religion_tab: Eu4ReligionTab
 var diplomacy_tab: Eu4DiplomacyTab
 var diplomacy: Diplomacy            # main.gd define (relações)
 var diplo: DiploActions             # main.gd define (opiniões e ações diplomáticas)
+var manpower: Manpower              # main.gd define (efetivo)
 var _tabs: Control
 var _court: Control
 var _gov: Control
