@@ -9,6 +9,7 @@ const FOCUS := {"ADM": "Administrativo", "DIP": "Diplomático", "MIL": "Militar"
 
 signal techs_requested(tag: String)
 signal ideas_requested(tag: String)
+signal advisors_requested(tag: String)
 
 var tag := ""
 var power: MonarchPower           # main.gd define
@@ -16,6 +17,9 @@ var _map: MapView
 var _label: Label
 var _tech_button: Button
 var _ideas_button: Button
+var _advisors_button: Button
+var economy: Economy
+var advisors: Advisors
 var _pt := {}
 
 
@@ -38,6 +42,10 @@ func _init() -> void:
 	_ideas_button.text = "Ver ideias"
 	_ideas_button.pressed.connect(func(): ideas_requested.emit(tag))
 	vb.add_child(_ideas_button)
+	_advisors_button = Button.new()
+	_advisors_button.text = "Ver conselheiros"
+	_advisors_button.pressed.connect(func(): advisors_requested.emit(tag))
+	vb.add_child(_advisors_button)
 	if FileAccess.file_exists("res://data/governos_pt.json"):
 		var d = JSON.parse_string(FileAccess.get_file_as_string("res://data/governos_pt.json"))
 		if d is Dictionary:
@@ -75,6 +83,18 @@ func show_country(map: MapView, t: String) -> void:
 			lines.append("Tecnologia: adm %d · dip %d · mil %d (custo %+d%%)" % [
 					TechWindow.level_of(map, t, "adm", power), TechWindow.level_of(map, t, "dip", power),
 					TechWindow.level_of(map, t, "mil", power), roundi(float(g["cost_modifier"]) * 100.0)])
+	if economy:
+		var inc := economy.income(t)
+		var exp := economy.expenses(t)
+		lines.append("Tesouro: %s ducados (%s/mês: imposto %s, produção %s, conselheiros -%s)" % [
+				AdvisorsWindow._n(economy.money(t)), AdvisorsWindow._n(economy.balance(t), true),
+				AdvisorsWindow._n(inc["tax"]), AdvisorsWindow._n(inc["production"]), AdvisorsWindow._n(exp["advisors"])])
+	if advisors and advisors.enabled():
+		var adv := []
+		for cat in Advisors.CATS:
+			var h := advisors.get_hired(t, cat)
+			adv.append("%s %s" % [cat, ("%s %d" % [advisors.types[h["type"]]["name"], int(h["skill"])]) if not h.is_empty() else "—"])
+		lines.append("Conselheiros: " + " · ".join(adv))
 	if power and power.state.has(t):
 		lines.append("Pontos de monarca: adm %d (+%d) · dip %d (+%d) · mil %d (+%d) por mês" % [
 				power.points(t, "adm"), power.gain(t, "adm"), power.points(t, "dip"), power.gain(t, "dip"),
@@ -98,6 +118,7 @@ func show_country(map: MapView, t: String) -> void:
 		txt += "grupos %d/%d" % [power.adopted(t).size(), power.idea_slots(t)] + (" (%s)" % ", ".join(gr) if not gr.is_empty() else "")
 		lines.append(txt)
 	_ideas_button.visible = power != null and not map.national_ideas.is_empty()
+	_advisors_button.visible = advisors != null and advisors.enabled()
 	_tech_button.visible = not map.technologies.is_empty() and map.tech_groups.has(c.get("tech_group", ""))
 	if c.has("primary_culture"):
 		lines.append("Cultura principal: " + _culture(map, c["primary_culture"]))

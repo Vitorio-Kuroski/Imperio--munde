@@ -9,6 +9,8 @@ const ZOOM_MAX := 8.0
 var map: MapView
 var clock := GameClock.new()
 var power := MonarchPower.new()
+var economy := Economy.new()
+var advisors := Advisors.new()
 var camera: Camera2D
 var player_tag := ""
 
@@ -26,6 +28,7 @@ var tooltip: MapTooltip
 var country_panel: CountryPanel
 var tech_window: TechWindow
 var ideas_window: IdeasWindow
+var advisors_window: AdvisorsWindow
 var start_panel: CenterContainer
 var eu4_status: Label
 var eu4_buttons: Array[Button] = []
@@ -38,6 +41,9 @@ func _ready() -> void:
 	add_child(map)
 	map.load_map(MAP_SCALE)
 	power.setup(map, clock)
+	power.advisors = advisors
+	economy.setup(map, clock, power, advisors)
+	advisors.setup(map, clock, power, economy)
 
 	camera = Camera2D.new()
 	add_child(camera)
@@ -69,7 +75,7 @@ func _build_ui() -> void:
 	top_bar.add_child(hb)
 
 	country_label = Label.new()
-	country_label.custom_minimum_size.x = 520
+	country_label.custom_minimum_size.x = 640
 	hb.add_child(country_label)
 
 	var spacer := Control.new()
@@ -170,11 +176,28 @@ func _build_ui() -> void:
 	country_panel.ideas_requested.connect(func(t: String):
 		tech_window.hide()
 		ideas_window.show_for(map, t))
-	power.changed.connect(func(_t):
+	advisors_window = AdvisorsWindow.new()
+	advisors_window.advisors = advisors
+	advisors_window.economy = economy
+	advisors_window.fmt = ideas_window.fmt_mods
+	ui.add_child(advisors_window)
+	country_panel.economy = economy
+	country_panel.advisors = advisors
+	country_panel.advisors_requested.connect(func(t: String):
+		tech_window.hide()
+		ideas_window.hide()
+		advisors_window.show_for(map, t))
+	var refresh_all := func(_t):
 		country_panel.refresh()
 		tech_window.refresh()
 		ideas_window.refresh()
-		_refresh_top_bar())
+		advisors_window.refresh()
+		_refresh_top_bar()
+	power.changed.connect(refresh_all)
+	economy.changed.connect(refresh_all)
+	advisors.changed.connect(func(t):
+		if t == player_tag:
+			refresh_all.call(t))
 	country_panel.techs_requested.connect(func(t: String):
 		if ideas_window:
 			ideas_window.hide()
@@ -302,6 +325,7 @@ func _start_game(tag: String) -> void:
 	power.player = tag
 	tech_window.player = tag
 	ideas_window.player = tag
+	advisors_window.player = tag
 	start_panel.hide()
 	var cap: int = int(map.countries[tag]["capital"])
 	camera.position = map.province_center(cap)
@@ -318,8 +342,9 @@ func _refresh_top_bar() -> void:
 		var dev := 0
 		for p in mine:
 			dev += int(p["development"])
-		country_label.text = "%s — %d prov., desenv. %d   ADM %d · DIP %d · MIL %d" % [
-				map.countries[player_tag]["name"], mine.size(), dev, power.points(player_tag, "adm"),
+		country_label.text = "%s — %d prov., desenv. %d   %s ducados (%s)   ADM %d · DIP %d · MIL %d" % [
+				map.countries[player_tag]["name"], mine.size(), dev, AdvisorsWindow._n(economy.money(player_tag)),
+				AdvisorsWindow._n(economy.balance(player_tag), true), power.points(player_tag, "adm"),
 				power.points(player_tag, "dip"), power.points(player_tag, "mil")]
 	else:
 		country_label.text = ""
@@ -465,7 +490,8 @@ func _update_tooltip() -> void:
 			or (side_panel.visible and side_panel.get_global_rect().has_point(m)) \
 			or (country_panel.visible and country_panel.get_global_rect().has_point(m)) \
 			or (tech_window.visible and tech_window.get_global_rect().has_point(m)) \
-			or (ideas_window.visible and ideas_window.get_global_rect().has_point(m))
+			or (ideas_window.visible and ideas_window.get_global_rect().has_point(m)) \
+			or (advisors_window.visible and advisors_window.get_global_rect().has_point(m))
 	tooltip.update_for(map, -1 if over_ui else map.province_at_mouse(), m)
 
 

@@ -28,6 +28,7 @@ var state := {}                  # tag -> {"points", "tech", "groups": [{"id", "
 var idea_groups := {}            # id -> grupo (map.idea_groups)
 var national_ideas := {}         # id -> conjunto (map.national_ideas)
 var _mods_cache := {}            # tag -> modificadores somados
+var advisors: Advisors           # conselheiros somam nível aos pontos e efeitos aos modificadores
 
 
 func setup(m: MapView, c: GameClock) -> void:
@@ -53,10 +54,15 @@ func tech(tag: String, cat: String) -> int:
 	return int(state[tag]["tech"][cat]) if state.has(tag) else 0
 
 
-## Ganho mensal: base + nota do governante (adm/dip/mil).
+## Ganho mensal: base + nota do governante + nível do conselheiro (adm/dip/mil).
 func gain(tag: String, cat: String) -> int:
 	var m: Dictionary = map.countries.get(tag, {}).get("monarch", {})
-	return BASE_GAIN + int(m.get(cat, 0))
+	return BASE_GAIN + int(m.get(cat, 0)) + (advisors.skill(tag, cat) if advisors else 0)
+
+
+## Esquece a soma de efeitos guardada (ideias ou conselheiros mudaram).
+func invalidate(tag: String) -> void:
+	_mods_cache.erase(tag)
 
 
 ## Custo do próximo nível da árvore `cat` (-1 se não houver próximo).
@@ -186,6 +192,8 @@ func _sum_mods(tag: String) -> Dictionary:
 			add.call(grp["ideas"][i]["modifiers"])
 		if int(g["n"]) >= grp["ideas"].size():
 			add.call(grp["bonus"])
+	if advisors:
+		add.call(advisors.modifiers(tag))
 	return out
 
 

@@ -1,0 +1,9 @@
+{
+  "philosopher": "Filósofo", "natural_scientist": "Cientista natural", "artist": "Artista", "treasurer": "Tesoureiro",
+  "theologian": "Teólogo", "master_of_mint": "Mestre da casa da moeda", "inquisitor": "Inquisidor",
+  "statesman": "Estadista", "naval_reformer": "Reformador naval", "trader": "Comerciante", "spymaster": "Mestre espião",
+  "colonial_governor": "Governador colonial", "diplomat": "Diplomata", "navigator": "Navegador",
+  "army_reformer": "Reformador do exército", "army_organiser": "Organizador do exército", "commandant": "Comandante",
+  "quartermaster": "Intendente", "recruitmaster": "Mestre de recrutamento", "fortification_expert": "Especialista em fortificações",
+  "grand_captain": "Grande capitão"
+}

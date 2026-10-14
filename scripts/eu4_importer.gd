@@ -102,7 +102,8 @@ func _rel(p: String) -> String:
 		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
-			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/"]:
+			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
+			"common/advisortypes/", "history/advisors/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -712,6 +713,8 @@ func _import() -> String:
 	var units := _units(technologies)
 	var national_ideas := []
 	var idea_groups := _ideas(countries, groups, rel_group, national_ideas)
+	var advisors := []
+	var advisor_types := _advisors(defs, advisors)
 	var adjacencies := []
 	if _index.has("map/adjacencies.csv"):
 		for line in _text("map/adjacencies.csv").split("\n"):
@@ -781,7 +784,8 @@ func _import() -> String:
 			"terrains": terrains, "areas": geo["areas"], "regions": geo["regions"], "superregions": geo["superregions"],
 			"continents": geo["continents"], "adjacencies": adjacencies, "governments": governments,
 			"technologies": technologies, "tech_groups": tech_groups, "units": units,
-			"idea_groups": idea_groups, "national_ideas": national_ideas, "provinces": provinces}))
+			"idea_groups": idea_groups, "national_ideas": national_ideas,
+			"advisor_types": advisor_types, "advisors": advisors, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
@@ -1371,6 +1375,46 @@ func _ideas(countries: Array, culture_group_of: Dictionary, religion_group_of: D
 		if used.has(fs[0]["id"]):
 			national.append(fs[0])
 	return groups
+
+
+## Tipos de conselheiro (categoria e efeitos) e conselheiros históricos (nome, província, nível, datas).
+func _advisors(defs: Dictionary, advisors: Array) -> Array:
+	var pt := _json("res://data/conselheiros_pt.json")
+	var types := []
+	var known := {}
+	for f in _list("common/advisortypes/"):
+		for e in _parse(_text(f)):
+			if e[0] == "" or not (e[1] is Array):
+				continue
+			var cat := ""
+			var rest := []
+			for kv in e[1]:
+				if kv[0] == "monarch_power" and kv[1] is String:
+					cat = kv[1]
+				elif kv[0] != "chance":
+					rest.append(kv)
+			if cat == "":
+				continue
+			types.append({"id": e[0], "name": pt.get(e[0], pretty_key(e[0])), "category": cat.to_lower(),
+					"modifiers": _idea_mods(rest)})
+			known[e[0]] = true
+	for f in _list("history/advisors/"):
+		for e in _parse(_text(f)):
+			if e[0] != "advisor" or not (e[1] is Array):
+				continue
+			var a := {}
+			for kv in e[1]:
+				var k: String = kv[0]
+				if k in ["name", "type", "date", "death_date"] and kv[1] is String:
+					a[k] = kv[1]
+				elif k in ["advisor_id", "location", "skill"] and kv[1] is String and (kv[1] as String).is_valid_int() \
+						and not (kv[1] as String).begins_with("-"):
+					a["id" if k == "advisor_id" else k] = int(kv[1])
+				elif k == "female" and kv[1] is String and kv[1] == "yes":
+					a["female"] = true
+			if known.has(a.get("type", "")) and defs.has(a.get("location", -1)) and a.has("name"):
+				advisors.append(a)
+	return types
 
 
 const UNIT_NUM_KEYS := ["maneuver", "offensive_morale", "defensive_morale", "offensive_fire", "defensive_fire",

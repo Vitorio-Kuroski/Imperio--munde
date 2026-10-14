@@ -59,6 +59,8 @@ var technologies: Dictionary = {}  # "adm"/"dip"/"mil" -> [{level, year, modifie
 var tech_groups: Dictionary = {}   # id -> {start_level, cost_modifier}
 var idea_groups: Array = []        # grupos de ideias (category adm/dip/mil, bonus, ideas)
 var national_ideas: Array = []     # ideias nacionais/de grupo/genéricas (start, bonus, ideas); países têm "ideas"
+var advisor_types: Array = []      # tipos de conselheiro (category, modifiers)
+var advisors: Array = []           # conselheiros históricos (name, location, skill, type, date, death_date)
 var units: Dictionary = {}         # id -> {name, type, unit_type, atributos, tech, level}
 var _building_pt := {}             # rótulos dos efeitos (data/construcoes_pt.json)
 var id_image: Image
@@ -140,6 +142,8 @@ func load_map(map_scale: float) -> void:
 	for u in data.get("units", []):
 		units[u["id"]] = u
 	idea_groups = data.get("idea_groups", [])
+	advisor_types = data.get("advisor_types", [])
+	advisors = data.get("advisors", [])
 	national_ideas = data.get("national_ideas", [])
 
 	var ids_tex: Texture2D

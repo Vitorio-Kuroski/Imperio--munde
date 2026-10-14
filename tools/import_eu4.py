@@ -18,6 +18,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   common/technologies/*.txt, common/technology.txt (tecnologias e grupos tecnologicos; opcionais)
   common/units/*.txt                           (unidades: tipo, grupo, atributos; opcional)
   common/ideas/*.txt                           (ideias nacionais e grupos de ideias; opcional)
+  common/advisortypes/*.txt, history/advisors/*.txt (tipos de conselheiro e conselheiros historicos)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -348,6 +349,39 @@ def eu4_ideas(root, countries, culture_group_of, religion_group_of):
                 break
     national = [st for st, _ in free_sets if st["id"] in used]
     return groups, national
+
+
+def eu4_advisors(root, defs):
+    """Tipos de conselheiro (categoria e efeitos) e conselheiros historicos (nome, provincia, nivel, datas)."""
+    with open("data/conselheiros_pt.json", encoding="utf-8") as f:
+        pt = json.load(f)
+    types = []
+    for fn in sorted(glob.glob(os.path.join(root, "common", "advisortypes", "*.txt"))):
+        for name, items in parse_script(read_text(fn)):
+            if not name or not isinstance(items, list):
+                continue
+            cat = next((v for k, v in items if k == "monarch_power" and isinstance(v, str)), "")
+            if not cat:
+                continue
+            types.append({"id": name, "name": pt.get(name) or pretty_key(name), "category": cat.lower(),
+                          "modifiers": idea_mods([(k, v) for k, v in items if k not in ("monarch_power", "chance")])})
+    known = {t["id"] for t in types}
+    advisors = []
+    for fn in sorted(glob.glob(os.path.join(root, "history", "advisors", "*.txt"))):
+        for k, items in parse_script(read_text(fn)):
+            if k != "advisor" or not isinstance(items, list):
+                continue
+            a = {}
+            for kk, v in items:
+                if kk in ("name", "type", "date", "death_date") and isinstance(v, str):
+                    a[kk] = v
+                elif kk in ("advisor_id", "location", "skill") and isinstance(v, str) and v.isdigit():
+                    a["id" if kk == "advisor_id" else kk] = int(v)
+                elif kk == "female" and v == "yes":
+                    a["female"] = True
+            if a.get("type") in known and a.get("location") in defs and "name" in a:
+                advisors.append(a)
+    return types, advisors
 
 
 def parse_building(bid, items, names):
@@ -957,6 +991,7 @@ def main():
 
     # ---------------------------------------------------------- ideias (common/ideas)
     idea_groups, national_ideas = eu4_ideas(root, countries, groups, rel_group)
+    advisor_types, advisors = eu4_advisors(root, defs)
 
     # ---------------------------------------------------------- map.json
     provinces = []
@@ -1005,7 +1040,8 @@ def main():
                    "superregions": geo["superregions"], "continents": geo["continents"],
                    "adjacencies": adjacencies, "governments": governments,
                    "technologies": technologies, "tech_groups": tech_groups, "units": units,
-                   "idea_groups": idea_groups, "national_ideas": national_ideas, "provinces": provinces},
+                   "idea_groups": idea_groups, "national_ideas": national_ideas,
+                   "advisor_types": advisor_types, "advisors": advisors, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])
