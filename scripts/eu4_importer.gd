@@ -103,7 +103,7 @@ func _rel(p: String) -> String:
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
 			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
-			"common/advisortypes/", "history/advisors/"]:
+			"common/advisortypes/", "history/advisors/", "common/institutions/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -715,6 +715,13 @@ func _import() -> String:
 	var idea_groups := _ideas(countries, groups, rel_group, national_ideas)
 	var advisors := []
 	var advisor_types := _advisors(defs, advisors)
+	var inst_raw := _institutions()
+	var institutions := []
+	for e in inst_raw:
+		institutions.append(e[0])
+	var country_of := {}
+	for c in countries:
+		country_of[c["tag"]] = c
 	var adjacencies := []
 	if _index.has("map/adjacencies.csv"):
 		for line in _text("map/adjacencies.csv").split("\n"):
@@ -775,6 +782,23 @@ func _import() -> String:
 		for k in ["area", "region", "superregion", "continent"]:
 			if geo[k + "_of"].has(pid):
 				prov[k] = geo[k + "_of"][pid]
+		if not is_sea and not inst_raw.is_empty():
+			var pctx := prov.duplicate()
+			pctx["culture_group"] = groups.get(prov.get("culture", ""), "")
+			var owner_c: Variant = country_of.get(prov["owner"], null)
+			var have := []
+			for e in inst_raw:
+				if e[1] == null:
+					continue
+				var ok := true
+				for x in e[1]:
+					if x[0] != "" and not _eval_province(x[0], x[1], pctx, owner_c):
+						ok = false
+						break
+				if ok:
+					have.append(e[0]["id"])
+			if not have.is_empty():
+				prov["institutions"] = have
 		provinces.append(prov)
 	var f := FileAccess.open(OUT_DIR + "/map.json", FileAccess.WRITE)
 	if f == null:
@@ -785,7 +809,8 @@ func _import() -> String:
 			"continents": geo["continents"], "adjacencies": adjacencies, "governments": governments,
 			"technologies": technologies, "tech_groups": tech_groups, "units": units,
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
-			"advisor_types": advisor_types, "advisors": advisors, "provinces": provinces}))
+			"advisor_types": advisor_types, "advisors": advisors,
+			"institutions": institutions, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
@@ -1375,6 +1400,99 @@ func _ideas(countries: Array, culture_group_of: Dictionary, religion_group_of: D
 		if used.has(fs[0]["id"]):
 			national.append(fs[0])
 	return groups
+
+
+const COUNTRY_TRIGGERS := {"technology_group": "tech_group", "government": "government",
+		"primary_culture": "primary_culture", "religion": "religion", "tag": "tag"}
+
+
+## Condição de país (owner = { ... }) para o history das instituições.
+func _eval_country(k: String, v: Variant, c: Dictionary) -> bool:
+	if k == "":
+		return true
+	var kl := k.to_lower()
+	if kl in ["or", "and", "not"]:
+		if not (v is Array):
+			return false
+		var any := false
+		var all := true
+		for x in v:
+			if x[0] == "":
+				continue
+			if _eval_country(x[0], x[1], c):
+				any = true
+			else:
+				all = false
+		return any if kl == "or" else (all if kl == "and" else not any)
+	if not (v is String):
+		return false
+	if COUNTRY_TRIGGERS.has(kl):
+		return str(c.get(COUNTRY_TRIGGERS[kl], "")) == v
+	if kl == "has_reform":
+		return v in c.get("reforms", [])
+	if kl in FALSE_AT_START or kl == "is_playing_custom_nation":
+		return v == "no"
+	return false
+
+
+## Condição de província (history das instituições). p = província (com culture_group), c = dono.
+func _eval_province(k: String, v: Variant, p: Dictionary, c: Variant) -> bool:
+	if k == "":
+		return true
+	var kl := k.to_lower()
+	if kl in ["or", "and", "not"]:
+		if not (v is Array):
+			return false
+		var any := false
+		var all := true
+		for x in v:
+			if x[0] == "":
+				continue
+			if _eval_province(x[0], x[1], p, c):
+				any = true
+			else:
+				all = false
+		return any if kl == "or" else (all if kl == "and" else not any)
+	if kl == "owner":
+		if c == null or not (v is Array):
+			return false
+		for x in v:
+			if x[0] != "" and not _eval_country(x[0], x[1], c):
+				return false
+		return true
+	if not (v is String):
+		return false
+	if kl == "is_year":
+		return (v as String).is_valid_int() and int(v) <= CUTOFF / 10000
+	if kl in ["continent", "region", "superregion", "area", "culture", "culture_group", "religion", "trade_goods"]:
+		return str(p.get(kl, "")) == v
+	if kl == "province_id":
+		return (v as String).is_valid_int() and int(v) == int(p["id"])
+	return false
+
+
+## Instituições [{id, name, color, bonus, start_date, start_province}, trigger history ou null].
+func _institutions() -> Array:
+	var pt := _json("res://data/instituicoes_pt.json")
+	var out := []
+	for f in _list("common/institutions/"):
+		for e in _parse(_text(f)):
+			if e[0] == "" or not (e[1] is Array):
+				continue
+			var inst := {"id": e[0], "name": pt.get("nomes", {}).get(e[0], pretty_key(e[0])),
+					"color": pt.get("cores", {}).get(e[0], hashed_color(e[0])), "bonus": {}}
+			var hist = null
+			for kv in e[1]:
+				if kv[0] == "bonus" and kv[1] is Array:
+					inst["bonus"] = _idea_mods(kv[1])
+				elif kv[0] == "historical_start_date" and kv[1] is String:
+					inst["start_date"] = kv[1]
+				elif kv[0] == "historical_start_province" and str(kv[1]).is_valid_int():
+					inst["start_province"] = int(kv[1])
+				elif kv[0] == "history" and kv[1] is Array:
+					hist = kv[1]
+			out.append([inst, hist])
+	return out
 
 
 ## Tipos de conselheiro (categoria e efeitos) e conselheiros históricos (nome, província, nível, datas).

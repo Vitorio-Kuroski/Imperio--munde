@@ -1,0 +1,12 @@
+{
+  "nomes": {
+    "feudalism": "Feudalismo", "renaissance": "Renascimento", "new_world_i": "Colonialismo",
+    "printing_press": "Imprensa", "global_trade": "Comércio global", "manufactories": "Manufaturas",
+    "enlightenment": "Iluminismo", "industrialization": "Industrialização"
+  },
+  "cores": {
+    "feudalism": [150, 110, 60], "renaissance": [70, 140, 210], "new_world_i": [60, 160, 90],
+    "printing_press": [200, 170, 60], "global_trade": [190, 90, 160], "manufactories": [130, 130, 150],
+    "enlightenment": [230, 210, 120], "industrialization": [90, 90, 90]
+  }
+}

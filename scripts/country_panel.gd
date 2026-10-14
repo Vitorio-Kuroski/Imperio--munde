@@ -19,6 +19,9 @@ var _tech_button: Button
 var _ideas_button: Button
 var _advisors_button: Button
 var economy: Economy
+var institutions: Institutions
+var _embrace_button: Button
+var _embrace_id := ""
 var advisors: Advisors
 var _pt := {}
 
@@ -46,6 +49,11 @@ func _init() -> void:
 	_advisors_button.text = "Ver conselheiros"
 	_advisors_button.pressed.connect(func(): advisors_requested.emit(tag))
 	vb.add_child(_advisors_button)
+	_embrace_button = Button.new()
+	_embrace_button.pressed.connect(func():
+		if institutions and institutions.embrace(tag, _embrace_id):
+			refresh())
+	vb.add_child(_embrace_button)
 	if FileAccess.file_exists("res://data/governos_pt.json"):
 		var d = JSON.parse_string(FileAccess.get_file_as_string("res://data/governos_pt.json"))
 		if d is Dictionary:
@@ -117,6 +125,26 @@ func show_country(map: MapView, t: String) -> void:
 			gr.append("%s %d/7" % [power.idea_groups[g["id"]]["name"], int(g["n"])])
 		txt += "grupos %d/%d" % [power.adopted(t).size(), power.idea_slots(t)] + (" (%s)" % ", ".join(gr) if not gr.is_empty() else "")
 		lines.append(txt)
+	_embrace_button.visible = false
+	if institutions and institutions.enabled():
+		var parts := []
+		for inst in institutions.list:
+			var iid: String = inst["id"]
+			if not institutions.born.has(iid):
+				continue
+			if institutions.has_embraced(t, iid):
+				parts.append(inst["name"] + " ✓")
+			else:
+				var pr := institutions.present(t, iid)
+				parts.append("%s %d%%" % [inst["name"], roundi(pr * 100.0)])
+				if t == power.player and pr >= Institutions.EMBRACE_MIN and not _embrace_button.visible:
+					_embrace_id = iid
+					_embrace_button.text = "Adotar %s (%s ducados)" % [inst["name"],
+							AdvisorsWindow._n(institutions.embrace_cost(t, iid))]
+					_embrace_button.disabled = not institutions.can_embrace(t, iid)
+					_embrace_button.visible = true
+		if not parts.is_empty():
+			lines.append("Instituições: " + ", ".join(parts))
 	_ideas_button.visible = power != null and not map.national_ideas.is_empty()
 	_advisors_button.visible = advisors != null and advisors.enabled()
 	_tech_button.visible = not map.technologies.is_empty() and map.tech_groups.has(c.get("tech_group", ""))

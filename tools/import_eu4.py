@@ -19,6 +19,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   common/units/*.txt                           (unidades: tipo, grupo, atributos; opcional)
   common/ideas/*.txt                           (ideias nacionais e grupos de ideias; opcional)
   common/advisortypes/*.txt, history/advisors/*.txt (tipos de conselheiro e conselheiros historicos)
+  common/institutions/*.txt                    (instituicoes: origem, bonus e onde ja existem em 1444)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -382,6 +383,79 @@ def eu4_advisors(root, defs):
             if a.get("type") in known and a.get("location") in defs and "name" in a:
                 advisors.append(a)
     return types, advisors
+
+
+COUNTRY_TRIGGERS = {"technology_group": "tech_group", "government": "government", "primary_culture": "primary_culture",
+                    "religion": "religion", "tag": "tag"}
+
+
+def eval_country(k, v, c):
+    """Condicao de pais (owner = { ... }) para o history das instituicoes."""
+    if not k:
+        return True
+    kl = k.lower()
+    if kl in ("or", "and", "not"):
+        if not isinstance(v, list):
+            return False
+        r = [eval_country(a, b, c) for a, b in v if a]
+        return any(r) if kl == "or" else (all(r) if kl == "and" else not any(r))
+    if not isinstance(v, str):
+        return False
+    if kl in COUNTRY_TRIGGERS:
+        return c.get(COUNTRY_TRIGGERS[kl]) == v
+    if kl == "has_reform":
+        return v in c.get("reforms", [])
+    if kl in FALSE_AT_START or kl == "is_playing_custom_nation":
+        return v == "no"
+    return False
+
+
+def eval_province(k, v, p, c, year):
+    """Condicao de provincia (history das instituicoes). p = provincia (com culture_group), c = dono."""
+    if not k:
+        return True
+    kl = k.lower()
+    if kl in ("or", "and", "not"):
+        if not isinstance(v, list):
+            return False
+        r = [eval_province(a, b, p, c, year) for a, b in v if a]
+        return any(r) if kl == "or" else (all(r) if kl == "and" else not any(r))
+    if kl == "owner":
+        return c is not None and isinstance(v, list) and all(eval_country(a, b, c) for a, b in v if a)
+    if not isinstance(v, str):
+        return False
+    if kl == "is_year":
+        return v.isdigit() and int(v) <= year
+    if kl in ("continent", "region", "superregion", "area", "culture", "culture_group", "religion", "trade_goods"):
+        return p.get(kl) == v
+    if kl == "province_id":
+        return v.isdigit() and int(v) == p["id"]
+    return False
+
+
+def eu4_institutions(root, cutoff):
+    """Instituicoes (bonus, data e provincia de origem) e o trigger "history" que diz onde ja existem."""
+    with open("data/instituicoes_pt.json", encoding="utf-8") as f:
+        pt = json.load(f)
+    out = []
+    for fn in sorted(glob.glob(os.path.join(root, "common", "institutions", "*.txt"))):
+        for name, items in parse_script(read_text(fn)):
+            if not name or not isinstance(items, list):
+                continue
+            inst = {"id": name, "name": pt["nomes"].get(name) or pretty_key(name),
+                    "color": pt["cores"].get(name) or hashed_color(name), "bonus": {}}
+            hist = None
+            for k, v in items:
+                if k == "bonus" and isinstance(v, list):
+                    inst["bonus"] = idea_mods(v)
+                elif k == "historical_start_date" and isinstance(v, str):
+                    inst["start_date"] = v
+                elif k == "historical_start_province" and isinstance(v, str) and v.isdigit():
+                    inst["start_province"] = int(v)
+                elif k == "history" and isinstance(v, list):
+                    hist = v
+            out.append((inst, hist))
+    return out
 
 
 def parse_building(bid, items, names):
@@ -992,6 +1066,9 @@ def main():
     # ---------------------------------------------------------- ideias (common/ideas)
     idea_groups, national_ideas = eu4_ideas(root, countries, groups, rel_group)
     advisor_types, advisors = eu4_advisors(root, defs)
+    inst_raw = eu4_institutions(root, cutoff)
+    institutions = [i for i, _ in inst_raw]
+    country_of = {c["tag"]: c for c in countries}
 
     # ---------------------------------------------------------- map.json
     provinces = []
@@ -1031,6 +1108,13 @@ def main():
                      ("continent", geo["continent_of"])):
             if pid in d:
                 prov[k] = d[pid]
+        if not sea and inst_raw:
+            pctx = dict(prov, culture_group=groups.get(prov.get("culture", ""), ""))
+            owner_c = country_of.get(prov["owner"])
+            have = [i["id"] for i, h in inst_raw
+                    if h is not None and all(eval_province(a, b, pctx, owner_c, cutoff[0]) for a, b in h if a)]
+            if have:
+                prov["institutions"] = have
         provinces.append(prov)
 
     with open("data/eu4/map.json", "w", encoding="utf-8") as f:
@@ -1041,7 +1125,8 @@ def main():
                    "adjacencies": adjacencies, "governments": governments,
                    "technologies": technologies, "tech_groups": tech_groups, "units": units,
                    "idea_groups": idea_groups, "national_ideas": national_ideas,
-                   "advisor_types": advisor_types, "advisors": advisors, "provinces": provinces},
+                   "advisor_types": advisor_types, "advisors": advisors,
+                   "institutions": institutions, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])

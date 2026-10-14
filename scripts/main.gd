@@ -11,6 +11,7 @@ var clock := GameClock.new()
 var power := MonarchPower.new()
 var economy := Economy.new()
 var advisors := Advisors.new()
+var institutions := Institutions.new()
 var camera: Camera2D
 var player_tag := ""
 
@@ -44,6 +45,9 @@ func _ready() -> void:
 	power.advisors = advisors
 	economy.setup(map, clock, power, advisors)
 	advisors.setup(map, clock, power, economy)
+	institutions.setup(map, clock, power, economy)
+	power.institutions = institutions
+	map.inst_view = institutions
 
 	camera = Camera2D.new()
 	add_child(camera)
@@ -83,7 +87,7 @@ func _build_ui() -> void:
 	hb.add_child(spacer)
 
 	mode_button = Button.new()
-	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura, religião, produtos, comércio, regiões (T)"
+	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura, religião, produtos, comércio, regiões, instituições (T)"
 	mode_button.pressed.connect(_toggle_map_mode)
 	hb.add_child(mode_button)
 
@@ -194,6 +198,11 @@ func _build_ui() -> void:
 		advisors_window.refresh()
 		_refresh_top_bar()
 	power.changed.connect(refresh_all)
+	country_panel.institutions = institutions
+	institutions.changed.connect(func(_t):
+		if map.map_mode == MapView.MapMode.INSTITUICOES:
+			map.refresh_colors()
+		refresh_all.call(_t))
 	economy.changed.connect(refresh_all)
 	advisors.changed.connect(func(t):
 		if t == player_tag:
@@ -405,6 +414,16 @@ func _show_province(pid: int) -> void:
 			txt += "\nReligião: %s" % map.religions[rid]["name"] + (" (%s)" % rgrp if rgrp != "" else "")
 		if p.get("coastal", false):
 			txt += "\nCosteira"
+	if institutions.enabled() and not p["sea"]:
+		var have := []
+		for inst in institutions.list:
+			var pr := institutions.province_progress(inst["id"], pid)
+			if pr >= 100.0:
+				have.append(inst["name"])
+			elif pr > 0.0:
+				have.append("%s %d%%" % [inst["name"], roundi(pr)])
+		if not have.is_empty():
+			txt += "\nInstituições: " + ", ".join(have)
 	txt += _geography_info(p)
 	info_label.text = txt
 	side_panel.show()

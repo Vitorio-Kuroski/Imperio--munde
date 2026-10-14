@@ -29,8 +29,9 @@ const TERRAIN_COLORS := {
 	"intransitável": Color8(95, 90, 85),
 }
 
-enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO, PRODUTOS, COMERCIO, REGIOES }
-const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião", "produtos", "comércio", "regiões"]
+enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO, PRODUTOS, COMERCIO, REGIOES, INSTITUICOES }
+const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião", "produtos", "comércio", "regiões",
+		"instituições"]
 
 var map_w: int
 var map_h: int
@@ -59,6 +60,8 @@ var technologies: Dictionary = {}  # "adm"/"dip"/"mil" -> [{level, year, modifie
 var tech_groups: Dictionary = {}   # id -> {start_level, cost_modifier}
 var idea_groups: Array = []        # grupos de ideias (category adm/dip/mil, bonus, ideas)
 var national_ideas: Array = []     # ideias nacionais/de grupo/genéricas (start, bonus, ideas); países têm "ideas"
+var institutions: Array = []       # instituições (id, name, color, bonus, start_date, start_province)
+var inst_view: Institutions        # presença atual (para o modo de mapa instituições)
 var advisor_types: Array = []      # tipos de conselheiro (category, modifiers)
 var advisors: Array = []           # conselheiros históricos (name, location, skill, type, date, death_date)
 var units: Dictionary = {}         # id -> {name, type, unit_type, atributos, tech, level}
@@ -69,6 +72,7 @@ var palette_tex: ImageTexture
 var mat: ShaderMaterial
 var selected_id := -1
 var map_mode := MapMode.POLITICO
+var owner_version := 0            # muda a cada troca de dono (Economy recalcula a renda)
 var source := ""                   # de onde veio o mapa (caminho do map.json)
 
 
@@ -143,6 +147,7 @@ func load_map(map_scale: float) -> void:
 		units[u["id"]] = u
 	idea_groups = data.get("idea_groups", [])
 	advisor_types = data.get("advisor_types", [])
+	institutions = data.get("institutions", [])
 	advisors = data.get("advisors", [])
 	national_ideas = data.get("national_ideas", [])
 
@@ -206,6 +211,8 @@ func province_color(pid: int) -> Color:
 		return trade_node_color(p.get("trade_node", ""))
 	if map_mode == MapMode.REGIOES:
 		return area_color(p.get("area", ""))
+	if map_mode == MapMode.INSTITUICOES:
+		return institution_color(pid)
 	var tag: String = p["owner"]
 	if tag == "" or not countries.has(tag):
 		return UNOWNED_COLOR
@@ -239,6 +246,25 @@ func trade_node_color(nid: String) -> Color:
 		return UNOWNED_COLOR
 	var c: Array = trade_nodes[nid]["color"]
 	return Color8(int(c[0]), int(c[1]), int(c[2]))
+
+
+## Cor do modo instituições: a instituição mais recente, mais forte quanto maior a presença.
+func institution_color(pid: int) -> Color:
+	if inst_view == null:
+		return UNOWNED_COLOR
+	var iid := inst_view.focus()
+	if iid == "":
+		return UNOWNED_COLOR
+	var c: Array = inst_view.by_id[iid]["color"]
+	var t := inst_view.province_progress(iid, pid) / 100.0
+	return Color(0.30, 0.29, 0.27).lerp(Color8(int(c[0]), int(c[1]), int(c[2])), t)
+
+
+## Repinta a paleta no modo atual (quando os dados do modo mudam, ex.: instituições se espalhando).
+func refresh_colors() -> void:
+	for p in provinces:
+		_write_palette(int(p["id"]))
+	palette_tex.update(palette_image)
 
 
 func area_color(aid: String) -> Color:
@@ -289,6 +315,8 @@ func has_map_mode(mode: MapMode) -> bool:
 			return not trade_nodes.is_empty()
 		MapMode.REGIOES:
 			return not areas.is_empty()
+		MapMode.INSTITUICOES:
+			return not institutions.is_empty()
 	return true
 
 
@@ -316,6 +344,7 @@ func _write_palette(pid: int) -> void:
 
 func set_owner_of(pid: int, tag: String) -> void:
 	provinces[pid]["owner"] = tag
+	owner_version += 1
 	_write_palette(pid)
 	palette_tex.update(palette_image)
 

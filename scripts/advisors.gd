@@ -54,6 +54,10 @@ func total_salary(tag: String) -> float:
 	return t
 
 
+func get_hired_count(tag: String) -> int:
+	return hired.get(tag, {}).size()
+
+
 func get_hired(tag: String, cat: String) -> Dictionary:
 	return hired.get(tag, {}).get(cat, {})
 
@@ -95,7 +99,8 @@ func hire(tag: String, cat: String, idx: int) -> bool:
 	if a.has("id"):
 		_used[a["id"]] = true
 	power.invalidate(tag)
-	changed.emit(tag)
+	if tag == power.player:
+		changed.emit(tag)
 	return true
 
 
@@ -103,7 +108,8 @@ func dismiss(tag: String, cat: String) -> void:
 	if hired.get(tag, {}).has(cat):
 		hired[tag].erase(cat)
 		power.invalidate(tag)
-		changed.emit(tag)
+		if tag == power.player:
+			changed.emit(tag)
 
 
 func dismiss_most_expensive(tag: String) -> bool:
@@ -155,7 +161,10 @@ func _on_month() -> void:
 	if not enabled():
 		return
 	for tag in map.countries:
-		if tag == power.player:
+		if tag == power.player or get_hired_count(tag) == 3:
+			continue
+		var bal := economy.balance(tag)
+		if bal <= 1.0 or economy.money(tag) <= 0.0:
 			continue
 		for cat in CATS:
 			if not get_hired(tag, cat).is_empty():
@@ -166,5 +175,6 @@ func _on_month() -> void:
 				if best < 0 or int(c[i]["skill"]) < int(c[best]["skill"]):
 					best = i
 			# a IA só contrata se o saldo mensal continuar positivo
-			if best >= 0 and economy.balance(tag) > salary(tag, c[best]) and economy.money(tag) > 0.0:
+			if best >= 0 and bal > salary(tag, c[best]):
+				bal -= salary(tag, c[best])
 				hire(tag, cat, best)

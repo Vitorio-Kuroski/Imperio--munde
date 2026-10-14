@@ -20,6 +20,7 @@ var clock: GameClock
 var power: MonarchPower
 var advisors: Advisors
 var treasury := {}               # tag -> ducados
+var _counted_version := -1
 var _base := {}                  # tag -> {"tax": por ano, "prod": por ano} (recalculado todo mês)
 
 
@@ -36,6 +37,7 @@ func setup(m: MapView, c: GameClock, pw: MonarchPower, adv: Advisors) -> void:
 
 ## Soma imposto e produção (ducados por ano, sem modificadores) de todos os países numa passada.
 func _recount() -> void:
+	_counted_version = map.owner_version
 	_base.clear()
 	for p in map.provinces:
 		var tag: String = p["owner"]
@@ -77,12 +79,14 @@ func spend(tag: String, amount: float) -> bool:
 	if money(tag) < amount:
 		return false
 	treasury[tag] = money(tag) - amount
-	changed.emit(tag)
+	if tag == power.player:
+		changed.emit(tag)
 	return true
 
 
 func _on_month() -> void:
-	_recount()
+	if map.owner_version != _counted_version:   # só recalcula quando algum dono muda
+		_recount()
 	for tag in treasury:
 		treasury[tag] = money(tag) + balance(tag)
 		# sem empréstimos ainda: no vermelho, o país dispensa o conselheiro mais caro

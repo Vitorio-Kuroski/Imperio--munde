@@ -28,7 +28,9 @@ var state := {}                  # tag -> {"points", "tech", "groups": [{"id", "
 var idea_groups := {}            # id -> grupo (map.idea_groups)
 var national_ideas := {}         # id -> conjunto (map.national_ideas)
 var _mods_cache := {}            # tag -> modificadores somados
+var _slots_at := PackedInt32Array() # vagas de grupos de ideias por nível adm (acumulado)
 var advisors: Advisors           # conselheiros somam nível aos pontos e efeitos aos modificadores
+var institutions: Institutions   # instituições não adotadas encarecem tecnologias; adotadas dão bônus
 
 
 func setup(m: MapView, c: GameClock) -> void:
@@ -38,6 +40,10 @@ func setup(m: MapView, c: GameClock) -> void:
 		idea_groups[g["id"]] = g
 	for g in map.national_ideas:
 		national_ideas[g["id"]] = g
+	var acc := 0
+	for t in map.technologies.get("adm", []):
+		acc += int(t.get("modifiers", {}).get("allowed_idea_groups", 0))
+		_slots_at.append(acc)
 	for tag in map.countries:
 		var g: String = map.countries[tag].get("tech_group", "")
 		var lvl := int(map.tech_groups[g]["start_level"]) if map.tech_groups.has(g) else 0
@@ -75,7 +81,9 @@ func tech_cost(tag: String, cat: String) -> int:
 	var mod := float(map.tech_groups[g]["cost_modifier"]) if map.tech_groups.has(g) else 0.0
 	var ahead := maxi(0, int(techs[nxt]["year"]) - clock.year)
 	var ideas_mod := modifier(tag, "technology_cost") + modifier(tag, cat + "_tech_cost_modifier")
-	return roundi(BASE_TECH_COST * (1.0 + mod) * (1.0 + AHEAD_PENALTY * ahead) * maxf(0.1, 1.0 + ideas_mod))
+	var inst_pen := institutions.tech_penalty(tag, techs[nxt]) if institutions else 0.0
+	return roundi(BASE_TECH_COST * (1.0 + mod) * (1.0 + AHEAD_PENALTY * ahead) * maxf(0.1, 1.0 + ideas_mod)
+			* (1.0 + inst_pen))
 
 
 func can_research(tag: String, cat: String) -> bool:
@@ -84,24 +92,23 @@ func can_research(tag: String, cat: String) -> bool:
 
 
 func research(tag: String, cat: String) -> bool:
-	if not can_research(tag, cat):
+	var c := tech_cost(tag, cat)
+	if c < 0 or points(tag, cat) < c:
 		return false
-	state[tag]["points"][cat] -= tech_cost(tag, cat)
+	state[tag]["points"][cat] -= c
 	state[tag]["tech"][cat] += 1
 	_mods_cache.erase(tag)
-	changed.emit(tag)
+	if tag == player:
+		changed.emit(tag)
 	return true
 
 
 # ------------------------------------------------------------------ ideias
 ## Vagas de grupos de ideias: soma de allowed_idea_groups nas tecnologias adm já pesquisadas.
 func idea_slots(tag: String) -> int:
-	var n := 0
-	var lvl := tech(tag, "adm")
-	for t in map.technologies.get("adm", []):
-		if int(t["level"]) <= lvl:
-			n += int(t.get("modifiers", {}).get("allowed_idea_groups", 0))
-	return n
+	if _slots_at.is_empty():
+		return 0
+	return _slots_at[clampi(tech(tag, "adm"), 0, _slots_at.size() - 1)]
 
 
 func adopted(tag: String) -> Array:
@@ -136,7 +143,8 @@ func adopt(tag: String, gid: String) -> bool:
 	if not can_adopt(tag, gid):
 		return false
 	state[tag]["groups"].append({"id": gid, "n": 0})
-	changed.emit(tag)
+	if tag == player:
+		changed.emit(tag)
 	return true
 
 
@@ -155,7 +163,8 @@ func buy_idea(tag: String, gid: String) -> bool:
 		if g["id"] == gid:
 			g["n"] += 1
 	_mods_cache.erase(tag)
-	changed.emit(tag)
+	if tag == player:
+		changed.emit(tag)
 	return true
 
 
@@ -194,6 +203,8 @@ func _sum_mods(tag: String) -> Dictionary:
 			add.call(grp["bonus"])
 	if advisors:
 		add.call(advisors.modifiers(tag))
+	if institutions:
+		add.call(institutions.modifiers(tag))
 	return out
 
 
@@ -201,7 +212,10 @@ func _sum_mods(tag: String) -> Dictionary:
 func _ai_ideas(tag: String) -> void:
 	if idea_groups.is_empty():
 		return
-	if adopted(tag).size() < idea_slots(tag):
+	var slots := idea_slots(tag)
+	if slots == 0:
+		return
+	if adopted(tag).size() < slots:
 		var m: Dictionary = map.countries.get(tag, {}).get("monarch", {})
 		var best := "adm"
 		for cat in CATS:
@@ -223,6 +237,7 @@ func _on_month() -> void:
 			state[tag]["points"][cat] = mini(MAX_POINTS, points(tag, cat) + gain(tag, cat))
 		if tag != player and not map.technologies.is_empty():
 			for cat in CATS:        # IA simples: pesquisa assim que tiver pontos
-				research(tag, cat)
+				if points(tag, cat) >= 200:   # nenhuma tecnologia custa menos que isso
+					research(tag, cat)
 			_ai_ideas(tag)
 	changed.emit(player)

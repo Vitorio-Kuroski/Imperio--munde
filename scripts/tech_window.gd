@@ -220,9 +220,14 @@ func _details(map: MapView, t: Dictionary, tag: String) -> String:
 	if not lib.is_empty():
 		txt += "\n     libera: " + ", ".join(lib)
 	var inst := []
+	var iv: Institutions = power.institutions if power else null
 	for i in t.get("institutions", {}):
-		inst.append("%s %d%%" % [_pt.get("instituicoes", {}).get(i, Eu4Importer.pretty_key(i)),
-				roundi(float(t["institutions"][i]) * 100.0)])
+		var mark := ""
+		if iv and iv.enabled():
+			mark = " ✓" if iv.has_embraced(tag, i) else " ✗"
+		inst.append("%s %d%%%s" % [_pt.get("instituicoes", {}).get(i, Eu4Importer.pretty_key(i)),
+				roundi(float(t["institutions"][i]) * 100.0), mark])
 	if not inst.is_empty():
-		txt += "\n     espera: " + ", ".join(inst)
+		txt += "\n     espera: " + ", ".join(inst) + \
+				(" (✗ = não adotada: encarece a pesquisa pelo valor esperado)" if " ✗" in ", ".join(inst) else "")
 	return txt
