@@ -22,8 +22,8 @@ const TERRAIN_COLORS := {
 	"pântano": Color8(90, 120, 100),
 }
 
-enum MapMode { POLITICO, TERRENO, CULTURA }
-const MAP_MODE_NAMES := ["político", "terreno", "cultura"]
+enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO }
+const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião"]
 
 var map_w: int
 var map_h: int
@@ -32,6 +32,8 @@ var countries: Dictionary = {}     # tag -> dict
 var country_index: Dictionary = {} # tag -> 1..N (0 = sem dono)
 var cultures: Dictionary = {}      # id -> dict (name, group, color)
 var culture_index: Dictionary = {} # id -> 1..N (0 = nenhuma)
+var religions: Dictionary = {}     # id -> dict (name, group, color); vazio se o mapa não tiver religiões
+var religion_index: Dictionary = {} # id -> 1..N (0 = nenhuma)
 var id_image: Image
 var palette_image: Image
 var palette_tex: ImageTexture
@@ -71,6 +73,11 @@ func load_map(map_scale: float) -> void:
 		cultures[c["id"]] = c
 		culture_index[c["id"]] = n
 		n += 1
+	n = 1
+	for r in data.get("religions", []):
+		religions[r["id"]] = r
+		religion_index[r["id"]] = n
+		n += 1
 
 	var ids_tex: Texture2D
 	if ids_path.begins_with("user://"):
@@ -107,6 +114,8 @@ func province_color(pid: int) -> Color:
 		return TERRAIN_COLORS.get(p["terrain"], UNOWNED_COLOR)
 	if map_mode == MapMode.CULTURA:
 		return culture_color(p.get("culture", ""))
+	if map_mode == MapMode.RELIGIAO:
+		return religion_color(p.get("religion", ""))
 	var tag: String = p["owner"]
 	if tag == "" or not countries.has(tag):
 		return UNOWNED_COLOR
@@ -121,6 +130,23 @@ func culture_color(cid: String) -> Color:
 	return Color8(int(c[0]), int(c[1]), int(c[2]))
 
 
+func religion_color(rid: String) -> Color:
+	if not religions.has(rid):
+		return UNOWNED_COLOR
+	var c: Array = religions[rid]["color"]
+	return Color8(int(c[0]), int(c[1]), int(c[2]))
+
+
+## O modo de mapa tem dados neste mapa? (cultura e religião só existem em alguns mapas)
+func has_map_mode(mode: MapMode) -> bool:
+	match mode:
+		MapMode.CULTURA:
+			return not cultures.is_empty()
+		MapMode.RELIGIAO:
+			return not religions.is_empty()
+	return true
+
+
 func _write_palette(pid: int) -> void:
 	var p: Dictionary = provinces[pid]
 	var col := province_color(pid)
@@ -128,7 +154,9 @@ func _write_palette(pid: int) -> void:
 	palette_image.set_pixel(pid, 0, col)
 	var owner_idx: int = country_index.get(p["owner"], 0)
 	var cult_idx: int = culture_index.get(p.get("culture", ""), 0)
-	palette_image.set_pixel(pid, 2, Color((owner_idx >> 8) / 255.0, 0.0, 0.0, 1.0))
+	var rel_idx: int = religion_index.get(p.get("religion", ""), 0)
+	palette_image.set_pixel(pid, 2, Color((owner_idx >> 8) / 255.0, (rel_idx & 255) / 255.0,
+			(rel_idx >> 8) / 255.0, 1.0))
 	palette_image.set_pixel(pid, 1, Color((owner_idx & 255) / 255.0, (cult_idx & 255) / 255.0,
 			(cult_idx >> 8) / 255.0, 1.0 if p["sea"] else 0.0))
 
@@ -144,8 +172,13 @@ func set_map_mode(mode: MapMode) -> void:
 	if mode == map_mode:
 		return
 	map_mode = mode
-	# no modo cultura as bordas fortes passam a separar culturas em vez de países
-	mat.set_shader_parameter("border_mode", 1 if mode == MapMode.CULTURA else 0)
+	# nos modos cultura e religião as bordas fortes separam culturas/religiões em vez de países
+	var bm := 0
+	if mode == MapMode.CULTURA:
+		bm = 1
+	elif mode == MapMode.RELIGIAO:
+		bm = 2
+	mat.set_shader_parameter("border_mode", bm)
 	for p in provinces:
 		_write_palette(int(p["id"]))
 	palette_tex.update(palette_image)

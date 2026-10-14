@@ -72,7 +72,7 @@ func _build_ui() -> void:
 	hb.add_child(spacer)
 
 	mode_button = Button.new()
-	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura (T)"
+	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura, religião (T)"
 	mode_button.pressed.connect(_toggle_map_mode)
 	hb.add_child(mode_button)
 
@@ -293,9 +293,14 @@ func _refresh_top_bar() -> void:
 	mode_button.text = "Mapa: %s" % MapView.MAP_MODE_NAMES[map.map_mode]
 
 
-## Alterna político -> terreno -> cultura -> político.
+## Alterna político -> terreno -> cultura -> religião -> político (pula os modos sem dados no mapa).
 func _toggle_map_mode() -> void:
-	map.set_map_mode(((map.map_mode + 1) % MapView.MAP_MODE_NAMES.size()) as MapView.MapMode)
+	var mode := map.map_mode
+	for i in MapView.MAP_MODE_NAMES.size():
+		mode = ((mode + 1) % MapView.MAP_MODE_NAMES.size()) as MapView.MapMode
+		if map.has_map_mode(mode):
+			break
+	map.set_map_mode(mode)
 	_refresh_top_bar()
 	if map.selected_id >= 0:
 		_show_province(map.selected_id)
@@ -318,6 +323,10 @@ func _show_province(pid: int) -> void:
 		if map.cultures.has(cid):
 			var grp: String = map.cultures[cid]["group"]
 			txt += "\nCultura: %s" % map.cultures[cid]["name"] + (" (%s)" % grp if grp != "" else "")
+		var rid: String = p.get("religion", "")
+		if map.religions.has(rid):
+			var rgrp: String = map.religions[rid]["group"]
+			txt += "\nReligião: %s" % map.religions[rid]["name"] + (" (%s)" % rgrp if rgrp != "" else "")
 		if p.get("coastal", false):
 			txt += "\nCosteira"
 	info_label.text = txt

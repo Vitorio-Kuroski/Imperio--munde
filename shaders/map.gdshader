@@ -4,14 +4,15 @@ shader_type canvas_item;
 //  - palette: textura N x 3. Linha 0 = cor da província.
 //             Linha 1 = R: índice do país dono (byte baixo; 0 = nenhum), G+B: índice da
 //             cultura (byte baixo/alto, 0 = nenhuma), A: 1.0 se for mar.
-//             Linha 2 = R: byte alto do índice do país dono (até 65535 países).
+//             Linha 2 = R: byte alto do índice do país dono (até 65535 países),
+//             G+B: índice da religião (byte baixo/alto, 0 = nenhuma).
 // Trocar o dono de uma província = mudar 3 pixels da paleta (sem loops em GDScript).
 
 uniform sampler2D ids : filter_nearest, repeat_disable;
 uniform sampler2D palette : filter_nearest, repeat_disable;
 uniform vec2 map_size = vec2(2048.0, 2411.0);
 uniform int selected_id = -1;
-uniform int border_mode = 0;   // 0 = bordas fortes entre países, 1 = entre culturas
+uniform int border_mode = 0;   // bordas fortes entre: 0 = países, 1 = culturas, 2 = religiões
 
 int id_at(ivec2 p) {
 	ivec2 s = ivec2(map_size);
@@ -30,6 +31,11 @@ vec4 info_of(int id) {
 
 int owner_of(int id, vec4 inf) {
 	return int(inf.r * 255.0 + 0.5) + int(texelFetch(palette, ivec2(id, 2), 0).r * 255.0 + 0.5) * 256;
+}
+
+int religion_of(int id) {
+	vec4 r = texelFetch(palette, ivec2(id, 2), 0);
+	return int(r.g * 255.0 + 0.5) + int(r.b * 255.0 + 0.5) * 256;
 }
 
 int culture_of(vec4 inf) {
@@ -53,6 +59,10 @@ float edge_to(int id, vec4 inf, ivec2 p) {
 	if (border_mode == 1) {
 		if (culture_of(inf) != culture_of(ninf)) {
 			return 0.75;          // fronteira entre culturas
+		}
+	} else if (border_mode == 2) {
+		if (religion_of(id) != religion_of(nid)) {
+			return 0.75;          // fronteira entre religiões
 		}
 	} else if (owner_of(id, inf) != owner_of(nid, ninf)) {
 		return 0.75;              // fronteira entre países

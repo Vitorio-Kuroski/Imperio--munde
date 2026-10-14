@@ -93,7 +93,7 @@ func _rel(p: String) -> String:
 	if rel.begins_with("map/"):
 		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
-			"common/cultures/"]:
+			"common/cultures/", "common/religions/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -549,6 +549,9 @@ func _import() -> String:
 		cultures.append({"id": cid, "name": loc.get(cid, (cid as String).capitalize()),
 				"group": (loc.get(g, g.capitalize()) if g != "" else ""), "color": col})
 
+	# ---- religiões (grupos e cores de common/religions; nomes em português de data/religioes_pt.json)
+	var religions := _religions(religion.values(), loc)
+
 	# ---- map.json
 	_set_status("Gravando os dados...")
 	var provinces := []
@@ -589,10 +592,50 @@ func _import() -> String:
 	if f == null:
 		return "Não consegui gravar " + OUT_DIR + "/map.json"
 	f.store_string(JSON.stringify({"width": w, "height": h, "countries": countries, "cultures": cultures,
-			"provinces": provinces}))
+			"religions": religions, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
+
+
+## Lista de religiões {id, name, group, color}: todas as de common/religions (na ordem do arquivo)
+## mais as usadas nas províncias que não estiverem lá.
+func _religions(used: Array, loc: Dictionary) -> Array:
+	var pt: Dictionary = {}
+	if FileAccess.file_exists("res://data/religioes_pt.json"):
+		pt = JSON.parse_string(FileAccess.get_file_as_string("res://data/religioes_pt.json"))
+	var nice := func(k: String) -> String: return pt.get(k, loc.get(k, k.capitalize()))
+	var out := []
+	var seen := {}
+	for f in _list("common/religions/"):
+		for g in _parse(_text(f)):
+			if not (g[1] is Array):
+				continue
+			for r in g[1]:
+				if not (r[1] is Array) or seen.has(r[0]):
+					continue
+				var col := []
+				for kv in r[1]:
+					if kv[0] == "color" and kv[1] is Array:
+						for x in kv[1]:
+							if x[0] == "" and str(x[1]).is_valid_float():
+								col.append(float(x[1]))
+				if col.size() < 3:
+					continue        # não é religião (ex.: flag_emblem_index_range)
+				if col[0] <= 1.0 and col[1] <= 1.0 and col[2] <= 1.0:
+					col = [col[0] * 255, col[1] * 255, col[2] * 255]
+				seen[r[0]] = true
+				out.append({"id": r[0], "name": nice.call(r[0]), "group": nice.call(g[0]),
+						"color": [int(col[0]), int(col[1]), int(col[2])]})
+	var rest := {}
+	for r in used:
+		if r != "" and not seen.has(r):
+			rest[r] = true
+	var keys := rest.keys()
+	keys.sort()
+	for r in keys:
+		out.append({"id": r, "name": nice.call(r), "group": "", "color": hashed_color(r)})
+	return out
 
 
 func _terrain(c: Dictionary, hm: float, hs: float) -> String:

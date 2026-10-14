@@ -7,6 +7,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   map/climate.txt, map/heightmap.bmp           (terreno; opcionais)
   common/country_tags/*.txt, common/countries/*.txt   (cores dos paises; opcionais)
   common/cultures/*.txt                        (grupos de cultura; opcional)
+  common/religions/*.txt                       (religioes, grupos e cores; opcional)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -394,6 +395,35 @@ def main():
             col = hashed_color(cid)
         cultures.append({"id": cid, "name": pretty(cid), "group": pretty(g) if g else "", "color": col})
 
+    # ---------------------------------------------------------- religioes
+    # todas as de common/religions (ordem do arquivo) + as usadas que faltarem; nomes em
+    # portugues de data/religioes_pt.json
+    with open("data/religioes_pt.json", encoding="utf-8") as f:
+        pt = json.load(f)
+
+    def nice(key):
+        return pt.get(key) or pretty(key)
+
+    religions, seen = [], set()
+    for rf in sorted(glob.glob(os.path.join(root, "common", "religions", "*.txt"))):
+        for gname, gval in parse_script(read_text(rf)):
+            if not isinstance(gval, list):
+                continue
+            for rname, rval in gval:
+                if not isinstance(rval, list) or rname in seen:
+                    continue
+                col = next((v for k, v in rval if k == "color" and isinstance(v, list)), None)
+                vals = [float(v) for k, v in (col or []) if k is None and re.fullmatch(r"-?[\d.]+", v)]
+                if len(vals) < 3:
+                    continue    # nao e religiao (ex.: flag_emblem_index_range)
+                if max(vals[:3]) <= 1.0:
+                    vals = [v * 255 for v in vals]
+                seen.add(rname)
+                religions.append({"id": rname, "name": nice(rname), "group": nice(gname),
+                                  "color": [int(v) for v in vals[:3]]})
+    for rid in sorted(set(religion.values()) - seen - {""}):
+        religions.append({"id": rid, "name": nice(rid), "group": "", "color": hashed_color(rid)})
+
     # ---------------------------------------------------------- map.json
     provinces = []
     for pid in range(n_prov):
@@ -423,7 +453,7 @@ def main():
 
     with open("data/eu4/map.json", "w", encoding="utf-8") as f:
         json.dump({"width": W, "height": H, "countries": countries, "cultures": cultures,
-                   "provinces": provinces},
+                   "religions": religions, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])
