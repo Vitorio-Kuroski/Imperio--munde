@@ -1,0 +1,41 @@
+{
+  "governos": {
+    "monarchy": "Monarquia", "republic": "República", "tribal": "Tribal", "native": "Nativo", "theocracy": "Teocracia"
+  },
+  "postos": {"1": "Ducado", "2": "Reino", "3": "Império"},
+  "grupos_tecnologicos": {
+    "western": "Ocidental", "eastern": "Oriental", "ottoman": "Otomano", "muslim": "Muçulmano", "indian": "Indiano",
+    "chinese": "Chinês", "nomad_group": "Nômade", "sub_saharan": "Subsaariano", "central_african": "Centro-africano",
+    "east_african": "Leste-africano", "north_american": "Norte-americano", "mesoamerican": "Mesoamericano",
+    "south_american": "Sul-americano", "andean": "Andino", "aboriginal_tech": "Aborígene",
+    "polynesian_tech": "Polinésio", "high_american": "Alto-americano"
+  },
+  "reformas": {
+    "feudalism_reform": "Monarquia feudal", "autocracy_reform": "Autocracia", "plutocratic_reform": "Monarquia plutocrática",
+    "elective_monarchy": "Monarquia eletiva", "elective_monarchy_reform": "Monarquia eletiva",
+    "feudal_france_reform": "Monarquia feudal francesa", "english_monarchy": "Monarquia inglesa",
+    "iqta": "Iqta", "indian_sultanate_reform": "Sultanato indiano", "rajput_kingdom": "Reino rajput",
+    "nayankara_reform": "Sistema Nayankara", "mandala_reform": "Mandala", "daimyo": "Daimiô", "indep_daimyo": "Daimiô independente",
+    "shogunate": "Xogunato", "celestial_empire": "Império Celeste", "chinese_warlord": "Senhor da guerra chinês",
+    "principality": "Principado", "grand_duchy_reform": "Grão-ducado", "tsardom": "Czarado",
+    "mamluk_government": "Governo mameluco", "ottoman_government": "Governo otomano", "feudal_theocracy": "Teocracia feudal",
+    "kalmar_union": "União de Kalmar", "tanistry_reform": "Tanistria", "appanage_reform": "Apanágio",
+    "noble_elite_reform": "Elite nobre", "negusa_nagast": "Negusa Nagast", "musa_rule": "Governo de Musa",
+    "mossi_federal_kingdom": "Reino federal mossi", "confucian_bureaucracy": "Burocracia confuciana",
+    "merchants_reform": "República mercantil", "oligarchy_reform": "República oligárquica",
+    "noble_republic": "República nobre", "venice_merchants_reform": "República de Veneza",
+    "free_city": "Cidade livre", "imperial_city": "Cidade imperial", "dutch_republic": "República holandesa",
+    "republican_dictatorship_reform": "Ditadura republicana", "peasants_republic": "República camponesa",
+    "leading_clergy_reform": "Clero dirigente", "monastic_order_reform": "Ordem monástica",
+    "papacy_reform": "Papado", "holy_state_reform": "Estado santo", "episcopal_theocracy": "Teocracia episcopal",
+    "tribal_kingdom": "Reino tribal", "tribal_despotism": "Despotismo tribal", "tribal_federation": "Federação tribal",
+    "steppe_horde": "Horda das estepes", "great_mongol_state_reform": "Grande Estado Mongol",
+    "siberian_tribe": "Tribo siberiana", "polynesian_tribe": "Tribo polinésia", "african_council": "Conselho africano",
+    "native_clan_council_reform": "Conselho de clãs", "native_settle_down_reform": "Assentamento nativo",
+    "native_oral_tradition_reform": "Tradição oral", "native_martial_tradition_reform": "Tradição marcial",
+    "native_land_tradition_reform": "Tradição da terra", "native_trading_with_foreigners_reform": "Comércio com estrangeiros",
+    "solomonic_empire": "Império salomônico", "misl_confederacy_reform": "Confederação misl",
+    "austrian_archduchy_reform": "Arquiducado austríaco", "siamese_absolutism": "Absolutismo siamês",
+    "hansa_reform": "Hansa", "trading_city": "Cidade comercial"
+  }
+}

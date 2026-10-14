@@ -107,6 +107,43 @@ def parse_script(text):
     return block()
 
 
+def country_history(items, cutoff):
+    """Pais no dia de inicio: governo, reformas, grupo tecnologico, cultura principal e aceitas,
+    religiao, capital, posto, foco nacional, monarca e herdeiro (blocos datados ate a data)."""
+    seq = [(k, v) for k, v in items if k and not (DATE_RE.match(k) and isinstance(v, list))]
+    dated = sorted(((tuple(int(x) for x in k.split(".")), v) for k, v in items
+                    if k and DATE_RE.match(k) and isinstance(v, list)), key=lambda t: t[0])
+    for d, v in dated:
+        if d <= cutoff:
+            seq += [(k, x) for k, x in v if k]
+    h = {"reforms": [], "accepted_cultures": []}
+    keys = {"government": "government", "technology_group": "tech_group", "primary_culture": "primary_culture",
+            "religion": "religion", "capital": "capital", "national_focus": "national_focus"}
+    for k, v in seq:
+        if isinstance(v, str):
+            if k in keys:
+                h[keys[k]] = v
+            elif k == "government_rank" and v.isdigit():
+                h["rank"] = int(v)
+            elif k == "add_government_reform" and v not in h["reforms"]:
+                h["reforms"].append(v)
+            elif k == "add_accepted_culture" and v not in h["accepted_cultures"]:
+                h["accepted_cultures"].append(v)
+            elif k == "remove_accepted_culture" and v in h["accepted_cultures"]:
+                h["accepted_cultures"].remove(v)
+        elif k in ("monarch", "heir") and isinstance(v, list):
+            person = {}
+            for kk, vv in v:
+                if kk in ("name", "dynasty", "birth_date") and isinstance(vv, str):
+                    person[kk] = vv
+                elif kk in ("adm", "dip", "mil") and isinstance(vv, str) and vv.isdigit():
+                    person[kk] = int(vv)
+            h[k] = person
+            if k == "monarch" and "heir" in h and h["heir"].get("name") == person.get("name"):
+                del h["heir"]       # o herdeiro virou o monarca
+    return h
+
+
 def state_at(items, cutoff):
     """Aplica as chaves de topo e os blocos datados <= cutoff (em ordem cronologica)."""
     st = {}
@@ -583,13 +620,25 @@ def main():
                             color = [int(c) for c in vals[:3]]
                         break
         capital = first_prov.get(tag, 1)
-        for hf in glob.glob(os.path.join(root, "history", "countries", tag + " -*.txt")):
-            st = state_at(parse_script(read_text(hf)), cutoff)
-            c = st.get("capital")
-            if isinstance(c, str) and c.isdigit() and int(c) in defs:
+        hist = {}
+        for hf in sorted(glob.glob(os.path.join(root, "history", "countries", tag + "*.txt"))):
+            if not re.match(re.escape(tag) + r"\s*-", os.path.basename(hf)):
+                continue
+            hist = country_history(parse_script(read_text(hf)), cutoff)
+            c = hist.pop("capital", "")
+            if c.isdigit() and int(c) in defs:
                 capital = int(c)
             break
-        countries.append({"tag": tag, "name": names.get(tag, tag), "color": color, "capital": capital})
+        countries.append({"tag": tag, "name": names.get(tag, tag), "color": color, "capital": capital, **hist})
+
+    # tipos de governo (common/governments)
+    with open("data/governos_pt.json", encoding="utf-8") as f:
+        gov_pt = json.load(f)["governos"]
+    governments = []
+    for gf in sorted(glob.glob(os.path.join(root, "common", "governments", "*.txt"))):
+        for gname, gval in parse_script(read_text(gf)):
+            if isinstance(gval, list) and any(k == "reform_levels" for k, _ in gval):
+                governments.append({"id": gname, "name": gov_pt.get(gname) or pretty_key(gname)})
 
     # ---------------------------------------------------------- culturas
     groups = {}
@@ -769,7 +818,7 @@ def main():
                    "religions": religions, "trade_goods": trade_goods, "trade_nodes": trade_nodes,
                    "buildings": buildings, "terrains": terrains, "areas": geo["areas"], "regions": geo["regions"],
                    "superregions": geo["superregions"], "continents": geo["continents"],
-                   "adjacencies": adjacencies, "provinces": provinces},
+                   "adjacencies": adjacencies, "governments": governments, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])

@@ -9,6 +9,11 @@ extends RefCounted
 const OUT_DIR := "user://eu4"
 const CUTOFF := 14441111            # 1444.11.11 como AAAAMMDD
 const TOPS := ["map/", "history/", "common/", "localisation/"]
+## Caracteres do cp1252 que o Latin-1 não tem (0x80-0x9F -> Unicode).
+const CP1252 := {0x80: 0x20AC, 0x82: 0x201A, 0x83: 0x0192, 0x84: 0x201E, 0x85: 0x2026, 0x86: 0x2020, 0x87: 0x2021,
+		0x88: 0x02C6, 0x89: 0x2030, 0x8A: 0x0160, 0x8B: 0x2039, 0x8C: 0x0152, 0x8E: 0x017D, 0x91: 0x2018,
+		0x92: 0x2019, 0x93: 0x201C, 0x94: 0x201D, 0x95: 0x2022, 0x96: 0x2013, 0x97: 0x2014, 0x98: 0x02DC,
+		0x99: 0x2122, 0x9A: 0x0161, 0x9B: 0x203A, 0x9C: 0x0153, 0x9E: 0x017E, 0x9F: 0x0178}
 const MAP_FILES := ["provinces.bmp", "definition.csv", "default.map", "climate.txt", "heightmap.bmp", "terrain.txt",
 		"terrain.bmp", "trees.bmp", "rivers.bmp", "area.txt", "region.txt", "superregion.txt", "continent.txt",
 		"adjacencies.csv"]
@@ -21,6 +26,7 @@ var _mutex := Mutex.new()
 var _index := {}                    # caminho relativo -> [zip (-1 = pasta), caminho completo]
 var _zips: Array[FileAccess] = []
 var _zip_entries: Array[Dictionary] = []    # por zip: nome -> [método, tam. comprimido, tam. real, crc, offset]
+var _high_re := RegEx.create_from_string("[\\x{80}-\\x{FF}]")
 var _tok := RegEx.create_from_string("#[^\\n]*|\"[^\"]*\"|[{}=]|[^\\s{}=#\"]+")
 
 
@@ -96,7 +102,7 @@ func _rel(p: String) -> String:
 		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
-			"common/buildings/"]:
+			"common/buildings/", "common/governments/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -189,7 +195,41 @@ func _text(rel: String) -> String:
 	var b := _bytes(rel)
 	if b.size() >= 3 and b[0] == 0xEF and b[1] == 0xBB and b[2] == 0xBF:
 		return b.slice(3).get_string_from_utf8()
-	return b.get_string_from_ascii()
+	var s := b.get_string_from_ascii()          # Latin-1
+	var high: Array[int] = []
+	for m in _high_re.search_all(s):
+		high.append(m.get_start())
+	if high.is_empty():
+		return s                                # só ASCII
+	if _is_utf8(b, high):
+		return b.get_string_from_utf8()         # alguns arquivos são UTF-8 sem BOM
+	for code in CP1252:                         # 0x80-0x9F do cp1252 (š, œ, ž, aspas...)
+		var ch := String.chr(code)
+		if s.contains(ch):
+			s = s.replace(ch, String.chr(CP1252[code]))
+	return s
+
+
+## Os bytes >= 0x80 (posições `high`) formam sequências UTF-8 válidas?
+func _is_utf8(b: PackedByteArray, high: Array[int]) -> bool:
+	var k := 0
+	while k < high.size():
+		var i := high[k]
+		var c := b[i]
+		var n := 0
+		if c >= 0xC2 and c <= 0xDF:
+			n = 1
+		elif c >= 0xE0 and c <= 0xEF:
+			n = 2
+		elif c >= 0xF0 and c <= 0xF4:
+			n = 3
+		else:
+			return false
+		for j in range(1, n + 1):
+			if k + j >= high.size() or high[k + j] != i + j or b[i + j] > 0xBF:
+				return false
+		k += n + 1
+	return true
 
 
 func _set_status(s: String) -> void:
@@ -250,6 +290,55 @@ func _date(k: String) -> int:
 	if p.size() != 3 or not (p[0].is_valid_int() and p[1].is_valid_int() and p[2].is_valid_int()):
 		return -1
 	return int(p[0]) * 10000 + int(p[1]) * 100 + int(p[2])
+
+
+## País no dia de início: governo, reformas, grupo tecnológico, cultura principal e aceitas, religião,
+## capital, posto, foco nacional, monarca e herdeiro (blocos datados até a data).
+func _country_history(items: Array) -> Dictionary:
+	var seq := []
+	var dated := []
+	for kv in items:
+		if kv[0] == "":
+			continue
+		var d := _date(kv[0])
+		if d >= 0 and kv[1] is Array:
+			dated.append([d, kv[1]])
+		else:
+			seq.append(kv)
+	dated.sort_custom(func(a, b): return a[0] < b[0])
+	for e in dated:
+		if e[0] <= CUTOFF:
+			for kv in e[1]:
+				if kv[0] != "":
+					seq.append(kv)
+	var h := {"reforms": [], "accepted_cultures": []}
+	var keys := {"government": "government", "technology_group": "tech_group", "primary_culture": "primary_culture",
+			"religion": "religion", "capital": "capital", "national_focus": "national_focus"}
+	for kv in seq:
+		var k: String = kv[0]
+		var v = kv[1]
+		if v is String:
+			if keys.has(k):
+				h[keys[k]] = v
+			elif k == "government_rank" and (v as String).is_valid_int():
+				h["rank"] = int(v)
+			elif k == "add_government_reform" and not (v in h["reforms"]):
+				h["reforms"].append(v)
+			elif k == "add_accepted_culture" and not (v in h["accepted_cultures"]):
+				h["accepted_cultures"].append(v)
+			elif k == "remove_accepted_culture":
+				h["accepted_cultures"].erase(v)
+		elif k in ["monarch", "heir"] and v is Array:
+			var person := {}
+			for x in v:
+				if x[0] in ["name", "dynasty", "birth_date"] and x[1] is String:
+					person[x[0]] = x[1]
+				elif x[0] in ["adm", "dip", "mil"] and x[1] is String and (x[1] as String).is_valid_int():
+					person[x[0]] = int(x[1])
+			h[k] = person
+			if k == "monarch" and h.has("heir") and h["heir"].get("name") == person.get("name"):
+				h.erase("heir")     # o herdeiro virou o monarca
+	return h
 
 
 ## Estado no dia de início: chaves de topo + blocos datados até a data, em ordem.
@@ -558,13 +647,28 @@ func _import() -> String:
 						color = [int(vals[0]), int(vals[1]), int(vals[2])]
 					break
 		var capital: int = first_prov.get(tag, 1)
+		var hist := {}
 		if hist_country.has(tag):
-			var st := _state_at(_parse(_text(hist_country[tag])))
-			var c := str(st.get("capital", ""))
+			hist = _country_history(_parse(_text(hist_country[tag])))
+			var c := str(hist.get("capital", ""))
+			hist.erase("capital")
 			if c.is_valid_int() and defs.has(int(c)):
 				capital = int(c)
 		var name: String = loc.get(tag, file_names.get(tag, tag))
-		countries.append({"tag": tag, "name": name, "color": color, "capital": capital})
+		var country := {"tag": tag, "name": name, "color": color, "capital": capital}
+		country.merge(hist)
+		countries.append(country)
+
+	# tipos de governo (common/governments)
+	var gov_pt: Dictionary = _json("res://data/governos_pt.json").get("governos", {})
+	var governments := []
+	for f in _list("common/governments/"):
+		for g in _parse(_text(f)):
+			if g[1] is Array:
+				for kv in g[1]:
+					if kv[0] == "reform_levels":
+						governments.append({"id": g[0], "name": gov_pt.get(g[0], pretty_key(g[0]))})
+						break
 
 	# ---- culturas (grupos de common/cultures, se houver)
 	var groups := {}
@@ -667,7 +771,8 @@ func _import() -> String:
 	f.store_string(JSON.stringify({"width": w, "height": h, "countries": countries, "cultures": cultures,
 			"religions": religions, "trade_goods": trade_goods, "trade_nodes": trade_nodes, "buildings": buildings,
 			"terrains": terrains, "areas": geo["areas"], "regions": geo["regions"], "superregions": geo["superregions"],
-			"continents": geo["continents"], "adjacencies": adjacencies, "provinces": provinces}))
+			"continents": geo["continents"], "adjacencies": adjacencies, "governments": governments,
+			"provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""

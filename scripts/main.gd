@@ -22,6 +22,7 @@ var mode_button: Button
 var side_panel: PanelContainer
 var info_label: Label
 var tooltip: MapTooltip
+var country_panel: CountryPanel
 var start_panel: CenterContainer
 var eu4_status: Label
 var eu4_buttons: Array[Button] = []
@@ -152,6 +153,10 @@ func _build_ui() -> void:
 		b.pressed.connect(_start_game.bind(tag))
 		vb.add_child(b)
 
+	# Painel do país (dono da província selecionada ou o país do jogador)
+	country_panel = CountryPanel.new()
+	ui.add_child(country_panel)
+
 	# Dica do mapa (criada por último para ficar por cima)
 	tooltip = MapTooltip.new()
 	ui.add_child(tooltip)
@@ -277,6 +282,7 @@ func _start_game(tag: String) -> void:
 	camera.zoom = Vector2(1.2, 1.2)
 	map.select(cap)
 	_show_province(cap)
+	country_panel.show_country(map, tag)
 	_refresh_top_bar()
 
 
@@ -428,7 +434,8 @@ func _process(delta: float) -> void:
 func _update_tooltip() -> void:
 	var m := get_viewport().get_mouse_position()
 	var over_ui := start_panel.visible or top_bar.get_global_rect().has_point(m) \
-			or (side_panel.visible and side_panel.get_global_rect().has_point(m))
+			or (side_panel.visible and side_panel.get_global_rect().has_point(m)) \
+			or (country_panel.visible and country_panel.get_global_rect().has_point(m))
 	tooltip.update_for(map, -1 if over_ui else map.province_at_mouse(), m)
 
 
@@ -445,6 +452,8 @@ func _unhandled_input(event: InputEvent) -> void:
 					var pid := map.province_at_mouse()
 					map.select(pid)
 					_show_province(pid)
+					var owner: String = map.provinces[pid]["owner"] if pid >= 0 else ""
+					country_panel.show_country(map, owner if owner != "" else player_tag)
 			MOUSE_BUTTON_WHEEL_UP:
 				camera.zoom = (camera.zoom * 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 			MOUSE_BUTTON_WHEEL_DOWN:
