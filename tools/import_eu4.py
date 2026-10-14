@@ -372,7 +372,7 @@ def eu4_ideas(root, countries, culture_group_of, religion_group_of, loc=None):
 # constantes de comercio do common/defines.lua (nome -> chave no map.json)
 TRADE_DEFINES = ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCHANT_PRESENT", "TRADE_ADDED_VALUE_MODIFER",
                  "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
-                 "MERCHANT_MAX_POWER_BONUS"]
+                 "MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST"]
 # modificadores estaticos usados no comercio: (bloco, efeito, chave no map.json)
 TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power"),
                 ("development", "local_missionary_strength", "dev_missionary_strength"),
@@ -420,6 +420,22 @@ def eu4_trade(root, loc):
             if m and to_num(m.group(1)) is not None:
                 rules[name.lower()] = to_num(m.group(1))
     return cots, rules
+
+
+def eu4_opinions(root):
+    """Modificadores de opiniao (common/opinion_modifiers): id -> efeitos numericos (opinion, max, min,
+    yearly_decay, months...). A 1a definicao de cada um vale; a de cada chave dentro dele tambem."""
+    out = {}
+    for f in sorted(glob.glob(os.path.join(root, "common", "opinion_modifiers", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list) or name in out:
+                continue
+            d = {}
+            for k, v in val:
+                if k and k not in d and to_num(v) is not None:
+                    d[k] = to_num(v)
+            out[name] = d
+    return out
 
 
 def eu4_advisors(root, defs):
@@ -775,11 +791,17 @@ UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "
 GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
              "countrygovernmentview", "countrytechnologyview", "countryideasview",
              "countryeconomyview", "countryreligionview",
-             "macrobuildinterface_override", "macrobuildinterface"]   # o _override vem antes: as janelas dele valem
+             "macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview"]   # o _override vem antes: as janelas dele valem
 GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
-                     "GFX_scroll_track", "GFX_country_icon_religion"]
+                     "GFX_scroll_track", "GFX_country_icon_religion",
+                     "GFX_diplomacy_alliances", "GFX_diplomacy_royalmarriage", "GFX_diplomacy_leadvassal",
+                     "GFX_diplomacy_amvassal", "GFX_diplomacy_leadunions", "GFX_diplomacy_inunion",
+                     "GFX_diplomacy_guaranteed", "GFX_diplomacy_guaranting", "GFX_diplomacy_we_increase_relation",
+                     "GFX_diplomacy_they_increase_relation", "GFX_diplomacy_war", "GFX_diplomacy_leadmarch",
+                     "GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance",
+                     "GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence"]
 # icones de terreno da tela da provincia (GFX_combat_terrain_<terreno do EU4>)
 COMBAT_TERRAINS = ["GFX_combat_terrain_" + t for t in (
     "coastal_desert", "coastline", "desert", "desert_mountain", "drylands", "farmlands", "forest", "glacier",
@@ -1599,6 +1621,7 @@ def main():
     idea_groups, national_ideas = eu4_ideas(root, countries, groups, rel_group, loc)
     advisor_types, advisors = eu4_advisors(root, defs)
     centers_of_trade, trade_rules = eu4_trade(root, loc)
+    opinion_modifiers = eu4_opinions(root)
     inst_raw = eu4_institutions(root, cutoff)
     diplomacy, emperor, celestial = eu4_diplomacy(root, cutoff)
     wars = eu4_wars(root, cutoff)
@@ -1675,6 +1698,7 @@ def main():
                    "idea_groups": idea_groups, "national_ideas": national_ideas,
                    "advisor_types": advisor_types, "advisors": advisors,
                    "centers_of_trade": centers_of_trade, "trade_rules": trade_rules,
+                   "opinion_modifiers": opinion_modifiers,
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
                    "celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))

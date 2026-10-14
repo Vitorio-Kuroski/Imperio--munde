@@ -20,10 +20,10 @@ const TABS := {"tab_court": "court", "tab_gov": "gov", "tab_economy": "economy",
 		"tab_ideas": "ideas", "tab_religion": "religion",
 		"tab_diplomacy": "summary"}
 const TAB_TIPS := {"tab_court": "Corte", "tab_gov": "Governo", "tab_economy": "Economia", "tab_religion": "Religião", "tab_technology": "Tecnologia", "tab_ideas": "Ideias",
-		"tab_diplomacy": "Resumo: diplomacia, guerras, economia e instituições"}
+		"tab_diplomacy": "Diplomacia"}
 const TAB_KEYS := {"tab_court": "HEADER_COURT", "tab_gov": "HEADER_GOVERNMENT", "tab_economy": "HEADER_ECONOMY",
 		"tab_religion": "HEADER_RELIGION", "tab_technology": "HEADER_TECHNOLOGY", "tab_ideas": "HEADER_IDEAS",
-		"tab_diplomacy": "HEADER_OVERVIEW"}
+		"tab_diplomacy": "HEADER_DIPLOMACY"}
 const POWER_ICONS := {"adm": "GFX_icon_powers_administrative", "dip": "GFX_icon_powers_diplomatic",
 		"mil": "GFX_icon_powers_military"}
 const COURT_HIDE := ["abdicate_ruler_button", "extend_regency_button", "election_info", "monarch_heir_claim",
@@ -59,6 +59,9 @@ var tech_tab: Eu4TechTab
 var ideas_tab: Eu4IdeasTab
 var economy_tab: Eu4EconomyTab
 var religion_tab: Eu4ReligionTab
+var diplomacy_tab: Eu4DiplomacyTab
+var diplomacy: Diplomacy            # main.gd define (relações)
+var diplo: DiploActions             # main.gd define (opiniões e ações diplomáticas)
 var _tabs: Control
 var _court: Control
 var _gov: Control
@@ -83,6 +86,9 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 	religion_tab = Eu4ReligionTab.new()
 	if not religion_tab.setup(self):
 		religion_tab = null
+	diplomacy_tab = Eu4DiplomacyTab.new()
+	if not diplomacy_tab.setup(self):
+		diplomacy_tab = null
 	ideas_tab = Eu4IdeasTab.new()
 	if ideas_tab.setup(self):
 		ideas_tab.choose_group_requested.connect(func(t: String): ideas_requested.emit(t))
@@ -104,6 +110,8 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 		pages.append(economy_tab.root)
 	if religion_tab:
 		pages.append(religion_tab.root)
+	if diplomacy_tab:
+		pages.append(diplomacy_tab.root)
 	for v in pages:
 		var close := v.find_child("close_button", true, false) as BaseButton
 		if close:
@@ -169,7 +177,8 @@ func _open(name: String) -> Control:
 ## (`_fit_scale`) até a altura da Religião, em vez de esticar o fundo.
 const PAGE_BG := ["GFX_court_view_bg", "GFX_economy_view_bg", "GFX_technology_view_bg",
 		"GFX_country_ideas_view_bg", "GFX_local_government_view_bg", "GFX_country_religion_view_bg_large",
-		"GFX_country_religion_view_bg_huge", "GFX_country_religion_view_bg"]
+		"GFX_country_religion_view_bg_huge", "GFX_country_religion_view_bg",
+		"GFX_country_diplomacy_view_bg_bottom_standard"]
 
 
 func _bg_height(root: Control) -> float:
@@ -251,7 +260,12 @@ func _on_tab(t: String) -> void:
 			else:
 				ideas_requested.emit(tag)
 		"summary":
-			summary_requested.emit(tag)
+			if diplomacy_tab and diplo:
+				tab = "diplomacy"
+				diplomacy_tab.mode = ""
+				refresh()
+			else:
+				summary_requested.emit(tag)
 
 
 ## Mostra o país `t` (vazio esconde).
@@ -278,15 +292,18 @@ func refresh() -> void:
 		economy_tab.root.visible = tab == "economy"
 	if religion_tab:
 		religion_tab.root.visible = tab == "religion"
+	if diplomacy_tab:
+		diplomacy_tab.root.visible = tab == "diplomacy"
 	for pg in [_court, _gov, tech_tab.root if tech_tab else null, ideas_tab.root if ideas_tab else null,
-			economy_tab.root if economy_tab else null, religion_tab.root if religion_tab else null]:
+			economy_tab.root if economy_tab else null, religion_tab.root if religion_tab else null,
+			diplomacy_tab.root if diplomacy_tab else null]:
 		if pg and pg.visible:
 			_fit_scale(pg)
 	var tw := _tabs.find_child("countryview_tabs", true, false)
 	for n in TABS:
 		var b := tw.find_child(n, false, false) as Eu4Gui.Button2 if tw else null
 		if b and b.visible:
-			b.set_frame(1 if TABS[n] == tab else 0)
+			b.set_frame(1 if TABS[n] == tab or (TABS[n] == "summary" and tab == "diplomacy") else 0)
 	match tab:
 		"court":
 			_fill_court()
@@ -300,6 +317,8 @@ func refresh() -> void:
 			economy_tab.fill(tag)
 		"religion":
 			religion_tab.fill(tag)
+		"diplomacy":
+			diplomacy_tab.fill(tag)
 
 
 func _gov_name(c: Dictionary) -> String:

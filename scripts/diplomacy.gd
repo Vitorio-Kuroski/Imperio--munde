@@ -4,7 +4,8 @@ extends RefCounted
 ## (vassalo, união pessoal, marca, dependências como apanágio), alianças, casamentos reais,
 ## garantias e ligas comerciais; mais o Sacro Império (províncias "hre", imperador, eleitores) e o
 ## imperador celestial; e as guerras (history/wars) ativas ou dos últimos 10 anos, com batalhas.
-## Por enquanto as relações são fixas (ainda não há ações diplomáticas nem guerra no jogo).
+## Alianças, casamentos reais e garantias mudam pelas ações diplomáticas (DiploActions, via
+## add_relation/remove_relation); súditos e guerras ainda são fixos.
 
 const SUBJECT_TYPES := ["vassal", "union", "march", "dependency"]
 const SUBJECT_NAMES := {"vassal": "vassalo", "union": "união pessoal", "march": "marca", "appanage": "apanágio",
@@ -60,6 +61,44 @@ func setup(m: MapView) -> void:
 		elif t == "guarantee":
 			_add(_guarantees, a, b)
 			_add(_guarantors, b, a)
+
+
+## Nova aliança, casamento real ou garantia (a = quem garante) entre `a` e `b`.
+func add_relation(type: String, a: String, b: String) -> void:
+	relations.append({"type": type, "first": a, "second": b})
+	match type:
+		"alliance":
+			_add(_allies, a, b)
+			_add(_allies, b, a)
+		"royal_marriage":
+			_add(_marriages, a, b)
+			_add(_marriages, b, a)
+		"guarantee":
+			_add(_guarantees, a, b)
+			_add(_guarantors, b, a)
+	_changed()
+
+
+## Desfaz a relação (nos dois sentidos para aliança e casamento; a garantia é de `a` para `b`).
+func remove_relation(type: String, a: String, b: String) -> void:
+	relations = relations.filter(func(r): return not (r["type"] == type and ((r["first"] == a and r["second"] == b) \
+			or (type != "guarantee" and r["first"] == b and r["second"] == a))))
+	match type:
+		"alliance":
+			_allies.get(a, []).erase(b)
+			_allies.get(b, []).erase(a)
+		"royal_marriage":
+			_marriages.get(a, []).erase(b)
+			_marriages.get(b, []).erase(a)
+		"guarantee":
+			_guarantees.get(a, []).erase(b)
+			_guarantors.get(b, []).erase(a)
+	_changed()
+
+
+func _changed() -> void:
+	if map.map_mode == MapView.MapMode.DIPLOMACIA:
+		map.refresh_colors()
 
 
 func _add(d: Dictionary, k: Variant, v: Variant) -> void:

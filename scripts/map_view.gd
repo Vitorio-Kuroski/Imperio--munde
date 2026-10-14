@@ -75,6 +75,7 @@ var adjacencies: Array = []        # estreitos: [{from, to, type, through}]
 var technologies: Dictionary = {}  # "adm"/"dip"/"mil" -> [{level, year, modifiers, buildings, unlocks, units, institutions}]
 var tech_groups: Dictionary = {}   # id -> {start_level, cost_modifier}
 var idea_groups: Array = []        # grupos de ideias (category adm/dip/mil, bonus, ideas)
+var opinion_modifiers: Dictionary = {}  # common/opinion_modifiers do EU4 (id -> opinion, max, yearly_decay, months...)
 var national_ideas: Array = []     # ideias nacionais/de grupo/genéricas (start, bonus, ideas); países têm "ideas"
 var institutions: Array = []       # instituições (id, name, color, bonus, start_date, start_province)
 var inst_view: Institutions        # presença atual (para o modo de mapa instituições)
@@ -191,6 +192,7 @@ func load_map(map_scale: float) -> void:
 	trade_rules = data.get("trade_rules", {})
 	advisors = data.get("advisors", [])
 	national_ideas = data.get("national_ideas", [])
+	opinion_modifiers = data.get("opinion_modifiers", {})
 
 	var ids_tex: Texture2D
 	if ids_path.begins_with("user://"):

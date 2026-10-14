@@ -144,7 +144,7 @@ func _rel(p: String) -> String:
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
 			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
 			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/", "history/wars/",
-			"common/centers_of_trade/", "common/static_modifiers/"]:
+			"common/centers_of_trade/", "common/static_modifiers/", "common/opinion_modifiers/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -891,7 +891,7 @@ func _import() -> String:
 			"technologies": technologies, "tech_groups": tech_groups, "units": units,
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
-			"centers_of_trade": trade[0], "trade_rules": trade[1],
+			"centers_of_trade": trade[0], "trade_rules": trade[1], "opinion_modifiers": _opinions(),
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
 			"celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces}))
 	f.close()
@@ -1000,7 +1000,7 @@ func _buildings() -> Array:
 ## Constantes de comércio do common/defines.lua e modificadores estáticos usados no comércio.
 const TRADE_DEFINES := ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCHANT_PRESENT",
 		"TRADE_ADDED_VALUE_MODIFER", "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
-		"MERCHANT_MAX_POWER_BONUS"]
+		"MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST"]
 const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_power"],
 		["development", "local_missionary_strength", "dev_missionary_strength"],
 		["coastal", "province_trade_power_modifier", "coastal_trade_power"],
@@ -1058,6 +1058,22 @@ func _trade() -> Array:
 			if m and m.get_string(1).is_valid_float():
 				rules[(n as String).to_lower()] = _int_if_whole(float(m.get_string(1)))
 	return [cots, rules]
+
+
+## Modificadores de opinião (common/opinion_modifiers): id -> efeitos numéricos (opinion, max, min,
+## yearly_decay, months...). A 1ª definição de cada um vale; a de cada chave dentro dele também.
+func _opinions() -> Dictionary:
+	var out := {}
+	for f in _list("common/opinion_modifiers/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array) or out.has(kv[0]):
+				continue
+			var d := {}
+			for x in kv[1]:
+				if x[0] != "" and not d.has(x[0]) and x[1] is String and (x[1] as String).is_valid_float():
+					d[x[0]] = _int_if_whole(float(x[1]))
+			out[kv[0]] = d
+	return out
 
 
 func _int_if_whole(x: float) -> Variant:
@@ -1370,7 +1386,7 @@ func _make_ui() -> void:
 const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
 		"countrygovernmentview", "countrytechnologyview", "countryideasview",
 		"countryeconomyview", "countryreligionview",
-		"macrobuildinterface_override", "macrobuildinterface"]   # o _override vem antes: as janelas dele valem
+		"macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview"]   # o _override vem antes: as janelas dele valem
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",
@@ -1384,7 +1400,13 @@ const COMBAT_TERRAINS := [
 const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
 		"GFX_mapmode_religion", "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas",
 		"GFX_mapmode_institutions", "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
-		"GFX_scroll_track", "GFX_country_icon_religion"]
+		"GFX_scroll_track", "GFX_country_icon_religion",
+		"GFX_diplomacy_alliances", "GFX_diplomacy_royalmarriage", "GFX_diplomacy_leadvassal",
+		"GFX_diplomacy_amvassal", "GFX_diplomacy_leadunions", "GFX_diplomacy_inunion",
+		"GFX_diplomacy_guaranteed", "GFX_diplomacy_guaranting", "GFX_diplomacy_we_increase_relation",
+		"GFX_diplomacy_they_increase_relation", "GFX_diplomacy_war", "GFX_diplomacy_leadmarch",
+		"GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance",
+		"GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence"]
 const SPRITE_KINDS := ["spritetype", "frameanimatedspritetype", "textspritetype", "corneredtilespritetype",
 		"maskedshieldtype", "progressbartype"]
 

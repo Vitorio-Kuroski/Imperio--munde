@@ -16,6 +16,7 @@ var trade := Trade.new()
 var religion := Religion.new()
 var construction := Construction.new()
 var diplomacy := Diplomacy.new()
+var diplo := DiploActions.new()
 var camera: Camera2D
 var player_tag := ""
 
@@ -69,6 +70,7 @@ func _ready() -> void:
 	economy._recount()
 	power.economy = economy
 	map.diplo_view = diplomacy
+	diplo.setup(map, clock, power, diplomacy, economy)
 
 	camera = Camera2D.new()
 	add_child(camera)
@@ -161,6 +163,9 @@ func _setup_eu4_hud() -> void:
 		country_view.advisors = advisors
 		country_view.institutions = institutions
 		country_view.religion = religion
+		country_view.diplomacy = diplomacy
+		country_view.diplo = diplo
+		diplo.changed.connect(func(_t): country_view.refresh())
 		country_view.fmt_mods = ideas_window.fmt_mods
 		country_view.techs_requested.connect(func(t: String):
 			ideas_window.hide()
