@@ -102,10 +102,12 @@ func _rel(p: String) -> String:
 		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
-			"common/buildings/", "common/governments/"]:
+			"common/buildings/", "common/governments/", "common/technologies/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
+		return rel
+	if rel == "common/technology.txt":
 		return rel
 	return ""
 
@@ -704,6 +706,8 @@ func _import() -> String:
 
 	# ---- geografia (áreas, regiões, super-regiões, continentes) e estreitos
 	var geo := _geography()
+	var tech_groups := []
+	var technologies := _technologies(buildings, tech_groups)
 	var adjacencies := []
 	if _index.has("map/adjacencies.csv"):
 		for line in _text("map/adjacencies.csv").split("\n"):
@@ -772,7 +776,7 @@ func _import() -> String:
 			"religions": religions, "trade_goods": trade_goods, "trade_nodes": trade_nodes, "buildings": buildings,
 			"terrains": terrains, "areas": geo["areas"], "regions": geo["regions"], "superregions": geo["superregions"],
 			"continents": geo["continents"], "adjacencies": adjacencies, "governments": governments,
-			"provinces": provinces}))
+			"technologies": technologies, "tech_groups": tech_groups, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
@@ -1200,6 +1204,56 @@ func _geography() -> Dictionary:
 			if x[0] == "" and str(x[1]).is_valid_int() and not g["continent_of"].has(int(x[1])):
 				g["continent_of"][int(x[1])] = e[0]
 	return g
+
+
+## Árvores adm/dip/mil (common/technologies) e grupos tecnológicos (common/technology.txt).
+func _technologies(buildings: Array, groups: Array) -> Dictionary:
+	var bids := {}
+	for b in buildings:
+		bids[b["id"]] = true
+	var techs := {}
+	for cat in ["adm", "dip", "mil"]:
+		var rel := "common/technologies/%s.txt" % cat
+		if not _index.has(rel):
+			continue
+		var lst := []
+		for kv in _parse(_text(rel)):
+			if kv[0] != "technology" or not (kv[1] is Array):
+				continue
+			var t := {"level": lst.size(), "year": 0, "modifiers": {}, "buildings": [], "unlocks": [], "units": [],
+					"institutions": {}}
+			for x in kv[1]:
+				var k: String = x[0]
+				var v = x[1]
+				if k == "":
+					continue
+				if k == "year" and str(v).is_valid_float():
+					t["year"] = int(float(v))
+				elif k == "expects_institution" and v is Array:
+					for y in v:
+						if y[0] != "" and str(y[1]).is_valid_float():
+							t["institutions"][y[0]] = _int_if_whole(float(y[1]))
+				elif k == "enable" and v is String:
+					t["units"].append(v)
+				elif v is String and v == "yes":
+					t["buildings" if bids.has(k) else "unlocks"].append(k)
+				elif k != "sprite_level" and v is String and (v as String).is_valid_float():
+					t["modifiers"][k] = _int_if_whole(float(v))
+			lst.append(t)
+		techs[cat] = lst
+	if _index.has("common/technology.txt"):
+		for kv in _parse(_text("common/technology.txt")):
+			if kv[0] == "groups" and kv[1] is Array:
+				for g in kv[1]:
+					if g[0] != "" and g[1] is Array:
+						var d := {"id": g[0], "start_level": 0, "cost_modifier": 0}
+						for x in g[1]:
+							if x[0] == "start_level" and str(x[1]).is_valid_float():
+								d["start_level"] = int(float(x[1]))
+							elif x[0] == "start_cost_modifier" and str(x[1]).is_valid_float():
+								d["cost_modifier"] = _int_if_whole(float(x[1]))
+						groups.append(d)
+	return techs
 
 
 ## Blocos de topo [nome, itens] de um arquivo de script (vazio se o arquivo não existir).

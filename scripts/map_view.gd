@@ -55,6 +55,8 @@ var region_index: Dictionary = {}  # id -> 1..N
 var superregions: Dictionary = {}  # id -> dict (name)
 var continents: Dictionary = {}    # id -> dict (name)
 var adjacencies: Array = []        # estreitos: [{from, to, type, through}]
+var technologies: Dictionary = {}  # "adm"/"dip"/"mil" -> [{level, year, modifiers, buildings, unlocks, units, institutions}]
+var tech_groups: Dictionary = {}   # id -> {start_level, cost_modifier}
 var _building_pt := {}             # rótulos dos efeitos (data/construcoes_pt.json)
 var id_image: Image
 var palette_image: Image
@@ -129,6 +131,9 @@ func load_map(map_scale: float) -> void:
 	for c in data.get("continents", []):
 		continents[c["id"]] = c
 	adjacencies = data.get("adjacencies", [])
+	technologies = data.get("technologies", {})
+	for g in data.get("tech_groups", []):
+		tech_groups[g["id"]] = g
 
 	var ids_tex: Texture2D
 	if ids_path.begins_with("user://"):

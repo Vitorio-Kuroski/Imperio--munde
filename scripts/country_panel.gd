@@ -7,8 +7,11 @@ extends PanelContainer
 const START := [1444, 11, 11]
 const FOCUS := {"ADM": "Administrativo", "DIP": "Diplomático", "MIL": "Militar"}
 
+signal techs_requested(tag: String)
+
 var tag := ""
 var _label: Label
+var _tech_button: Button
 var _pt := {}
 
 
@@ -17,10 +20,16 @@ func _init() -> void:
 	grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	offset_right = -12
 	offset_top = 44
+	var vb := VBoxContainer.new()
+	add_child(vb)
 	_label = Label.new()
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.custom_minimum_size.x = 320
-	add_child(_label)
+	vb.add_child(_label)
+	_tech_button = Button.new()
+	_tech_button.text = "Ver tecnologias"
+	_tech_button.pressed.connect(func(): techs_requested.emit(tag))
+	vb.add_child(_tech_button)
 	if FileAccess.file_exists("res://data/governos_pt.json"):
 		var d = JSON.parse_string(FileAccess.get_file_as_string("res://data/governos_pt.json"))
 		if d is Dictionary:
@@ -52,6 +61,12 @@ func show_country(map: MapView, t: String) -> void:
 	if c.has("tech_group"):
 		lines.append("Grupo tecnológico: " + _pt.get("grupos_tecnologicos", {}).get(c["tech_group"],
 				Eu4Importer.pretty_key(c["tech_group"])))
+		if map.tech_groups.has(c["tech_group"]):
+			var g: Dictionary = map.tech_groups[c["tech_group"]]
+			var lv := int(g["start_level"])
+			lines.append("Tecnologia: adm %d · dip %d · mil %d (custo %+d%%)" % [lv, lv, lv,
+					roundi(float(g["cost_modifier"]) * 100.0)])
+	_tech_button.visible = not map.technologies.is_empty() and map.tech_groups.has(c.get("tech_group", ""))
 	if c.has("primary_culture"):
 		lines.append("Cultura principal: " + _culture(map, c["primary_culture"]))
 	var acc := []

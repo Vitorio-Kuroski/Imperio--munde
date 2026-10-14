@@ -23,6 +23,7 @@ var side_panel: PanelContainer
 var info_label: Label
 var tooltip: MapTooltip
 var country_panel: CountryPanel
+var tech_window: TechWindow
 var start_panel: CenterContainer
 var eu4_status: Label
 var eu4_buttons: Array[Button] = []
@@ -156,6 +157,9 @@ func _build_ui() -> void:
 	# Painel do país (dono da província selecionada ou o país do jogador)
 	country_panel = CountryPanel.new()
 	ui.add_child(country_panel)
+	tech_window = TechWindow.new()
+	ui.add_child(tech_window)
+	country_panel.techs_requested.connect(func(t: String): tech_window.show_for(map, t))
 
 	# Dica do mapa (criada por último para ficar por cima)
 	tooltip = MapTooltip.new()
@@ -435,7 +439,8 @@ func _update_tooltip() -> void:
 	var m := get_viewport().get_mouse_position()
 	var over_ui := start_panel.visible or top_bar.get_global_rect().has_point(m) \
 			or (side_panel.visible and side_panel.get_global_rect().has_point(m)) \
-			or (country_panel.visible and country_panel.get_global_rect().has_point(m))
+			or (country_panel.visible and country_panel.get_global_rect().has_point(m)) \
+			or (tech_window.visible and tech_window.get_global_rect().has_point(m))
 	tooltip.update_for(map, -1 if over_ui else map.province_at_mouse(), m)
 
 

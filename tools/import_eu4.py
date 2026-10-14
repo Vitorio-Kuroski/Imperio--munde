@@ -15,6 +15,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
                                                estimado pelo heightmap e pelo clima)
   map/area.txt, map/region.txt, map/superregion.txt, map/continent.txt (geografia; opcionais)
   map/rivers.bmp (rios), map/adjacencies.csv (estreitos); opcionais
+  common/technologies/*.txt, common/technology.txt (tecnologias e grupos tecnologicos; opcionais)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -169,6 +170,62 @@ def state_at(items, cutoff):
                 else:
                     st[k2] = v2
     return st
+
+
+def to_num(v):
+    """"2" -> 2, "0.25" -> 0.25, outra coisa -> None."""
+    try:
+        f = float(v)
+        return int(f) if f == int(f) else f
+    except (TypeError, ValueError):
+        return None
+
+
+def eu4_technologies(root, building_ids):
+    """Arvores adm/dip/mil (common/technologies) e grupos tecnologicos (common/technology.txt)."""
+    techs = {}
+    for cat in ("adm", "dip", "mil"):
+        path = os.path.join(root, "common", "technologies", cat + ".txt")
+        if not os.path.isfile(path):
+            continue
+        lst = []
+        for k, v in parse_script(read_text(path)):
+            if k != "technology" or not isinstance(v, list):
+                continue
+            t = {"level": len(lst), "year": 0, "modifiers": {}, "buildings": [], "unlocks": [], "units": [],
+                 "institutions": {}}
+            for kk, vv in v:
+                if not kk:
+                    continue
+                if kk == "year" and to_num(vv) is not None:
+                    t["year"] = int(to_num(vv))
+                elif kk == "expects_institution" and isinstance(vv, list):
+                    for a, b in vv:
+                        if a and to_num(b) is not None:
+                            t["institutions"][a] = to_num(b)
+                elif kk == "enable" and isinstance(vv, str):
+                    t["units"].append(vv)
+                elif vv == "yes":
+                    (t["buildings"] if kk in building_ids else t["unlocks"]).append(kk)
+                elif kk != "sprite_level" and isinstance(vv, str) and to_num(vv) is not None:
+                    t["modifiers"][kk] = to_num(vv)
+            lst.append(t)
+        techs[cat] = lst
+    groups = []
+    tp = os.path.join(root, "common", "technology.txt")
+    if os.path.isfile(tp):
+        for k, v in parse_script(read_text(tp)):
+            if k == "groups" and isinstance(v, list):
+                for g, gv in v:
+                    if g and isinstance(gv, list):
+                        d = {"id": g, "start_level": 0, "cost_modifier": 0}
+                        for kk, vv in gv:
+                            if kk == "start_level" and to_num(vv) is not None:
+                                d["start_level"] = int(to_num(vv))
+                            elif kk == "start_cost_modifier" and to_num(vv) is not None:
+                                d["cost_modifier"] = to_num(vv)
+                        groups.append(d)
+    return techs, groups
 
 
 def parse_building(bid, items, names):
@@ -764,6 +821,7 @@ def main():
             trade_nodes.append(node)
 
     geo = eu4_geography(root)
+    technologies, tech_groups = eu4_technologies(root, {b["id"] for b in buildings})
     adjacencies = []
     ap_ = os.path.join(root, "map", "adjacencies.csv")
     if os.path.isfile(ap_):
@@ -818,7 +876,8 @@ def main():
                    "religions": religions, "trade_goods": trade_goods, "trade_nodes": trade_nodes,
                    "buildings": buildings, "terrains": terrains, "areas": geo["areas"], "regions": geo["regions"],
                    "superregions": geo["superregions"], "continents": geo["continents"],
-                   "adjacencies": adjacencies, "governments": governments, "provinces": provinces},
+                   "adjacencies": adjacencies, "governments": governments,
+                   "technologies": technologies, "tech_groups": tech_groups, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])
