@@ -179,9 +179,9 @@ func _units_tab(map: MapView, tag: String) -> void:
 static func unit_stats(u: Dictionary) -> String:
 	if u.has("hull_size"):
 		var p := ["casco %s" % u["hull_size"], "canhões %s" % u.get("base_cannons", 0),
-				"marinheiros %s" % u.get("sailors", 0), "velocidade %s" % str(u.get("sail_speed", 0)).replace(".", ",")]
+				"marinheiros %s" % u.get("sailors", 0), "velocidade %s" % str(u.get("sail_speed", 0)).replace(".", Loc.dec)]
 		if u.has("trade_power"):
-			p.append("poder comercial %s" % str(u["trade_power"]).replace(".", ","))
+			p.append("poder comercial %s" % str(u["trade_power"]).replace(".", Loc.dec))
 		return ", ".join(p)
 	return "fogo %s/%s · choque %s/%s · moral %s/%s · manobra %s" % [u.get("offensive_fire", 0),
 			u.get("defensive_fire", 0), u.get("offensive_shock", 0), u.get("defensive_shock", 0),
@@ -202,7 +202,7 @@ func _details(map: MapView, t: Dictionary, tag: String) -> String:
 			txt = ("%+d" % v) if float(v) == floorf(v) else ("%+.2f" % v)
 		else:
 			txt = "%+d%%" % roundi(v * 100.0)
-		parts.append("%s %s" % [labels[k], txt.replace(".", ",")])
+		parts.append("%s %s" % [labels[k], txt.replace(".", Loc.dec)])
 	var lib := []
 	for b in t.get("buildings", []):
 		lib.append(map.buildings[b]["name"] if map.buildings.has(b) else Eu4Importer.pretty_key(b))

@@ -57,4 +57,6 @@ func set_speed(s: int) -> void:
 
 
 func date_text() -> String:
+	if Loc.active():
+		return Loc.date(year, month, day)
 	return "%d %s %d" % [day, MONTHS[month - 1], year]

@@ -130,4 +130,4 @@ func _label(text: String) -> Label:
 
 static func _n(x: float, sign := false) -> String:
 	var t := ("%+.1f" if sign else "%.1f") % x
-	return t.replace(".", ",")
+	return t.replace(".", Loc.dec)

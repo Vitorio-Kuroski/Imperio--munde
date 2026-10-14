@@ -38,7 +38,7 @@ static func has_import() -> bool:
 
 ## Apaga o mapa importado (o jogo volta ao mapa padrão).
 static func remove_import() -> void:
-	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png", "icons.png"]:
+	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png", "icons.png", "loc.txt"]:
 		if FileAccess.file_exists(OUT_DIR + "/" + f):
 			DirAccess.remove_absolute(OUT_DIR + "/" + f)
 	for u in UI_TEXTURES:
@@ -657,6 +657,16 @@ func _import() -> String:
 		for m in loc_re.search_all(_text(f)):
 			if not loc.has(m.get_string(1)):
 				loc[m.get_string(1)] = m.get_string(2)
+	# a localização inteira vai para user://eu4/loc.txt (o jogo usa nos nomes e nas telas)
+	var lkeys := loc.keys()
+	lkeys.sort()
+	var lines := PackedStringArray()
+	for k in lkeys:
+		lines.append("%s\t%s" % [k, (loc[k] as String).replace("\t", " ")])
+	var lf := FileAccess.open(OUT_DIR + "/loc.txt", FileAccess.WRITE)
+	if lf:
+		lf.store_string("\n".join(lines) + ("\n" if not lines.is_empty() else ""))
+		lf.close()
 
 	# ---- países
 	var tags := {}

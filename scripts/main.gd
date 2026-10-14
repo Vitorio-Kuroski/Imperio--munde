@@ -126,6 +126,7 @@ func _setup_eu4_hud() -> void:
 	if g == null:
 		return
 	eu4_hud = Eu4Hud.new()
+	eu4_hud.religion = religion
 	ui.add_child(eu4_hud)
 	ui.move_child(eu4_hud, 0)            # atrás dos painéis e janelas
 	if not eu4_hud.setup(g, map, clock, power, economy):
@@ -505,7 +506,7 @@ func _refresh_top_bar() -> void:
 	date_label.text = clock.date_text()
 	pause_button.text = "▶" if clock.paused else "⏸"
 	speed_label.text = "Vel. %d/5" % clock.speed
-	mode_button.text = "Mapa: %s" % MapView.MAP_MODE_NAMES[map.map_mode]
+	mode_button.text = Loc.s("Mapa: %s", "Map: %s") % MapView.map_mode_name(map.map_mode)
 	if eu4_hud:
 		eu4_hud.player = player_tag
 		eu4_hud.refresh()
@@ -653,11 +654,11 @@ func _terrain_info(label: String) -> String:
 	var t: Dictionary = map.terrains[label]
 	var parts := []
 	if t.has("movement_cost"):
-		parts.append("movimento ×" + _num(t["movement_cost"]))
+		parts.append(Loc.s("movimento ×", "movement ×") + _num(t["movement_cost"]))
 	if float(t.get("defence", 0)) != 0.0:
-		parts.append("defesa %+d" % int(t["defence"]))
+		parts.append(Loc.s("defesa %+d", "defence %+d") % int(t["defence"]))
 	if t.has("supply_limit"):
-		parts.append("suprimento " + _num(t["supply_limit"]))
+		parts.append(Loc.s("suprimento ", "supply ") + _num(t["supply_limit"]))
 	return " (%s)" % ", ".join(parts) if not parts.is_empty() else ""
 
 
@@ -684,7 +685,7 @@ static func _num(x: float) -> String:
 	var t := str(snappedf(x, 0.01))
 	if t.ends_with(".0"):
 		t = t.left(-2)
-	return t.replace(".", ",")
+	return t.replace(".", Loc.dec)
 
 
 func _on_month_passed() -> void:

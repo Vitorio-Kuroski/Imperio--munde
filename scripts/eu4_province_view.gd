@@ -71,24 +71,25 @@ func setup(g: Eu4Gui, m: MapView, inst: Institutions) -> bool:
 		close.pressed.connect(func():
 			hide()
 			closed.emit())
-		close.tooltip_text = "Fechar"
-	_txt("demographics_header", "Demografia")
-	_txt("military_header", "Militar")
-	_txt("trade_header", "Comércio")
-	_txt("tax", "Imposto:")
-	_txt("production", "Produção:")
-	_txt("total", "Total:")
-	_txt("religion_title", "Religião")
-	_txt("culture_title", "Cultura")
-	_txt("manpower", "Efetivo:")
-	_txt("supply", "Suprimento:")
-	_txt("goodsproduced", "Bens produzidos:")
-	_txt("tradepower", "Poder comercial:")
-	_txt("tradevalue", "Valor comercial:")
-	_tip("tax_base_icon", "Imposto base")
-	_tip("prod_base_icon", "Produção base")
-	_tip("mp_base_icon", "Efetivo base")
-	_tip("development_icon", "Desenvolvimento")
+		close.tooltip_text = Loc.t("CLOSE", "Fechar")
+	if not Loc.active():        # com a localização do EU4, os rótulos já vêm do .gui (TAX, HEADER_TRADE...)
+		_txt("demographics_header", "Demografia")
+		_txt("military_header", "Militar")
+		_txt("trade_header", "Comércio")
+		_txt("tax", "Imposto:")
+		_txt("production", "Produção:")
+		_txt("total", "Total:")
+		_txt("religion_title", "Religião")
+		_txt("culture_title", "Cultura")
+		_txt("manpower", "Efetivo:")
+		_txt("supply", "Suprimento:")
+		_txt("goodsproduced", "Bens produzidos:")
+		_txt("tradepower", "Poder comercial:")
+		_txt("tradevalue", "Valor comercial:")
+	_tip("tax_base_icon", Loc.t("BASE_TAX", "Imposto base"))
+	_tip("prod_base_icon", Loc.t("BASE_PRODUCTION", "Produção base"))
+	_tip("mp_base_icon", Loc.t("BASE_MANPOWER", "Efetivo base"))
+	_tip("development_icon", Loc.t("DEVELOPMENT", "Desenvolvimento"))
 	var banner := _n("province_banner")
 	if banner:
 		banner.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -151,7 +152,7 @@ func _show(name: String, on: bool) -> void:
 
 
 static func _num(x: float) -> String:
-	return ("%.2f" % x).replace(".", ",")
+	return ("%.2f" % x).replace(".", Loc.dec)
 
 
 ## Mostra a província `id` (-1 ou mar esconde a tela).
@@ -168,9 +169,9 @@ func show_province(id: int) -> void:
 	_txt("region_name", map.regions[rid]["name"] if map.regions.has(rid) else "")
 	var owner: String = p["owner"]
 	_show("have_capital", owner != "" and int(map.countries.get(owner, {}).get("capital", -1)) == id)
-	_tip("have_capital", "Capital de " + str(map.countries.get(owner, {}).get("name", "")))
-	_tip("province_banner", "Dono: %s (clique para abrir o país)" % (map.countries[owner]["name"] \
-			if map.countries.has(owner) else "ninguém"))
+	_tip("have_capital", Loc.s("Capital de ", "Capital of ") + str(map.countries.get(owner, {}).get("name", "")))
+	_tip("province_banner", Loc.s("Dono: %s (clique para abrir o país)", "Owner: %s (click to open the country)") % \
+			(map.countries[owner]["name"] if map.countries.has(owner) else Loc.s("ninguém", "nobody")))
 	# terreno
 	var eu4_t := ""
 	for t in map.terrains.values():
@@ -182,7 +183,7 @@ func show_province(id: int) -> void:
 		ter.visible = gui.sprites.has(spr)
 		if ter.visible:
 			ter.set_sprite(gui, spr, 0)
-		ter.tooltip_text = "Terreno: %s%s" % [p["terrain"], terrain_tip.call(p["terrain"]) if terrain_tip.is_valid() else ""]
+		ter.tooltip_text = "%s: %s%s" % [Loc.t("terrain", "Terreno"), map.terrain_name(p["terrain"]), terrain_tip.call(p["terrain"]) if terrain_tip.is_valid() else ""]
 	# desenvolvimento
 	var bt := int(p.get("base_tax", 0))
 	var bp := int(p.get("base_production", 0))
@@ -198,8 +199,9 @@ func show_province(id: int) -> void:
 	_txt("tax_value", _num(tax))
 	_txt("production_value", _num(prod))
 	_txt("total_value", _num(tax + prod))
-	_tip("tax_value", "Ducados por mês")
-	_tip("production_value", "Ducados por mês (produção × 0,2 × preço do produto)")
+	_tip("tax_value", Loc.s("Ducados por mês", "Ducats per month"))
+	_tip("production_value", Loc.s("Ducados por mês (produção × 0,2 × preço do produto)",
+			"Ducats per month (production × 0.2 × goods price)"))
 	# religião e cultura
 	var rel: String = p.get("religion", "")
 	_txt("religion", map.religions[rel]["name"] if map.religions.has(rel) else "—")
@@ -212,9 +214,9 @@ func show_province(id: int) -> void:
 		ri.tooltip_text = map.religions[rel]["name"] if map.religions.has(rel) else ""
 	var cul: String = p.get("culture", "")
 	_txt("culture", map.cultures[cul]["name"] if map.cultures.has(cul) else "—")
-	_tip("culture", ("Grupo: " + map.cultures[cul]["group"]) if map.cultures.has(cul) and map.cultures[cul]["group"] != "" else "")
+	_tip("culture", ("%s: %s" % [Loc.t("GROUP", "Grupo"), Loc.t(map.cultures[cul]["group"], map.cultures[cul]["group"])]) if map.cultures.has(cul) and map.cultures[cul]["group"] != "" else "")
 	_show("hre_icon", p.get("hre", false))
-	_tip("hre_icon", "Sacro Império Romano")
+	_tip("hre_icon", Loc.t("HINT_HRE_TITLE", "Sacro Império Romano"))
 	# militar
 	_txt("manpower_value", str(bm * 250))
 	var sup := 0.0
@@ -237,16 +239,17 @@ func show_province(id: int) -> void:
 			res.set_frame(gi)
 			res.tooltip_text = map.trade_goods[gid]["name"]
 	_txt("resource_price_value", _num(price) if gi >= 0 else "")
-	_tip("resource_price_value", "Preço de %s" % map.trade_goods[gid]["name"] if gi >= 0 else "")
+	_tip("resource_price_value", "%s: %s" % [Loc.t("PW_PRICE", "Preço"), map.trade_goods[gid]["name"]] if gi >= 0 else "")
 	var tv: Trade = map.trade_view
 	if tv and tv.enabled() and not tv.prov_power.is_empty():
 		_txt("tradepower_value", _num(tv.prov_power[id]))
 		_txt("tradevalue_value", _num(tv.prov_value[id]))
-		_tip("tradepower_value", "Desenvolvimento × 0,2 + centro de comércio, × (1 + costa, construções, mercantilismo)")
-		_tip("tradevalue_value", "Bens produzidos × preço (por ano)")
+		_tip("tradepower_value", Loc.s("Desenvolvimento × 0,2 + centro de comércio, × (1 + costa, construções, mercantilismo)",
+				"Development × 0.2 + center of trade, × (1 + coast, buildings, mercantilism)"))
+		_tip("tradevalue_value", Loc.s("Bens produzidos × preço (por ano)", "Goods produced × price (per year)"))
 	var nid: String = p.get("trade_node", "")
 	_txt("tradenode_button", map.trade_nodes[nid]["name"] if map.trade_nodes.has(nid) else "")
-	_tip("tradenode_button", "Nó de comércio" + (" · centro de comércio nível %d" % int(p["center_of_trade"]) \
+	_tip("tradenode_button", Loc.t("TRADENODE", "Nó de comércio") + (Loc.s(" · centro de comércio nível %d", " · center of trade level %d") % int(p["center_of_trade"]) \
 			if int(p.get("center_of_trade", 0)) > 0 else ""))
 	# construções (ícones na faixa dos modificadores) e instituições
 	var box := _n("modifiers")
@@ -266,5 +269,5 @@ func show_province(id: int) -> void:
 			if pr > 0.0:
 				inst.append("%s %d%%" % [i["name"], roundi(pr)])
 	_show("institution_icon", not inst.is_empty())
-	_tip("institution_icon", "Instituições: " + ", ".join(inst))
+	_tip("institution_icon", Loc.t("INSTITUTIONS", "Instituições") + ": " + ", ".join(inst))
 	show()

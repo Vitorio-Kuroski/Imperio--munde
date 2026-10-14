@@ -56,19 +56,21 @@ func setup(v: Eu4CountryView) -> bool:
 func _name(cat: String, t: Dictionary) -> String:
 	var names: Array = _pt.get("nomes", {}).get(cat, [])
 	var n := int(t["level"])
+	if Loc.active() and t.has("name"):        # nome da localização do EU4 (MapView._apply_loc)
+		return str(t["name"])
 	return str(names[n]) if n < names.size() else str(t.get("name", "Nível %d" % n))
 
 
 static func _fmt(v: float, pct: bool) -> String:
 	if pct:
 		return ("%+d%%" % roundi(v * 100.0))
-	return (("%+d" % int(v)) if v == floorf(v) else ("%+.2f" % v)).replace(".", ",")
+	return (("%+d" % int(v)) if v == floorf(v) else ("%+.2f" % v)).replace(".", Loc.dec)
 
 
 func fill(tag: String) -> void:
 	var map := view.map
 	var power := view.power
-	view._txt(root, "window_title", "Tecnologia — " + map.countries[tag]["name"])
+	view._txt(root, "window_title", Loc.t("HEADER_TECHNOLOGY", "Tecnologia") + " — " + map.countries[tag]["name"])
 	var tables := root.find_child("tables", true, false) as Control
 	view.gui.fill_list(tables, "", 0)
 	var cur_units := TechWindow.current_units(map, tag, power) if not map.units.is_empty() else {}
@@ -94,12 +96,13 @@ func _fill_table(t: Control, tag: String, cat: String, cur_units: Dictionary) ->
 	var pts := power.points(tag, cat) if power and power.state.has(tag) else 0
 	var btn := t.find_child("tech_research", true, false) as BaseButton
 	if nxt.is_empty():
-		view._txt(t, "tech_research_name", "Árvore completa")
+		view._txt(t, "tech_research_name", Loc.s("Árvore completa", "Tree completed"))
 	else:
 		view._txt(t, "tech_research_name", "%s (%d)" % [_name(cat, nxt), cost] if cost >= 0 else _name(cat, nxt))
 	if btn:
 		btn.disabled = not (power and tag == view.player and power.can_research(tag, cat))
-		btn.tooltip_text = ("Pesquisar o nível %d: %d pontos %s (você tem %d)" % [lvl + 1, cost, cat, pts]) \
+		btn.tooltip_text = (Loc.s("Pesquisar o nível %d: %d pontos %s (você tem %d)",
+				"Research level %d: %d %s points (you have %d)") % [lvl + 1, cost, cat, pts]) \
 				if not nxt.is_empty() and cost >= 0 else ""
 		for cn in btn.pressed.get_connections():
 			btn.pressed.disconnect(cn["callable"])
@@ -109,9 +112,9 @@ func _fill_table(t: Control, tag: String, cat: String, cur_units: Dictionary) ->
 	var prog := t.find_child("power_progress", true, false) as Eu4Gui.Progress
 	if prog:
 		prog.set_value(float(pts) / float(cost) if cost > 0 else 1.0)
-		prog.tooltip_text = "%d / %d pontos" % [pts, cost] if cost > 0 else ""
+		prog.tooltip_text = Loc.s("%d / %d pontos", "%d / %d points") % [pts, cost] if cost > 0 else ""
 	view._txt(t, "time_value", str(int(nxt.get("year", 0))) if not nxt.is_empty() else "", \
-			"Ano da tecnologia (pesquisar antes custa mais)")
+			Loc.s("Ano da tecnologia (pesquisar antes custa mais)", "Technology year (researching ahead of time costs more)"))
 	# instituições esperadas e construções liberadas pelo próximo nível
 	var ib := t.find_child("required_institutions_box", true, false) as Control
 	if ib:
@@ -122,7 +125,8 @@ func _fill_table(t: Control, tag: String, cat: String, cur_units: Dictionary) ->
 			if tex:
 				var ok := view.institutions != null and view.institutions.has_embraced(tag, iid)
 				var r := MapView.icon_rect(tex, 24, "%s %d%% (%s)" % [view.institutions.name_of(iid) if view.institutions \
-						else iid, roundi(float(exp[iid]) * 100.0), "adotada" if ok else "não adotada: encarece a pesquisa"])
+						else iid, roundi(float(exp[iid]) * 100.0), Loc.t("EMBRACED", "adotada") if ok \
+							else Loc.s("não adotada: encarece a pesquisa", "Not Embraced: research costs more")])
 				r.modulate = Color.WHITE if ok else Color(1, 0.55, 0.55)
 				ib.add_child(r)
 	var items := t.find_child("tech_researchitems", true, false) as Control
@@ -131,7 +135,7 @@ func _fill_table(t: Control, tag: String, cat: String, cur_units: Dictionary) ->
 		for b in nxt.get("buildings", []):
 			var tex := map.icon_texture("building:" + b)
 			if tex and items.get_child_count() < 6:
-				items.add_child(MapView.icon_rect(tex, 30, "Libera: " + str(map.buildings.get(b, {}).get("name", b))))
+				items.add_child(MapView.icon_rect(tex, 30, Loc.s("Libera: ", "Unlocks: ") + str(map.buildings.get(b, {}).get("name", b))))
 	# efeitos somados até o nível atual
 	var sums := {}
 	for i in mini(lvl + 1, techs.size()):

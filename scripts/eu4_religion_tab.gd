@@ -38,21 +38,21 @@ func setup(v: Eu4CountryView) -> bool:
 	var cb := root.find_child("convert_button", true, false) as BaseButton
 	if cb:
 		cb.show()
-		cb.tooltip_text = "Mudar a religião do Estado"
+		cb.tooltip_text = Loc.s("Mudar a religião do Estado", "Change the state religion")
 		cb.pressed.connect(func(): _show_convert(true))
 	var cw := root.find_child("countryreligionview_convert", true, false) as Control
 	if cw:
-		view._txt(cw, "title", "Mudar a religião do Estado")
+		view._txt(cw, "title", Loc.t("CONVERT", "Mudar a religião do Estado"))
 		var back := cw.find_child("back_button", true, false) as Control
 		if back:
-			view._set_button_text(back, "Voltar")
+			view._set_button_text(back, Loc.t("BACK", "Voltar"))
 			(back as BaseButton).pressed.connect(func(): _show_convert(false))
 	Eu4CountryView._hide(root, "icon_tolerance_heretic")    # o .gui usa o ícone da 1ª religião ali
 	Eu4CountryView._hide(root, "icon_tolerance_heathen")
-	view._txt(root, "label_tolerance", "Tolerância")
-	view._txt(root, "conversion", "Províncias")
-	for b in [["sort_name", "Nome"], ["sort_religion", "Religião"], ["sort_unity", "Desenv."],
-			["sort_mission", "Missionário"]]:
+	view._txt(root, "label_tolerance", Loc.t("TOLERANCE", "Tolerância"))
+	view._txt(root, "conversion", Loc.s("Províncias", "Provinces"))
+	for b in [["sort_name", Loc.t("NAME", "Nome")], ["sort_religion", Loc.t("RELIGION", "Religião")],
+			["sort_unity", Loc.s("Desenv.", "Dev.")], ["sort_mission", Loc.t("ENVOY_MISSIONARY", "Missionário")]]:
 		var btn := root.find_child(b[0], true, false) as Control
 		if btn:
 			view._set_button_text(btn, b[1])
@@ -60,7 +60,7 @@ func setup(v: Eu4CountryView) -> bool:
 	if list:            # o .gui não dá tamanho à lista: vai até o fim da moldura, com a barra de rolagem
 		list.offset_left = 18
 		list.offset_right = 540
-		list.offset_bottom = 540
+		list.offset_bottom = 520
 	return true
 
 
@@ -99,29 +99,32 @@ func _missionary(row: Control, tag: String, pid: int) -> void:
 		return
 	var ml := rel.months_left(tag, pid)
 	var s := rel.strength(tag, pid)
-	view._txt(row, "time", ("%d m" % ml) if active and ml >= 0 else "", "Meses até converter" if active else "")
+	view._txt(row, "time", ("%d m" % ml) if active and ml >= 0 else "", Loc.s("Meses até converter", "Months until converted") if active else "")
 	if btn == null:
 		return
 	for cn in btn.pressed.get_connections():
 		btn.pressed.disconnect(cn["callable"])
 	if active:
-		view._txt(row, "send_missionary_text", "Chamar")
+		view._txt(row, "send_missionary_text", Loc.t("RECALL", "Chamar"))
 		btn.disabled = false
 		btn.modulate = Color.WHITE
-		btn.tooltip_text = "Convertendo: %d%% (%s%% por mês, %s ducados por mês)" % [roundi(rel.progress(tag, pid)),
+		btn.tooltip_text = Loc.s("Convertendo: %d%% (%s%% por mês, %s ducados por mês)",
+				"Converting: %d%% (%s%% per month, %s ducats per month)") % [roundi(rel.progress(tag, pid)),
 				AdvisorsWindow._n(s * 100.0), AdvisorsWindow._n(rel.mission_cost(pid, tag))]
 		btn.pressed.connect(func():
 			rel.recall(tag, pid)
 			view.refresh())
 	else:
-		view._txt(row, "send_missionary_text", "Enviar")
+		view._txt(row, "send_missionary_text", Loc.t("SEND", "Enviar"))
 		btn.disabled = not rel.can_send(tag, pid)
 		btn.modulate = Color(0.6, 0.6, 0.6) if btn.disabled else Color.WHITE
-		btn.tooltip_text = "Força líquida %s%% por mês (%d meses), %s ducados por mês" % [AdvisorsWindow._n(s * 100.0),
+		btn.tooltip_text = Loc.s("Força líquida %s%% por mês (%d meses), %s ducados por mês",
+				"Net strength %s%% per month (%d months), %s ducats per month") % [AdvisorsWindow._n(s * 100.0),
 				ceili(100.0 / (s * 100.0)) if s > 0.0 else 0, AdvisorsWindow._n(rel.mission_cost(pid, tag))] if s > 0.0 \
-				else "Força missionária insuficiente (a resistência é 0,1% por desenvolvimento)"
+				else Loc.s("Força missionária insuficiente (a resistência é 0,1% por desenvolvimento)",
+				"Missionary strength too low (resistance is 0.1% per development)")
 		if rel.free_missionaries(tag) <= 0:
-			btn.tooltip_text += "\nSem missionário livre"
+			btn.tooltip_text += Loc.s("\nSem missionário livre", "\nNo free missionary")
 		btn.pressed.connect(func():
 			rel.send(tag, pid)
 			view.refresh())
@@ -148,13 +151,13 @@ func _show_convert(on: bool) -> void:
 	ids.sort_custom(func(a, b): return found[a] > found[b])
 	var list := cw.find_child("religions_listbox", true, false) as Control
 	var rows := view.gui.fill_list(list, "religionlistitem", ids.size())
-	view._txt(cw, "religion_messagetext", "" if not ids.is_empty() else "Nenhuma outra religião nas suas províncias")
+	view._txt(cw, "religion_messagetext", "" if not ids.is_empty() else Loc.t("NO_POTENTIAL_RELIGION", "Nenhuma outra religião nas suas províncias"))
 	for i in rows.size():
 		var rid: String = ids[i]
 		_religion_icon(rows[i].find_child("religion_icon", true, false) as Eu4Gui.Icon, rid)
 		view._txt(rows[i], "religion_name", str(map.religions.get(rid, {}).get("name", rid)))
 		Eu4CountryView._hide(rows[i], "reformation_center_icon")
-		view._txt(rows[i], "reformation_center_desc", "Desenvolvimento nas suas províncias: %d" % found[rid])
+		view._txt(rows[i], "reformation_center_desc", Loc.s("Desenvolvimento nas suas províncias: %d", "Development in your provinces: %d") % found[rid])
 		var ml := rows[i].find_child("religion_modifiers_listbox_convert", true, false) as Control
 		var mods: Dictionary = map.religions.get(rid, {}).get("modifiers", {})
 		var mrows := view.gui.fill_list(ml, "religion_modifier_item", mods.size())
@@ -168,8 +171,8 @@ func _show_convert(on: bool) -> void:
 			var ok := _tag == view.player and rel.can_convert_country(_tag, rid)
 			b.disabled = not ok
 			b.modulate = Color.WHITE if ok else Color(0.6, 0.6, 0.6)
-			b.tooltip_text = "Converter o país a %s" % map.religions.get(rid, {}).get("name", rid) if ok \
-					else "Só dá para adotar a religião da sua capital"
+			b.tooltip_text = Loc.s("Converter o país a %s", "Convert the country to %s") % map.religions.get(rid, {}).get("name", rid) if ok \
+					else Loc.s("Só dá para adotar a religião da sua capital", "Only the religion of your capital can be adopted")
 			b.pressed.connect(func():
 				if rel.convert_country(_tag, rid):
 					_show_convert(false)
@@ -183,8 +186,8 @@ func fill(tag: String) -> void:
 	var c: Dictionary = map.countries[tag]
 	var rid: String = c.get("religion", "")
 	var rel: Dictionary = map.religions.get(rid, {})
-	view._txt(root, "window_title", "Religião — " + c["name"])
-	view._txt(root, "current_religion_name", str(rel.get("name", "—")), "Grupo: " + str(rel.get("group", "")))
+	view._txt(root, "window_title", Loc.t("HEADER_RELIGION", "Religião") + " — " + c["name"])
+	view._txt(root, "current_religion_name", str(rel.get("name", "—")), Loc.t("GROUP", "Grupo") + ": " + Loc.t(str(rel.get("group", "")), str(rel.get("group", ""))))
 	_religion_icon(root.find_child("current_religion_icon", true, false) as Eu4Gui.Icon, rid)
 	# efeitos da religião
 	var mods_list := root.find_child("religion_modifiers_listbox", true, false) as Control
@@ -204,17 +207,18 @@ func fill(tag: String) -> void:
 	var tol := {"own": _base("tolerance_own") + pw.modifier(tag, "tolerance_own"),
 			"heretic": _base("tolerance_heretic") + pw.modifier(tag, "tolerance_heretic"),
 			"heathen": _base("tolerance_heathen") + pw.modifier(tag, "tolerance_heathen")}
-	var names := {"own": "da própria fé", "heretic": "a heréticos (mesmo grupo)", "heathen": "a pagãos (outros grupos)"}
+	var names := {"own": Loc.t("tolerance_own", "Tolerância da própria fé"), "heretic": Loc.t("tolerance_heretic",
+			"Tolerância a heréticos (mesmo grupo)"), "heathen": Loc.t("tolerance_heathen", "Tolerância a pagãos (outros grupos)")}
 	for k in tol:
 		var v: float = tol[k]
-		view._txt(root, "val_tolerance_" + k, ("%+.0f" % v) if v == floorf(v) else ("%+.1f" % v).replace(".", ","),
-				"Tolerância " + names[k])
+		view._txt(root, "val_tolerance_" + k, ("%+.0f" % v) if v == floorf(v) else ("%+.1f" % v).replace(".", Loc.dec),
+				names[k])
 		var l := root.find_child("val_tolerance_" + k, true, false) as Label
 		if l:
 			l.add_theme_color_override("font_color", GOOD if v >= 0.0 else BAD)
 		var ic := root.find_child("icon_tolerance_" + k, true, false) as Control
 		if ic:
-			ic.tooltip_text = "Tolerância " + names[k]
+			ic.tooltip_text = names[k]
 	_religion_icon(root.find_child("icon_tolerance_own", true, false) as Eu4Gui.Icon, rid)
 	# unidade religiosa e força missionária
 	var total := 0.0
@@ -228,14 +232,16 @@ func fill(tag: String) -> void:
 				same += float(p["development"])
 	var unity := same / total if total > 0.0 else 1.0
 	view._txt(root, "religiousunity_value", "%d%%" % roundi(unity * 100.0),
-			"Unidade religiosa: parte do desenvolvimento das províncias com a religião do Estado")
+			Loc.t("religious_unity", "Unidade religiosa") + Loc.s(": parte do desenvolvimento das províncias com a religião do Estado",
+			": share of province development with the state religion"))
 	var ms := _base("global_missionary_strength") + pw.modifier(tag, "global_missionary_strength")
-	view._txt(root, "missionary_strength_value", ("%+.1f%%" % (ms * 100.0)).replace(".", ","), "Força missionária")
+	view._txt(root, "missionary_strength_value", ("%+.1f%%" % (ms * 100.0)).replace(".", Loc.dec), Loc.t("GLOBAL_MISSIONARY_STRENGTH", "Força missionária"))
 	var rg := view.religion
 	if rg:
-		view._txt(root, "conversion", "Missionários %d/%d" % [rg.missions.get(tag, {}).size(), rg.max_missionaries(tag)],
-				"Missionários convertendo / total. A força líquida em cada província é a força missionária menos " \
-				+ "0,1% por desenvolvimento.")
+		view._txt(root, "conversion", Loc.t("HINT_MISSIONARY_TITLE", "Missionários") + " %d/%d" % [rg.missions.get(tag, {}).size(),
+				rg.max_missionaries(tag)], Loc.s("Missionários convertendo / total. A força líquida em cada província é a " \
+				+ "força missionária menos 0,1% por desenvolvimento.", "Missionaries converting / total. The net strength in " \
+				+ "each province is the missionary strength minus 0.1% per development."))
 	# províncias: primeiro as com missionário, depois as de outra religião, depois por desenvolvimento
 	var rgs := view.religion
 	provs.sort_custom(func(a, b):
@@ -258,7 +264,7 @@ func fill(tag: String) -> void:
 		view._txt(items[i], "religion", str(map.religions.get(pr, {}).get("name", "—")))
 		_religion_icon(items[i].find_child("province_religion", true, false) as Eu4Gui.Icon, pr)
 		var ok := pr == rid
-		view._txt(items[i], "unity", "%d" % int(p["development"]), "Desenvolvimento" + ("" if ok else " (outra religião)"))
+		view._txt(items[i], "unity", "%d" % int(p["development"]), Loc.t("DEVELOPMENT", "Desenvolvimento") + ("" if ok else Loc.s(" (outra religião)", " (other religion)")))
 		var ul := items[i].find_child("unity", true, false) as Label
 		if ul:
 			ul.add_theme_color_override("font_color", GOOD if ok else BAD)

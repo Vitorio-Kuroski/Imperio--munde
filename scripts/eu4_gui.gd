@@ -396,13 +396,13 @@ func _element(kind: String, items: Array) -> Control:
 				l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 				l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 				l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				l.text = txt if not txt.contains("_") else ""
+				l.text = Loc.plain(txt, txt if not txt.contains("_") else "")
 				style_label(l, str(_val(items, "buttonfont", "vic_18")))
 				l.name = "Text"
 				b.add_child(l)
 			var tip := str(_val(items, "tooltip", ""))
-			if tip != "" and not tip.contains("_"):
-				b.tooltip_text = tip
+			if tip != "":
+				b.tooltip_text = Loc.plain(tip, tip if not tip.contains("_") else "")
 			c = b
 			_place(c, items, b.custom_minimum_size)
 		"scrollbartype":
@@ -457,7 +457,10 @@ func _element(kind: String, items: Array) -> Control:
 			l.offset_right -= bs.x
 			l.offset_top += bs.y
 			l.clip_text = false
-			l.text = ""
+			# texto fixo da tela (chave da localização do EU4: "TAX", "CV_INCOMES"...); os valores
+			# são preenchidos pelas telas
+			var tk := str(_val(items, "text", ""))
+			l.text = Loc.plain(tk) if tk != "" else ""
 			c = l
 		_:
 			return null

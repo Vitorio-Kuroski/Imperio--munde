@@ -31,6 +31,7 @@ var map: MapView
 var clock: GameClock
 var power: MonarchPower
 var economy: Economy
+var religion: Religion             # opcional (missionários na barra)
 var player := ""
 var _flag_tag := ""
 var _dev_version := -1
@@ -54,17 +55,17 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock, pw: MonarchPower, eco: Economy) 
 	for n in HIDDEN:
 		if g.nodes.has(n):
 			g.nodes[n].hide()
-	_text("pause_banner_text", "Pausado")
+	_text("pause_banner_text", Loc.t("CORE_PAUSED", "Pausado"))
 	var shield := _node("player_shield") as Eu4Gui.Button2
 	if shield:
 		shield.pressed.connect(func(): shield_pressed.emit())
-		shield.tooltip_text = "Abrir o painel do seu país"
-	_button("button_pause", clock.toggle_pause, "Pausar / continuar (espaço)")
-	_button("speed_indicator", clock.toggle_pause, "Velocidade")
-	_button("button_speedup", func(): clock.set_speed(clock.speed + 1), "Mais rápido (+)")
-	_button("button_speeddown", func(): clock.set_speed(clock.speed - 1), "Mais devagar (−)")
-	_button("zoom_in", func(): zoom_requested.emit(1.25), "Aproximar")
-	_button("zoom_out", func(): zoom_requested.emit(0.8), "Afastar")
+		shield.tooltip_text = Loc.s("Abrir o painel do seu país", "Open your country view")
+	_button("button_pause", clock.toggle_pause, Loc.s("Pausar / continuar (espaço)", "Pause / resume (space)"))
+	_button("speed_indicator", clock.toggle_pause, Loc.t("PW_SPEED", "Velocidade"))
+	_button("button_speedup", func(): clock.set_speed(clock.speed + 1), Loc.s("Mais rápido (+)", "Faster (+)"))
+	_button("button_speeddown", func(): clock.set_speed(clock.speed - 1), Loc.s("Mais devagar (−)", "Slower (−)"))
+	_button("zoom_in", func(): zoom_requested.emit(1.25), Loc.t("ZOOM_IN", "Aproximar"))
+	_button("zoom_out", func(): zoom_requested.emit(0.8), Loc.t("ZOOM_OUT", "Afastar"))
 	for i in MAPMODES.size():
 		var b := _node("custom_mapmode_%d" % (i + 1)) as Eu4Gui.Button2
 		if b == null:
@@ -74,16 +75,17 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock, pw: MonarchPower, eco: Economy) 
 			b.hide()
 			continue
 		b.setup(g, MAPMODES[i][1])
-		b.tooltip_text = "Modo de mapa: " + MapView.MAP_MODE_NAMES[mode]
+		b.tooltip_text = Loc.s("Modo de mapa: ", "Map mode: ") + MapView.map_mode_name(mode)
 		b.pressed.connect(func():
 			map.set_map_mode(mode as MapView.MapMode)
 			refresh())
-	_tip("icon_gold", "Tesouro (ducados)")
-	_tip("icon_ADM", "Pontos administrativos")
-	_tip("icon_DIP", "Pontos diplomáticos")
-	_tip("icon_MIL", "Pontos militares")
-	_tip("icon_score", "Desenvolvimento total e posição entre os países")
-	_tip("icon_corruption", "Corrupção")
+	_tip("icon_gold", Loc.t("HINT_DUCATS_TITLE", "Tesouro (ducados)"))
+	_tip("icon_ADM", Loc.t("ADM_POWER", "Pontos administrativos"))
+	_tip("icon_DIP", Loc.t("DIP_POWER", "Pontos diplomáticos"))
+	_tip("icon_MIL", Loc.t("MIL_POWER", "Pontos militares"))
+	_tip("icon_score", Loc.s("Desenvolvimento total e posição entre os países", "Total development and rank among countries"))
+	_tip("icon_corruption", Loc.t("corruption", "Corrupção"))
+	_tip("icon_missionary", Loc.t("HINT_MISSIONARY_TITLE", "Missionários"))
 	refresh()
 	return true
 
@@ -143,9 +145,11 @@ func refresh() -> void:
 			_text(n, "")
 		return
 	_text("text_gold", str(int(economy.money(player))))
-	_tip("text_gold", "Saldo: %s ducados/mês · %d empréstimo(s) · inflação %s%%%s" % [
+	_tip("text_gold", Loc.s("Saldo: %s ducados/mês · %d empréstimo(s) · inflação %s%%%s",
+			"Balance: %s ducats/month · %d loan(s) · inflation %s%%%s") % [
 			AdvisorsWindow._n(economy.balance(player), true), economy.loan_count(player),
-			AdvisorsWindow._n(economy.inflation_of(player)), " · EM FALÊNCIA" if economy.is_bankrupt(player) else ""])
+			AdvisorsWindow._n(economy.inflation_of(player)),
+			Loc.s(" · EM FALÊNCIA", " · BANKRUPT") if economy.is_bankrupt(player) else ""])
 	_text("text_corruption", AdvisorsWindow._n(economy.corruption_of(player)))
 	for cat in ["adm", "dip", "mil"]:
 		_text("text_" + cat.to_upper(), str(power.points(player, cat)))
@@ -153,6 +157,8 @@ func refresh() -> void:
 	for n in ["text_manpower", "text_sailors", "text_stability", "text_prestige", "text_merchants", "text_settlers",
 			"text_diplomats", "text_missionaries"]:
 		_text(n, "—")
+	if religion and religion.enabled():      # missionários livres/total, como no EU4
+		_text("text_missionaries", "%d/%d" % [religion.free_missionaries(player), religion.max_missionaries(player)])
 	if _dev_version != map.owner_version:
 		_dev_version = map.owner_version
 		_dev = {}
@@ -167,4 +173,4 @@ func refresh() -> void:
 		if dev[t] > mine:
 			rank += 1
 	_text("text_score", str(mine))
-	_text("text_score_rank", "%dº" % rank)
+	_text("text_score_rank", (Loc.s("%dº", "#%d")) % rank)

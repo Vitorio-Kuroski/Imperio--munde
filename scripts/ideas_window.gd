@@ -165,11 +165,13 @@ func fmt_mods(mods: Dictionary) -> String:
 		if not (v is float or v is int):
 			continue
 		var label: String = labels.get(k, Eu4Importer.pretty_key(k).to_lower())
+		if Loc.active():        # nome do efeito na localização do EU4 (senão o nome da chave em inglês)
+			label = Loc.modifier(k, Eu4Importer.pretty_key(k))
 		var txt: String
 		if k in absolute:
 			txt = ("%+d" % v) if float(v) == floorf(v) else ("%+.2f" % v)
 		else:
 			var pct := float(v) * 100.0
 			txt = ("%+d%%" % roundi(pct)) if is_equal_approx(pct, roundf(pct)) else ("%+.1f%%" % pct)
-		parts.append("%s %s" % [label, txt.replace(".", ",")])
+		parts.append(("%s: %s" % [label, txt]) if Loc.active() else ("%s %s" % [label, txt.replace(".", Loc.dec)]))
 	return ", ".join(parts) if not parts.is_empty() else "—"

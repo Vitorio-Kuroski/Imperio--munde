@@ -1233,6 +1233,12 @@ def main():
         for m in re.finditer(r'^\s*([A-Za-z0-9_]+):\d*\s+"(.*)"\s*$', read_text(f), re.M):
             loc.setdefault(m.group(1), m.group(2))
 
+    # a localizacao inteira vai para data/eu4/loc.txt (o jogo usa nos nomes e nas telas)
+    os.makedirs("data/eu4", exist_ok=True)
+    with open("data/eu4/loc.txt", "w", encoding="utf-8") as lf:
+        for k in sorted(loc):
+            lf.write("%s\t%s\n" % (k, loc[k].replace("\t", " ")))
+
     # nomes de provincias (localizacao em ingles)
     prov_names = {int(k[4:]): v for k, v in loc.items() if re.fullmatch(r"PROV\d+", k)}
 

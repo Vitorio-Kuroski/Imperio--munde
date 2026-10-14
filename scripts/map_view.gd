@@ -32,6 +32,8 @@ const TERRAIN_COLORS := {
 enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO, PRODUTOS, COMERCIO, REGIOES, INSTITUICOES, DIPLOMACIA }
 const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião", "produtos", "comércio", "regiões",
 		"instituições", "diplomacia"]
+const MAP_MODE_KEYS := ["MAPMODE_POLITICAL", "MAPMODE_TERRAIN", "MAPMODE_CULTURE", "MAPMODE_RELIGION",
+		"MAPMODE_TRADE_GOODS", "MAPMODE_TRADE", "MAPMODE_REGION", "MAPMODE_INSTITUTIONS", "MAPMODE_DIPLOMACY"]
 ## Cores do modo diplomacia (relação com o país em foco).
 const DIPLO_COLORS := {"self": Color(0.13, 0.55, 0.22), "subject": Color(0.45, 0.78, 0.40),
 		"overlord": Color(0.80, 0.55, 0.18), "ally": Color(0.22, 0.45, 0.85), "marriage": Color(0.82, 0.45, 0.72),
@@ -40,6 +42,9 @@ const DIPLO_COLORS := {"self": Color(0.13, 0.55, 0.22), "subject": Color(0.45, 0
 const DIPLO_NAMES := {"self": "o país", "subject": "súdito", "overlord": "suserano", "ally": "aliado",
 		"marriage": "casamento real", "guarantee": "garantia", "same_bloc": "súdito do mesmo suserano",
 		"war": "em guerra", "recent_enemy": "inimigo recente"}
+const DIPLO_NAMES_EN := {"self": "the country", "subject": "subject", "overlord": "overlord", "ally": "ally",
+		"marriage": "royal marriage", "guarantee": "guarantee", "same_bloc": "subject of the same overlord",
+		"war": "at war", "recent_enemy": "recent enemy"}
 
 var map_w: int
 var map_h: int
@@ -118,6 +123,10 @@ func load_map(map_scale: float) -> void:
 	source = json_path
 	print("Mapa carregado de: ", json_path)
 	var data = JSON.parse_string(FileAccess.get_file_as_string(json_path))
+	# localização original do EU4 (loc.txt gravado pelos importadores): nomes como no jogo
+	Loc.load_file(json_path.get_base_dir() + "/loc.txt")
+	if Loc.active():
+		_apply_loc(data)
 	map_w = int(data["width"])
 	map_h = int(data["height"])
 	provinces = data["provinces"]
@@ -241,6 +250,45 @@ func load_map(map_scale: float) -> void:
 		trade_flows.visible = false
 		add_child(trade_flows)
 		trade_flows.setup(self)
+
+
+## Troca os nomes pelos da localização do EU4 (chaves do próprio jogo; sem a chave fica o nome atual).
+func _apply_loc(data: Dictionary) -> void:
+	var by_id := func(list_key: String, prefix := "") -> void:
+		for e in data.get(list_key, []):
+			if e is Dictionary and e.has("id"):
+				e["name"] = Loc.t(prefix + str(e["id"]), str(e.get("name", e["id"])))
+	for p in data["provinces"]:
+		p["name"] = Loc.t("PROV%d" % int(p["id"]), str(p.get("name", "")))
+	for c in data["countries"]:
+		c["name"] = Loc.t(str(c["tag"]), str(c.get("name", "")))
+	for k in ["cultures", "religions", "trade_goods", "trade_nodes", "areas", "regions", "superregions", "continents",
+			"governments", "institutions", "advisor_types", "units", "centers_of_trade"]:
+		by_id.call(k)
+	by_id.call("buildings", "building_")
+	for t in data.get("terrains", []):
+		t["name"] = Loc.t(str(t.get("eu4", "")), str(t["id"]).capitalize())
+	for list_key in ["idea_groups", "national_ideas"]:
+		for g in data.get(list_key, []):
+			g["name"] = Loc.t(str(g["id"]), str(g.get("name", "")))
+			for i in g.get("ideas", []):
+				i["name"] = Loc.t(str(i["id"]), str(i.get("name", "")))
+	var techs: Dictionary = data.get("technologies", {})
+	for cat in techs:
+		for t in techs[cat]:
+			var key := "%s_tech_cs_%d_name" % [cat, int(t["level"])]
+			if Loc.has(key):
+				t["name"] = Loc.t(key)
+
+
+## Nome do modo de mapa (localização do EU4, senão em português).
+static func map_mode_name(mode: int) -> String:
+	return Loc.t(MAP_MODE_KEYS[mode], MAP_MODE_NAMES[mode])
+
+
+## Nome do terreno (rótulo do mapa -> nome do EU4 com a localização, senão o rótulo).
+func terrain_name(label: String) -> String:
+	return str(terrains.get(label, {}).get("name", label.capitalize()))
 
 
 ## Bandeira do país (null se não houver bandeiras importadas).
@@ -416,12 +464,15 @@ func building_effects(bid: String) -> String:
 			txt = ("%+d" % v) if float(v) == floorf(v) else ("%+.2f" % v)
 		else:
 			txt = "%+d%%" % roundi(v * 100.0)
-		parts.append("%s %s" % [labels[k], txt.replace(".", ",")])
+		if Loc.active():
+			parts.append("%s: %s" % [Loc.modifier(k, Eu4Importer.pretty_key(k)), txt])
+		else:
+			parts.append("%s %s" % [labels[k], txt.replace(".", Loc.dec)])
 	if buildings[bid].has("goods"):
 		var names := []
 		for g in buildings[bid]["goods"]:
 			names.append(trade_goods[g]["name"] if trade_goods.has(g) else g)
-		parts.append("produção de " + ", ".join(names))
+		parts.append(Loc.s("produção de ", "produces ") + ", ".join(names))
 	return ", ".join(parts)
 
 

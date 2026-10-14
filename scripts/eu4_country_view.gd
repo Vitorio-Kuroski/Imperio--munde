@@ -21,6 +21,9 @@ const TABS := {"tab_court": "court", "tab_gov": "gov", "tab_economy": "economy",
 		"tab_diplomacy": "summary"}
 const TAB_TIPS := {"tab_court": "Corte", "tab_gov": "Governo", "tab_economy": "Economia", "tab_religion": "Religião", "tab_technology": "Tecnologia", "tab_ideas": "Ideias",
 		"tab_diplomacy": "Resumo: diplomacia, guerras, economia e instituições"}
+const TAB_KEYS := {"tab_court": "HEADER_COURT", "tab_gov": "HEADER_GOVERNMENT", "tab_economy": "HEADER_ECONOMY",
+		"tab_religion": "HEADER_RELIGION", "tab_technology": "HEADER_TECHNOLOGY", "tab_ideas": "HEADER_IDEAS",
+		"tab_diplomacy": "HEADER_OVERVIEW"}
 const POWER_ICONS := {"adm": "GFX_icon_powers_administrative", "dip": "GFX_icon_powers_diplomatic",
 		"mil": "GFX_icon_powers_military"}
 const COURT_HIDE := ["abdicate_ruler_button", "extend_regency_button", "election_info", "monarch_heir_claim",
@@ -104,7 +107,7 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 	for v in pages:
 		var close := v.find_child("close_button", true, false) as BaseButton
 		if close:
-			close.tooltip_text = "Fechar"
+			close.tooltip_text = Loc.t("CLOSE", "Fechar")
 			close.pressed.connect(func():
 				hide()
 				closed.emit())
@@ -117,7 +120,7 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 		if not TABS.has(n):
 			b.hide()
 			continue
-		b.tooltip_text = TAB_TIPS[n]
+		b.tooltip_text = Loc.t(TAB_KEYS[n], TAB_TIPS[n])
 		var t: String = TABS[n]
 		b.pressed.connect(func(): _on_tab(t))
 	for cat in ["ADM", "DIP", "MIL"]:
@@ -131,9 +134,10 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 			l.size = Vector2(44, 20)
 			ic.get_parent().add_child(l)
 			_focus_points[cat] = l
-	_txt(_gov, "accepted_cultures_label", "Culturas aceitas")
-	_txt(_gov, "non_accepted_cultures_label", "Outras culturas")
-	_txt(_gov, "modifiers_title", "Religião e instituições")
+	if not Loc.active():       # com a localização do EU4 os rótulos já vêm do .gui
+		_txt(_gov, "accepted_cultures_label", "Culturas aceitas")
+		_txt(_gov, "non_accepted_cultures_label", "Outras culturas")
+		_txt(_gov, "modifiers_title", "Religião e instituições")
 	if FileAccess.file_exists("res://data/governos_pt.json"):
 		var d = JSON.parse_string(FileAccess.get_file_as_string("res://data/governos_pt.json"))
 		if d is Dictionary:
@@ -267,6 +271,9 @@ func _gov_name(c: Dictionary) -> String:
 	var gov: String = c.get("government", "")
 	var name: String = _pt.get("governos", {}).get(gov, Eu4Importer.pretty_key(gov)) if gov != "" else ""
 	var rank := str(_pt.get("postos", {}).get(str(c.get("rank", "")), ""))
+	if Loc.active():
+		name = Loc.t(gov + "_name", Loc.t(gov.to_upper(), name)) if gov != "" else ""
+		rank = Loc.t("RANK_%s" % str(c.get("rank", "")), rank)
 	return name + (" · " + rank if rank != "" else "")
 
 
@@ -286,7 +293,7 @@ func _person(prefix: String, p: Dictionary, title: String) -> void:
 		name += " " + str(p["dynasty"])
 	_txt(_court, prefix + "_title" if prefix == "monarch" else prefix + "_name", title + name)
 	var age := _age(p)
-	_txt(_court, prefix + ("_ruler_age" if prefix == "monarch" else "_age"), "%d anos" % age if age >= 0 else "")
+	_txt(_court, prefix + ("_ruler_age" if prefix == "monarch" else "_age"), Loc.s("%d anos", "%d years") % age if age >= 0 else "")
 	for cat in ["adm", "dip", "mil"]:
 		_txt(_court, "%s_%s_value" % [prefix, cat], str(p.get(cat, "")))
 
@@ -295,7 +302,7 @@ func _fill_court() -> void:
 	var c: Dictionary = map.countries[tag]
 	_txt(_court, "window_title", c["name"], _gov_name(c))
 	var m: Dictionary = c.get("monarch", {})
-	_person("monarch", m, "Governante: " if m.is_empty() else "")
+	_person("monarch", m, (Loc.t("FE_RULER", "Governante") + ": ") if m.is_empty() else "")
 	var heir: Dictionary = c.get("heir", {})
 	for n in ["monarch_heir_adm_value", "monarch_heir_adm_icon", "monarch_heir_dip_value", "monarch_heir_dip_icon",
 			"monarch_heir_mil_value", "monarch_heir_mil_icon", "monarch_heir_crown_icon", "monarch_heir_age"]:
@@ -303,9 +310,9 @@ func _fill_court() -> void:
 		if x:
 			x.visible = not heir.is_empty()
 	if heir.is_empty():
-		_txt(_court, "monarch_heir_name", "Sem herdeiro")
+		_txt(_court, "monarch_heir_name", Loc.s("Sem herdeiro", "No heir"))
 	else:
-		_person("monarch_heir", heir, "Herdeiro: ")
+		_person("monarch_heir", heir, Loc.t("HEIR", "Herdeiro") + ": ")
 	# conselheiros (uma linha por categoria)
 	var list := _court.find_child("abilities_listbox", true, false) as Control
 	var rows := gui.fill_list(list, "countrycourtview_abilitylistitem", Advisors.CATS.size() if advisors else 0)
@@ -317,12 +324,13 @@ func _fill_court() -> void:
 		var b := _court.find_child("national_focus_" + cat, true, false) as Eu4Gui.Button2
 		if b:
 			b.set_frame(1 if focus == cat else 0)
-			b.tooltip_text = "Foco nacional: %s" % {"ADM": "administrativo", "DIP": "diplomático",
-					"MIL": "militar"}[cat] + (" (atual)" if focus == cat else "")
+			b.tooltip_text = Loc.s("Foco nacional: %s", "National focus: %s") % (Loc.s({"ADM": "administrativo",
+					"DIP": "diplomático", "MIL": "militar"}[cat], Loc.t(cat + "_POWER", cat))) \
+					+ (Loc.s(" (atual)", " (current)") if focus == cat else "")
 		if power and power.state.has(tag):
 			var ic := _court.find_child("icon_" + cat, true, false) as Control
 			if ic:
-				ic.tooltip_text = "%d pontos (+%d por mês)" % [power.points(tag, cat.to_lower()),
+				ic.tooltip_text = Loc.s("%d pontos (+%d por mês)", "%d points (+%d per month)") % [power.points(tag, cat.to_lower()),
 						power.gain(tag, cat.to_lower())]
 			if _focus_points.has(cat):
 				_focus_points[cat].text = str(power.points(tag, cat.to_lower()))
@@ -341,17 +349,17 @@ func _advisor_row(row: Control, cat: String) -> void:
 	if mods:
 		mods.offset_right = mods.offset_left + 270     # o efeito cabe numa linha
 	if a.is_empty():
-		_txt(row, "advisor_name", "Vago")
+		_txt(row, "advisor_name", Loc.s("Vago", "Vacant"))
 		_txt(row, "advisor_ability_skill", "")
 		_txt(row, "ability_skill", "")
-		_txt(row, "advisor_cost", "Clique para contratar")
+		_txt(row, "advisor_cost", Loc.s("Clique para contratar", "Click to hire"))
 		gui.fill_list(mods, "advisor_modifier_item", 0)
 	else:
 		var t: Dictionary = advisors.types.get(a["type"], {})
 		_txt(row, "advisor_name", str(a["name"]), str(t.get("name", a["type"])))
 		_txt(row, "advisor_ability_skill", str(int(a["skill"])))
 		_txt(row, "ability_skill", "")
-		_txt(row, "advisor_cost", "%s · %s ducados/mês" % [t.get("name", a["type"]),
+		_txt(row, "advisor_cost", Loc.s("%s · %s ducados/mês", "%s · %s ducats/month") % [t.get("name", a["type"]),
 				AdvisorsWindow._n(advisors.salary(tag, a))])
 		var items := gui.fill_list(mods, "advisor_modifier_item", 1)
 		if not items.is_empty():
@@ -366,7 +374,7 @@ func _advisor_row(row: Control, cat: String) -> void:
 			btn.texture_click_mask = null
 		else:
 			btn.setup(gui, "GFX_advisor_noAdvisorType")
-		btn.tooltip_text = "Conselheiros"
+		btn.tooltip_text = Loc.t("LEDGER_ADVISORS", "Conselheiros")
 		for cn in btn.pressed.get_connections():
 			btn.pressed.disconnect(cn["callable"])
 		btn.pressed.connect(func(): advisors_requested.emit(tag))
@@ -393,10 +401,10 @@ func _fill_gov() -> void:
 		for r in c.get("reforms", []):
 			var l := Label.new()
 			gui.style_label(l, "vic_18")
-			l.text = "• " + str(_pt.get("reformas", {}).get(r, Eu4Importer.pretty_key(r, "_reform")))
+			l.text = "• " + Loc.t(r, str(_pt.get("reformas", {}).get(r, Eu4Importer.pretty_key(r, "_reform"))))
 			vb.add_child(l)
 	var pc: String = c.get("primary_culture", "")
-	_txt(_gov, "monarch_cultures", "Cultura principal: " + _culture_name(pc) if pc != "" else "")
+	_txt(_gov, "monarch_cultures", Loc.t("HINT_PRIMARYCULTURE_TITLE", "Cultura principal") + ": " + _culture_name(pc) if pc != "" else "")
 	# culturas: aceitas e as outras presentes nas províncias, com o desenvolvimento
 	var dev := {}
 	for p in map.provinces:
@@ -424,13 +432,13 @@ func _fill_gov() -> void:
 	var rid: String = c.get("religion", "")
 	var rt := map.icon_texture("religion:" + rid)
 	if rt:
-		boxes[0].add_child(MapView.icon_rect(rt, 30, "Religião: " + str(map.religions.get(rid, {}).get("name", rid))))
+		boxes[0].add_child(MapView.icon_rect(rt, 30, Loc.t("RELIGION", "Religião") + ": " + str(map.religions.get(rid, {}).get("name", rid))))
 	if institutions and institutions.enabled() and boxes.size() > 1:
 		for inst in institutions.list:
 			if institutions.has_embraced(tag, inst["id"]):
 				var t := map.icon_texture("inst:" + inst["id"])
 				if t:
-					boxes[1].add_child(MapView.icon_rect(t, 30, inst["name"] + " (adotada)"))
+					boxes[1].add_child(MapView.icon_rect(t, 30, inst["name"] + Loc.s(" (adotada)", " (embraced)")))
 	if power and boxes.size() > 2:
 		var k := 2
 		for g in power.adopted(tag):
@@ -449,5 +457,5 @@ func _culture_list(n: String, ids: Array, dev: Dictionary) -> void:
 			_hide(rows[i], h)
 		var cid: String = ids[i]
 		var grp := str(map.cultures.get(cid, {}).get("group", ""))
-		_txt(rows[i], "name", _culture_name(cid), "Grupo: " + grp if grp != "" else "")
+		_txt(rows[i], "name", _culture_name(cid), Loc.t("GROUP", "Grupo") + ": " + Loc.t(grp, grp) if grp != "" else "")
 		_txt(rows[i], "dev", str(dev.get(cid, 0)))

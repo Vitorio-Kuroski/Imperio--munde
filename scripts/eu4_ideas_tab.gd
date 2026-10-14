@@ -39,7 +39,7 @@ func _first_value(m: Dictionary) -> String:
 	var k: String = m.keys()[0]
 	var v := float(m[k])
 	# como no EU4: efeitos fracionários em porcentagem com uma casa ("+20,0%"), os outros com duas ("+1,00")
-	return (("%+.1f%%" % (v * 100.0)) if absf(v) < 1.0 and v != floorf(v) else ("%+.2f" % v)).replace(".", ",")
+	return (("%+.1f%%" % (v * 100.0)) if absf(v) < 1.0 and v != floorf(v) else ("%+.2f" % v)).replace(".", Loc.dec)
 
 
 func _idea_icon(idea: Dictionary, px: int, on: bool, tip: String) -> TextureRect:
@@ -56,7 +56,7 @@ func fill(tag: String) -> void:
 	var map := view.map
 	var power := view.power
 	var c: Dictionary = map.countries[tag]
-	view._txt(root, "window_title", "Ideias — " + c["name"])
+	view._txt(root, "window_title", Loc.t("HEADER_IDEAS", "Ideias") + " — " + c["name"])
 	# ideias nacionais
 	var nat: Dictionary = power.national_ideas.get(c.get("ideas", ""), {}) if power else {}
 	var shield := root.find_child("unique_ideas_category", true, false) as Eu4Gui.Button2
@@ -66,7 +66,7 @@ func fill(tag: String) -> void:
 		shield.set_flag(ImageTexture.create_from_image(img) if img else null)
 	var un := power.national_unlocked(tag) if power and power.state.has(tag) else 0
 	view._txt(root, "unique_ideas_idea_title", str(nat.get("name", "Ideias nacionais")) if not nat.is_empty() \
-			else "Sem ideias nacionais")
+			else Loc.s("Sem ideias nacionais", "No national ideas"))
 	var start: Dictionary = nat.get("start", {})
 	var keys := start.keys()
 	for i in 2:
@@ -76,8 +76,8 @@ func fill(tag: String) -> void:
 			if ic:
 				ic.show()
 				ic.set_tex(map.icon_texture("mod:" + str(keys[i])))
-				ic.tooltip_text = "Tradição: " + _mods_text(one)
-			view._txt(root, "unique_ideas_start_desc_%d" % (i + 1), _first_value(one), "Tradição: " + _mods_text(one))
+				ic.tooltip_text = Loc.t("ND_TRADITIONS", "Tradição") + ": " + _mods_text(one)
+			view._txt(root, "unique_ideas_start_desc_%d" % (i + 1), _first_value(one), Loc.t("ND_TRADITIONS", "Tradição") + ": " + _mods_text(one))
 		else:
 			if ic:
 				ic.hide()
@@ -88,8 +88,8 @@ func fill(tag: String) -> void:
 		bi.visible = not bonus.is_empty()
 		if not bonus.is_empty():
 			bi.set_tex(map.icon_texture("mod:" + str(bonus.keys()[0])))
-			bi.tooltip_text = "Ambição: " + _mods_text(bonus)
-	view._txt(root, "unique_ideas_bonus_desc", _first_value(bonus), "Ambição: " + _mods_text(bonus))
+			bi.tooltip_text = Loc.t("ND_AMBITION", "Ambição") + ": " + _mods_text(bonus)
+	view._txt(root, "unique_ideas_bonus_desc", _first_value(bonus), Loc.t("ND_AMBITION", "Ambição") + ": " + _mods_text(bonus))
 	var box := root.find_child("unique_ideas", true, false) as Control
 	if box:
 		Eu4TechTab._clear(box)
@@ -103,11 +103,11 @@ func fill(tag: String) -> void:
 		for i in nat.get("ideas", []).size():
 			var idea: Dictionary = nat["ideas"][i]
 			box.add_child(_idea_icon(idea, 64, i < un, "%s: %s%s" % [idea["name"], _mods_text(idea["modifiers"]),
-					"" if i < un else " (liberada a cada 3 ideias de grupo)"]))
+					"" if i < un else Loc.s(" (liberada a cada 3 ideias de grupo)", " (unlocked every 3 group ideas)")]))
 	var up := root.find_child("idea_unique_progress", true, false) as Eu4Gui.Progress
 	if up:
 		up.set_value(un / 7.0)
-		up.tooltip_text = "%d/7 ideias nacionais" % un
+		up.tooltip_text = Loc.s("%d/7 ideias nacionais", "%d/7 national ideas") % un
 	# todas as vagas de grupos (como no EU4), alternando esquerda e direita: grupo adotado, vaga livre
 	# ou "Liberada em <tecnologia administrativa> (nível)"
 	var slots := power.idea_slots(tag) if power and power.state.has(tag) else 0
@@ -127,7 +127,7 @@ func _unlock_tech(k: int) -> Array:
 	var sa: PackedInt32Array = view.power._slots_at
 	for lvl in sa.size():
 		if sa[lvl] >= k + 1:
-			var names: Array = _pt.get("nomes", {}).get("adm", [])
+			var names: Array = _pt.get("nomes", {}).get("adm", []) if not Loc.active() else []
 			var techs: Array = view.map.technologies.get("adm", [])
 			var nm := str(names[lvl]) if lvl < names.size() else (str(techs[lvl].get("name", "")) if lvl < techs.size() else "")
 			return [lvl, nm]
@@ -152,16 +152,19 @@ func _slot(list: Control, tag: String, adopted: Array, slots: int, k: int) -> vo
 	var glow := row.find_child("available_idea_glow", true, false) as Control
 	var free := k < slots
 	if free:
-		view._txt(row, "txt", "Escolher um grupo de ideias" if tag == view.player else "Vaga livre")
+		view._txt(row, "txt", Loc.s("Escolher um grupo de ideias", "Pick an idea group") if tag == view.player \
+				else Loc.t("CV_IDEAS_GROUP_UNLOCK", "Vaga livre"))
 		if b:
 			b.pressed.connect(func(): choose_group_requested.emit(tag))
 	else:
 		var u := _unlock_tech(k)
-		view._txt(row, "txt", ("Liberada em\n%s (%d)" % [u[1], u[0]]) if not u.is_empty() else "Bloqueada")
+		view._txt(row, "txt", Loc.f("CV_IDEAS_UNLOCK_ADM_LEVEL", {"NAME": "%s (%d)" % [u[1], u[0]]}, "Liberada em\n%s (%d)" % [u[1], u[0]]) if not u.is_empty() \
+				else Loc.t("REFORM_LEVEL_LOCKED", "Bloqueada"))
 		if b:
 			b.disabled = true
 			b.modulate = Color(0.62, 0.62, 0.62)
-			b.tooltip_text = "Vaga liberada pela tecnologia administrativa %d" % u[0] if not u.is_empty() else ""
+			b.tooltip_text = Loc.s("Vaga liberada pela tecnologia administrativa %d", "Slot unlocked by administrative technology %d") % u[0] \
+					if not u.is_empty() else ""
 	if glow:
 		glow.visible = free and tag == view.player
 	var l := row.find_child("txt", true, false) as Label
@@ -182,7 +185,7 @@ func _group(row: Control, tag: String, g: Dictionary) -> void:
 	var cat: Eu4Gui.Icon = row.find_child("ideas_category", true, false) as Eu4Gui.Icon
 	if cat:
 		cat.set_tex(map.icon_texture("group:" + g["id"]))
-		cat.tooltip_text = "Bônus do grupo completo: " + _mods_text(grp.get("bonus", {}))
+		cat.tooltip_text = Loc.s("Bônus do grupo completo: ", "Full group bonus: ") + _mods_text(grp.get("bonus", {}))
 	var cost := row.find_child("ideas_cost", true, false) as Eu4Gui.Icon
 	var c: String = grp.get("category", "adm")
 	if cost and view.gui.sprites.has(POWER_ICONS.get(c, "")):
@@ -202,7 +205,8 @@ func _group(row: Control, tag: String, g: Dictionary) -> void:
 			var tip := "%s: %s" % [idea["name"], _mods_text(idea["modifiers"])]
 			var can_buy: bool = i == n and tag == view.player and power.can_buy_idea(tag, g["id"])
 			if i == n:
-				tip += "\n(próxima: %d pontos %s%s)" % [power.idea_cost(tag), c, "; clique para comprar" if can_buy else ""]
+				tip += Loc.s("\n(próxima: %d pontos %s%s)", "\n(next: %d %s points%s)") % [power.idea_cost(tag), c,
+						Loc.s("; clique para comprar", "; click to buy") if can_buy else ""]
 			var r := _idea_icon(idea, 28, i < n, tip)
 			if can_buy:
 				r.modulate = Color(1, 1, 0.75)
