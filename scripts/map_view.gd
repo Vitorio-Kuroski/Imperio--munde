@@ -22,8 +22,8 @@ const TERRAIN_COLORS := {
 	"pântano": Color8(90, 120, 100),
 }
 
-enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO, PRODUTOS }
-const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião", "produtos"]
+enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO, PRODUTOS, COMERCIO }
+const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião", "produtos", "comércio"]
 
 var map_w: int
 var map_h: int
@@ -36,6 +36,11 @@ var religions: Dictionary = {}     # id -> dict (name, group, color); vazio se o
 var religion_index: Dictionary = {} # id -> 1..N (0 = nenhuma)
 var trade_goods: Dictionary = {}   # id -> dict (name, color, price); vazio se o mapa não tiver produtos
 var trade_good_index: Dictionary = {} # id -> 1..N (0 = nenhum)
+var trade_nodes: Dictionary = {}   # id -> dict (name, color, location, inland, end, outgoing)
+var trade_node_index: Dictionary = {} # id -> 1..N (0 = nenhum)
+var buildings: Dictionary = {}     # id -> dict (name, cost, time, modifiers, replaces, goods)
+var trade_flows: TradeFlows        # setas do modo comércio
+var _building_pt := {}             # rótulos dos efeitos (data/construcoes_pt.json)
 var id_image: Image
 var palette_image: Image
 var palette_tex: ImageTexture
@@ -85,6 +90,13 @@ func load_map(map_scale: float) -> void:
 		trade_goods[g["id"]] = g
 		trade_good_index[g["id"]] = n
 		n += 1
+	n = 1
+	for t in data.get("trade_nodes", []):
+		trade_nodes[t["id"]] = t
+		trade_node_index[t["id"]] = n
+		n += 1
+	for b in data.get("buildings", []):
+		buildings[b["id"]] = b
 
 	var ids_tex: Texture2D
 	if ids_path.begins_with("user://"):
@@ -112,6 +124,12 @@ func load_map(map_scale: float) -> void:
 	centered = false
 	scale = Vector2(map_scale, map_scale)
 
+	if not trade_nodes.is_empty():
+		trade_flows = TradeFlows.new()
+		trade_flows.visible = false
+		add_child(trade_flows)
+		trade_flows.setup(self)
+
 
 func province_color(pid: int) -> Color:
 	var p: Dictionary = provinces[pid]
@@ -125,6 +143,8 @@ func province_color(pid: int) -> Color:
 		return religion_color(p.get("religion", ""))
 	if map_mode == MapMode.PRODUTOS:
 		return trade_good_color(p.get("trade_goods", ""))
+	if map_mode == MapMode.COMERCIO:
+		return trade_node_color(p.get("trade_node", ""))
 	var tag: String = p["owner"]
 	if tag == "" or not countries.has(tag):
 		return UNOWNED_COLOR
@@ -153,6 +173,41 @@ func trade_good_color(gid: String) -> Color:
 	return Color8(int(c[0]), int(c[1]), int(c[2]))
 
 
+func trade_node_color(nid: String) -> Color:
+	if not trade_nodes.has(nid):
+		return UNOWNED_COLOR
+	var c: Array = trade_nodes[nid]["color"]
+	return Color8(int(c[0]), int(c[1]), int(c[2]))
+
+
+## Efeitos de uma construção em texto ("nível de forte +2, imposto +40%").
+func building_effects(bid: String) -> String:
+	if not buildings.has(bid):
+		return ""
+	if _building_pt.is_empty() and FileAccess.file_exists("res://data/construcoes_pt.json"):
+		_building_pt = JSON.parse_string(FileAccess.get_file_as_string("res://data/construcoes_pt.json"))
+	var labels: Dictionary = _building_pt.get("efeitos", {})
+	var absolute: Array = _building_pt.get("absolutos", [])
+	var parts := []
+	var mods: Dictionary = buildings[bid].get("modifiers", {})
+	for k in mods:
+		var v = mods[k]
+		if not (v is float or v is int) or not labels.has(k):
+			continue
+		var txt: String
+		if k in absolute:
+			txt = ("%+d" % v) if float(v) == floorf(v) else ("%+.2f" % v)
+		else:
+			txt = "%+d%%" % roundi(v * 100.0)
+		parts.append("%s %s" % [labels[k], txt.replace(".", ",")])
+	if buildings[bid].has("goods"):
+		var names := []
+		for g in buildings[bid]["goods"]:
+			names.append(trade_goods[g]["name"] if trade_goods.has(g) else g)
+		parts.append("produção de " + ", ".join(names))
+	return ", ".join(parts)
+
+
 ## O modo de mapa tem dados neste mapa? (cultura e religião só existem em alguns mapas)
 func has_map_mode(mode: MapMode) -> bool:
 	match mode:
@@ -162,6 +217,8 @@ func has_map_mode(mode: MapMode) -> bool:
 			return not religions.is_empty()
 		MapMode.PRODUTOS:
 			return not trade_goods.is_empty()
+		MapMode.COMERCIO:
+			return not trade_nodes.is_empty()
 	return true
 
 
@@ -176,7 +233,9 @@ func _write_palette(pid: int) -> void:
 	palette_image.set_pixel(pid, 2, Color((owner_idx >> 8) / 255.0, (rel_idx & 255) / 255.0,
 			(rel_idx >> 8) / 255.0, 1.0))
 	var good_idx: int = trade_good_index.get(p.get("trade_goods", ""), 0)
-	palette_image.set_pixel(pid, 3, Color((good_idx & 255) / 255.0, (good_idx >> 8) / 255.0, 0.0, 1.0))
+	var node_idx: int = trade_node_index.get(p.get("trade_node", ""), 0)
+	palette_image.set_pixel(pid, 3, Color((good_idx & 255) / 255.0, (good_idx >> 8) / 255.0,
+			(node_idx & 255) / 255.0, (node_idx >> 8) / 255.0))
 	palette_image.set_pixel(pid, 1, Color((owner_idx & 255) / 255.0, (cult_idx & 255) / 255.0,
 			(cult_idx >> 8) / 255.0, 1.0 if p["sea"] else 0.0))
 
@@ -200,6 +259,10 @@ func set_map_mode(mode: MapMode) -> void:
 		bm = 2
 	elif mode == MapMode.PRODUTOS:
 		bm = 3
+	elif mode == MapMode.COMERCIO:
+		bm = 4
+	if trade_flows:
+		trade_flows.visible = mode == MapMode.COMERCIO
 	mat.set_shader_parameter("border_mode", bm)
 	for p in provinces:
 		_write_palette(int(p["id"]))

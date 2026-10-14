@@ -72,7 +72,7 @@ func _build_ui() -> void:
 	hb.add_child(spacer)
 
 	mode_button = Button.new()
-	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura, religião, produtos (T)"
+	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura, religião, produtos, comércio (T)"
 	mode_button.pressed.connect(_toggle_map_mode)
 	hb.add_child(mode_button)
 
@@ -110,6 +110,8 @@ func _build_ui() -> void:
 	side_panel.custom_minimum_size = Vector2(300, 150)
 	ui.add_child(side_panel)
 	info_label = Label.new()
+	info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info_label.custom_minimum_size.x = 340
 	info_label.text = "Clique em uma província."
 	side_panel.add_child(info_label)
 	side_panel.hide()
@@ -293,7 +295,7 @@ func _refresh_top_bar() -> void:
 	mode_button.text = "Mapa: %s" % MapView.MAP_MODE_NAMES[map.map_mode]
 
 
-## Alterna político -> terreno -> cultura -> religião -> produtos -> político (pula os modos sem dados no mapa).
+## Alterna político -> terreno -> cultura -> religião -> produtos -> comércio -> político (pula os modos sem dados no mapa).
 func _toggle_map_mode() -> void:
 	var mode := map.map_mode
 	for i in MapView.MAP_MODE_NAMES.size():
@@ -324,6 +326,15 @@ func _show_province(pid: int) -> void:
 		var gid: String = p.get("trade_goods", "")
 		if map.trade_goods.has(gid):
 			txt += "\nProduto: %s (preço %s)" % [map.trade_goods[gid]["name"], _num(map.trade_goods[gid]["price"])]
+		var nid: String = p.get("trade_node", "")
+		if map.trade_nodes.has(nid):
+			txt += "\nNó de comércio: %s" % map.trade_nodes[nid]["name"]
+		if int(p.get("center_of_trade", 0)) > 0:
+			txt += "\nCentro de comércio nível %d" % int(p["center_of_trade"])
+		for bid in p.get("buildings", []):
+			if map.buildings.has(bid):
+				var eff := map.building_effects(bid)
+				txt += "\nConstrução: %s" % map.buildings[bid]["name"] + (" (%s)" % eff if eff != "" else "")
 		var cid: String = p.get("culture", "")
 		if map.cultures.has(cid):
 			var grp: String = map.cultures[cid]["group"]
@@ -336,6 +347,13 @@ func _show_province(pid: int) -> void:
 			txt += "\nCosteira"
 	info_label.text = txt
 	side_panel.show()
+	_fit_side_panel.call_deferred()
+
+
+## Ajusta o painel ao texto, mantendo-o colado no canto inferior esquerdo.
+func _fit_side_panel() -> void:
+	side_panel.reset_size()
+	side_panel.position.y = get_viewport_rect().size.y - side_panel.size.y - 12
 
 
 ## Número com vírgula decimal (2.5 -> "2,5"; 3.0 -> "3").

@@ -93,7 +93,8 @@ func _rel(p: String) -> String:
 	if rel.begins_with("map/"):
 		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
-			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/"]:
+			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
+			"common/buildings/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -441,6 +442,12 @@ func _import() -> String:
 	idimg = null
 	out = PackedByteArray()
 
+	# ---- construções (common/buildings)
+	var buildings := _buildings()
+	var bids := {}
+	for b in buildings:
+		bids[b["id"]] = true
+
 	# ---- história das províncias (dono, cultura, religião, desenvolvimento)
 	var owner := {}
 	var culture := {}
@@ -448,6 +455,8 @@ func _import() -> String:
 	var dev := {}
 	var dev_parts := {}             # id -> [imposto, produção, efetivo]
 	var goods := {}
+	var prov_buildings := {}
+	var cot := {}                   # centro de comércio (nível)
 	var files := _list("history/provinces/")
 	for fi in files.size():
 		if fi % 200 == 0:
@@ -472,6 +481,15 @@ func _import() -> String:
 		for k in ["base_tax", "base_production", "base_manpower"]:
 			parts.append(int(round(float(str(st.get(k, "0"))))))
 		dev_parts[pid] = parts
+		var have := []
+		for b in bids:
+			if st.get(b) is String and st[b] == "yes":
+				have.append(b)
+		if not have.is_empty():
+			prov_buildings[pid] = have
+		var c := int(float(str(st.get("center_of_trade", "0"))))
+		if c > 0:
+			cot[pid] = c
 		dev[pid] = parts[0] + parts[1] + parts[2]
 
 	# ---- localização (opcional)
@@ -563,6 +581,8 @@ func _import() -> String:
 	# ---- religiões (grupos e cores de common/religions; nomes em português de data/religioes_pt.json)
 	var religions := _religions(religion.values(), loc)
 	var trade_goods := _trade_goods(goods.values(), loc)
+	var node_of := {}
+	var trade_nodes := _trade_nodes(loc, node_of)
 
 	# ---- map.json
 	_set_status("Gravando os dados...")
@@ -598,6 +618,12 @@ func _import() -> String:
 			prov["base_tax"] = parts[0]
 			prov["base_production"] = parts[1]
 			prov["base_manpower"] = parts[2]
+			if prov_buildings.has(pid):
+				prov["buildings"] = prov_buildings[pid]
+			if cot.has(pid):
+				prov["center_of_trade"] = cot[pid]
+		if node_of.has(pid):
+			prov["trade_node"] = node_of[pid]
 			var coastal := false
 			for q in neigh[pid]:
 				if sea.has(q):
@@ -609,10 +635,129 @@ func _import() -> String:
 	if f == null:
 		return "Não consegui gravar " + OUT_DIR + "/map.json"
 	f.store_string(JSON.stringify({"width": w, "height": h, "countries": countries, "cultures": cultures,
-			"religions": religions, "trade_goods": trade_goods, "provinces": provinces}))
+			"religions": religions, "trade_goods": trade_goods, "trade_nodes": trade_nodes, "buildings": buildings,
+			"provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
+
+
+## Nós de comércio {id, name, color, location, inland, end, outgoing: [{to, path}]} de common/tradenodes;
+## preenche node_of (província -> nó). Nomes de data/nos_comercio_pt.json.
+func _trade_nodes(loc: Dictionary, node_of: Dictionary) -> Array:
+	var pt := _json("res://data/nos_comercio_pt.json")
+	var out := []
+	for f in _list("common/tradenodes/"):
+		for n in _parse(_text(f)):
+			if not (n[1] is Array):
+				continue
+			var nid: String = n[0]
+			var node := {"id": nid, "name": pt.get(nid, loc.get(nid, nid.capitalize())), "color": hashed_color(nid),
+					"location": 0, "inland": false, "end": false, "outgoing": []}
+			for kv in n[1]:
+				match kv[0]:
+					"location":
+						if str(kv[1]).is_valid_int():
+							node["location"] = int(kv[1])
+					"color":
+						var col := _numbers(kv[1])
+						if col.size() >= 3:
+							if col[0] <= 1.0 and col[1] <= 1.0 and col[2] <= 1.0:
+								col = [col[0] * 255, col[1] * 255, col[2] * 255]
+							node["color"] = [mini(255, int(col[0] + 0.5)), mini(255, int(col[1] + 0.5)),
+									mini(255, int(col[2] + 0.5))]
+					"inland", "end":
+						node[kv[0]] = kv[1] is String and kv[1] == "yes"
+					"outgoing":
+						if kv[1] is Array:
+							var to := ""
+							var path := []
+							for x in kv[1]:
+								if x[0] == "name":
+									to = str(x[1])
+								elif x[0] == "path" and x[1] is Array:
+									for y in x[1]:
+										if y[0] == "" and str(y[1]).is_valid_int():
+											path.append(int(y[1]))
+							node["outgoing"].append({"to": to, "path": path})
+					"members":
+						if kv[1] is Array:
+							for y in kv[1]:
+								if y[0] == "" and str(y[1]).is_valid_int() and not node_of.has(int(y[1])):
+									node_of[int(y[1])] = nid
+			out.append(node)
+	return out
+
+
+## Construções de common/buildings: {id, name, cost, time, modifiers, replaces?, goods?, one_per_country?}.
+func _buildings() -> Array:
+	var pt: Dictionary = _json("res://data/construcoes_pt.json").get("nomes", {})
+	var out := []
+	var by_id := {}
+	for f in _list("common/buildings/"):
+		for bk in _parse(_text(f)):
+			if not (bk[1] is Array):
+				continue
+			var b := {"id": bk[0], "name": pt.get(bk[0], (bk[0] as String).capitalize())}
+			var mods := {}
+			for kv in bk[1]:
+				match kv[0]:
+					"cost", "time":
+						if str(kv[1]).is_valid_float():
+							b[kv[0]] = _int_if_whole(float(kv[1]))
+					"modifier":
+						if kv[1] is Array:
+							for m in kv[1]:
+								if m[0] != "" and m[1] is String:
+									if m[1] == "yes":
+										mods[m[0]] = true
+									elif (m[1] as String).is_valid_float():
+										mods[m[0]] = _int_if_whole(float(m[1]))
+									else:
+										mods[m[0]] = m[1]
+					"make_obsolete":
+						if kv[1] is String:
+							b["replaces"] = kv[1]
+					"manufactory":
+						if kv[1] is Array:
+							var g := []
+							for x in kv[1]:
+								if x[0] == "":
+									g.append(x[1])
+							b["goods"] = g
+					"one_per_country":
+						if kv[1] is String and kv[1] == "yes":
+							b["one_per_country"] = true
+			b["modifiers"] = mods
+			out.append(b)
+			by_id[b["id"]] = b
+	# manufaturas especiais herdam custo e tempo da "manufactory"
+	for b in out:
+		if b.has("goods") and not b.has("cost") and by_id.has("manufactory"):
+			for k in ["cost", "time"]:
+				if by_id["manufactory"].has(k):
+					b[k] = by_id["manufactory"][k]
+	return out
+
+
+func _int_if_whole(x: float) -> Variant:
+	return int(x) if x == floorf(x) else x
+
+
+func _numbers(v: Variant) -> Array:
+	var out := []
+	if v is Array:
+		for x in v:
+			if x[0] == "" and str(x[1]).is_valid_float():
+				out.append(float(x[1]))
+	return out
+
+
+func _json(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var d = JSON.parse_string(FileAccess.get_file_as_string(path))
+	return d if d is Dictionary else {}
 
 
 ## Lista de produtos {id, name, color, price}: os de common/tradegoods (cor) com o preço base de

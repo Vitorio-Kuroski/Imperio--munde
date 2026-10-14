@@ -9,6 +9,8 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   common/cultures/*.txt                        (grupos de cultura; opcional)
   common/religions/*.txt                       (religioes, grupos e cores; opcional)
   common/tradegoods/*.txt, common/prices/*.txt (produtos, cores e precos; opcional)
+  common/tradenodes/*.txt                      (nos de comercio e para onde o comercio corre; opcional)
+  common/buildings/*.txt                       (construcoes: custo, tempo, efeitos; opcional)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -126,6 +128,33 @@ def state_at(items, cutoff):
                 else:
                     st[k2] = v2
     return st
+
+
+def parse_building(bid, items, names):
+    """Construcao de common/buildings: custo, tempo (meses), efeitos (modifier), o que substitui."""
+    def num(v):
+        try:
+            f = float(v)
+            return int(f) if f == int(f) else f
+        except (TypeError, ValueError):
+            return None
+    b = {"id": bid, "name": names.get(bid) or bid.replace("_", " ").capitalize()}
+    mods = {}
+    for k, v in items:
+        if k in ("cost", "time") and num(v) is not None:
+            b[k] = num(v)
+        elif k == "modifier" and isinstance(v, list):
+            for mk, mv in v:
+                if mk and isinstance(mv, str):
+                    mods[mk] = True if mv == "yes" else (num(mv) if num(mv) is not None else mv)
+        elif k == "make_obsolete" and isinstance(v, str):
+            b["replaces"] = v
+        elif k == "manufactory" and isinstance(v, list):
+            b["goods"] = [x for kk, x in v if kk is None]
+        elif k == "one_per_country" and v == "yes":
+            b["one_per_country"] = True
+    b["modifiers"] = mods
+    return b
 
 
 def ids_in_block(text, name):
@@ -291,12 +320,29 @@ def main():
         del hm
     del ids
 
+    # ---------------------------------------------------------- construcoes (common/buildings)
+    with open("data/construcoes_pt.json", encoding="utf-8") as f:
+        build_pt = json.load(f)["nomes"]
+    buildings = []
+    for bf in sorted(glob.glob(os.path.join(root, "common", "buildings", "*.txt"))):
+        for bname, bval in parse_script(read_text(bf)):
+            if isinstance(bval, list):
+                buildings.append(parse_building(bname, bval, build_pt))
+    bmap = {b["id"]: b for b in buildings}
+    for b in buildings:     # manufaturas especiais herdam custo e tempo da "manufactory"
+        if "goods" in b and "cost" not in b and "manufactory" in bmap:
+            for k in ("cost", "time"):
+                if k in bmap["manufactory"]:
+                    b[k] = bmap["manufactory"][k]
+
     # ---------------------------------------------------------- historia das provincias (dono em 1444)
     print("Lendo historia das provincias...", flush=True)
     owner = {}
     dev = {}
     dev_parts = {}      # pid -> (imposto, producao, efetivo)
     goods = {}
+    prov_buildings = {}
+    cot = {}            # centro de comercio (nivel)
     culture = {}
     religion = {}
     for f in glob.glob(os.path.join(root, "history", "provinces", "*.txt")):
@@ -321,6 +367,14 @@ def main():
             except (TypeError, ValueError):
                 parts.append(0)
         dev_parts[pid] = tuple(parts)
+        have = [b for b in bmap if st.get(b) == "yes"]
+        if have:
+            prov_buildings[pid] = have
+        try:
+            if int(float(st.get("center_of_trade", 0) or 0)) > 0:
+                cot[pid] = int(float(st["center_of_trade"]))
+        except (TypeError, ValueError):
+            pass
         dev[pid] = sum(parts)
 
     # ---------------------------------------------------------- paises
@@ -471,6 +525,38 @@ def main():
         trade_goods.append({"id": gid, "name": goods_pt.get(gid) or pretty(gid), "color": hashed_color(gid),
                             "price": prices.get(gid, 1.0)})
 
+    # ---------------------------------------------------------- nos de comercio (common/tradenodes)
+    with open("data/nos_comercio_pt.json", encoding="utf-8") as f:
+        node_pt = json.load(f)
+    trade_nodes, node_of = [], {}
+    for nf in sorted(glob.glob(os.path.join(root, "common", "tradenodes", "*.txt"))):
+        for nname, nval in parse_script(read_text(nf)):
+            if not isinstance(nval, list):
+                continue
+            node = {"id": nname, "name": node_pt.get(nname) or pretty(nname), "color": hashed_color(nname),
+                    "location": 0, "inland": False, "end": False, "outgoing": []}
+            for k, v in nval:
+                if k == "location" and isinstance(v, str) and v.isdigit():
+                    node["location"] = int(v)
+                elif k == "color" and isinstance(v, list):
+                    vals = [float(x) for kk, x in v if kk is None and re.fullmatch(r"-?[\d.]+", x)]
+                    if len(vals) >= 3:
+                        if max(vals[:3]) <= 1.0:
+                            vals = [x * 255 for x in vals]
+                        node["color"] = [min(255, int(x + 0.5)) for x in vals[:3]]
+                elif k in ("inland", "end") and v == "yes":
+                    node[k] = True
+                elif k == "outgoing" and isinstance(v, list):
+                    to = next((x for kk, x in v if kk == "name" and isinstance(x, str)), "")
+                    path = next((x for kk, x in v if kk == "path" and isinstance(x, list)), [])
+                    node["outgoing"].append({"to": to, "path": [int(x) for kk, x in path
+                                                                 if kk is None and x.isdigit()]})
+                elif k == "members" and isinstance(v, list):
+                    for kk, x in v:
+                        if kk is None and x.isdigit():
+                            node_of.setdefault(int(x), nname)
+            trade_nodes.append(node)
+
     # ---------------------------------------------------------- map.json
     provinces = []
     for pid in range(n_prov):
@@ -495,6 +581,12 @@ def main():
             prov["culture"] = culture.get(pid, "")
             prov["religion"] = religion.get(pid, "")
             prov["trade_goods"] = goods.get(pid, "")
+            if pid in prov_buildings:
+                prov["buildings"] = prov_buildings[pid]
+            if pid in cot:
+                prov["center_of_trade"] = cot[pid]
+        if pid in node_of:
+            prov["trade_node"] = node_of[pid]
             prov["base_tax"], prov["base_production"], prov["base_manpower"] = dev_parts.get(pid, (0, 0, 0))
             prov["coastal"] = any(q in sea_ids for q in neigh[pid])
             prov["base_development"] = prov["development"]
@@ -502,7 +594,8 @@ def main():
 
     with open("data/eu4/map.json", "w", encoding="utf-8") as f:
         json.dump({"width": W, "height": H, "countries": countries, "cultures": cultures,
-                   "religions": religions, "trade_goods": trade_goods, "provinces": provinces},
+                   "religions": religions, "trade_goods": trade_goods, "trade_nodes": trade_nodes,
+                   "buildings": buildings, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])
