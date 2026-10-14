@@ -47,6 +47,7 @@ var power: MonarchPower
 var economy: Economy
 var advisors: Advisors
 var institutions: Institutions
+var religion: Religion            # main.gd define (conversão religiosa)
 var fmt_mods: Callable              # efeitos -> texto (IdeasWindow.fmt_mods)
 var player := ""                    # país do jogador (só ele pesquisa e compra ideias)
 var tag := ""

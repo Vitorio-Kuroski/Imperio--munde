@@ -992,6 +992,7 @@ const TRADE_DEFINES := ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRAD
 		"TRADE_ADDED_VALUE_MODIFER", "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
 		"MERCHANT_MAX_POWER_BONUS"]
 const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_power"],
+		["development", "local_missionary_strength", "dev_missionary_strength"],
 		["coastal", "province_trade_power_modifier", "coastal_trade_power"],
 		["mercantilism", "global_prov_trade_power_modifier", "mercantilism_trade_power"],
 		["base_values", "merchants", "base_merchants"]]

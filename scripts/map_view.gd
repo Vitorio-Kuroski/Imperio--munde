@@ -474,6 +474,13 @@ func set_owner_of(pid: int, tag: String) -> void:
 	palette_tex.update(palette_image)
 
 
+## Muda a religião da província (conversão) e atualiza a paleta (modo religião).
+func set_religion_of(pid: int, rid: String) -> void:
+	provinces[pid]["religion"] = rid
+	_write_palette(pid)
+	palette_tex.update(palette_image)
+
+
 ## Troca o modo de mapa (reescreve a paleta inteira uma vez; as bordas de país continuam).
 func set_map_mode(mode: MapMode) -> void:
 	if mode == map_mode:

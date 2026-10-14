@@ -13,6 +13,7 @@ var economy := Economy.new()
 var advisors := Advisors.new()
 var institutions := Institutions.new()
 var trade := Trade.new()
+var religion := Religion.new()
 var diplomacy := Diplomacy.new()
 var camera: Camera2D
 var player_tag := ""
@@ -59,6 +60,8 @@ func _ready() -> void:
 	economy.diplomacy = diplomacy
 	trade.setup(map, power)
 	economy.trade = trade
+	religion.setup(map, clock, power, economy)
+	economy.religion = religion
 	trade.recompute()
 	economy._recount()
 	power.economy = economy
@@ -132,6 +135,7 @@ func _setup_eu4_hud() -> void:
 		country_view.economy = economy
 		country_view.advisors = advisors
 		country_view.institutions = institutions
+		country_view.religion = religion
 		country_view.fmt_mods = ideas_window.fmt_mods
 		country_view.techs_requested.connect(func(t: String):
 			ideas_window.hide()
@@ -321,6 +325,7 @@ func _build_ui() -> void:
 			map.refresh_colors()
 		refresh_all.call(_t))
 	economy.changed.connect(refresh_all)
+	religion.changed.connect(refresh_all)
 	advisors.changed.connect(func(t):
 		if t == player_tag:
 			refresh_all.call(t))

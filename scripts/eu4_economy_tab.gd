@@ -207,7 +207,9 @@ func fill(tag: String) -> void:
 			"interest": "%d empréstimo(s), dívida de %s ducados" % [eco.loan_count(tag), AdvisorsWindow._n(eco.debt(tag))],
 			"diplomatic": "Taxa paga ao suserano" if eco.vassal_fee(tag) > 0.0 else "Nenhum",
 			"corruption": "Corrupção atual: %s (a barra cheia gasta 0,05 ducado por desenvolvimento e tira 1 por ano)" \
-					% AdvisorsWindow._n(eco.corruption_of(tag))}
+					% AdvisorsWindow._n(eco.corruption_of(tag)),
+			"missionaries": ("%d missionário(s) convertendo (0,5 + 5%% do desenvolvimento da província por mês)" \
+					% view.religion.missions.get(tag, {}).size()) if view.religion else ""}
 	for it in EXPENSES:
 		_line(expenses, it[1], float(exp.get(it[0], 0.0)), "", BAD, etips.get(it[0], "Ainda não existe no jogo"))
 		if it[2]:
@@ -221,6 +223,13 @@ func fill(tag: String) -> void:
 					sl.tooltip_text = "Combate à corrupção: %d%%" % roundi(sl.value * 100.0)
 					sl.value_changed.connect(func(v: float):
 						eco.set_root_out(tag, v)
+						view.refresh())
+				elif sl and it[0] == "missionaries" and view.religion:
+					sl.set_value(view.religion.budget_of(tag))
+					sl.editable = mine
+					sl.tooltip_text = "Missionários: %d%% (menos gasto, conversão mais lenta)" % roundi(sl.value * 100.0)
+					sl.value_changed.connect(func(v: float):
+						view.religion.set_budget(tag, v)
 						view.refresh())
 				elif sl:
 					sl.tooltip_text = "Manutenção: 100% (ainda não ajustável)"

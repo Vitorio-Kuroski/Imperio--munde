@@ -375,6 +375,7 @@ TRADE_DEFINES = ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCH
                  "MERCHANT_MAX_POWER_BONUS"]
 # modificadores estaticos usados no comercio: (bloco, efeito, chave no map.json)
 TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power"),
+                ("development", "local_missionary_strength", "dev_missionary_strength"),
                 ("coastal", "province_trade_power_modifier", "coastal_trade_power"),
                 ("mercantilism", "global_prov_trade_power_modifier", "mercantilism_trade_power"),
                 ("base_values", "merchants", "base_merchants")]
