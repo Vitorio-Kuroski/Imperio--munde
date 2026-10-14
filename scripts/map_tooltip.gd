@@ -1,7 +1,7 @@
 class_name MapTooltip
 extends PanelContainer
 ## Dica que segue o mouse sobre o mapa. Mostra a província e, conforme o modo de mapa,
-## a cultura (modo cultura), a religião (modo religião), o dono (modo político) ou o terreno (modo terreno).
+## a cultura (modo cultura), a religião (modo religião), o produto (modo produtos), o dono (modo político) ou o terreno (modo terreno).
 
 const OFFSET := Vector2(16, 18)
 
@@ -100,6 +100,15 @@ func _fill(map: MapView, pid: int) -> void:
 			else:
 				_title.text = "Sem religião definida"
 			_swatch.color = map.religion_color(rid)
+		MapView.MapMode.PRODUTOS:
+			var gid: String = p.get("trade_goods", "")
+			if map.trade_goods.has(gid):
+				var g: Dictionary = map.trade_goods[gid]
+				_title.text = g["name"]
+				_sub.text = "%s · preço %s" % [p["name"], str(snappedf(float(g["price"]), 0.01)).trim_suffix(".0").replace(".", ",")]
+			else:
+				_title.text = "Sem produto"
+			_swatch.color = map.trade_good_color(gid)
 		MapView.MapMode.TERRENO:
 			_title.text = str(p["terrain"]).capitalize()
 			_swatch.color = MapView.TERRAIN_COLORS.get(p["terrain"], MapView.UNOWNED_COLOR)

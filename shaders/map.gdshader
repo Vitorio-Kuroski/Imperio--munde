@@ -1,18 +1,19 @@
 shader_type canvas_item;
 // Pinta o mapa político a partir de:
 //  - ids:     imagem com o id da província em R (byte baixo) e G (byte alto)
-//  - palette: textura N x 3. Linha 0 = cor da província.
+//  - palette: textura N x 4. Linha 0 = cor da província.
 //             Linha 1 = R: índice do país dono (byte baixo; 0 = nenhum), G+B: índice da
 //             cultura (byte baixo/alto, 0 = nenhuma), A: 1.0 se for mar.
 //             Linha 2 = R: byte alto do índice do país dono (até 65535 países),
 //             G+B: índice da religião (byte baixo/alto, 0 = nenhuma).
-// Trocar o dono de uma província = mudar 3 pixels da paleta (sem loops em GDScript).
+//             Linha 3 = R+G: índice do produto (byte baixo/alto, 0 = nenhum).
+// Trocar o dono de uma província = mudar 4 pixels da paleta (sem loops em GDScript).
 
 uniform sampler2D ids : filter_nearest, repeat_disable;
 uniform sampler2D palette : filter_nearest, repeat_disable;
 uniform vec2 map_size = vec2(2048.0, 2411.0);
 uniform int selected_id = -1;
-uniform int border_mode = 0;   // bordas fortes entre: 0 = países, 1 = culturas, 2 = religiões
+uniform int border_mode = 0;   // bordas fortes entre: 0 = países, 1 = culturas, 2 = religiões, 3 = produtos
 
 int id_at(ivec2 p) {
 	ivec2 s = ivec2(map_size);
@@ -36,6 +37,11 @@ int owner_of(int id, vec4 inf) {
 int religion_of(int id) {
 	vec4 r = texelFetch(palette, ivec2(id, 2), 0);
 	return int(r.g * 255.0 + 0.5) + int(r.b * 255.0 + 0.5) * 256;
+}
+
+int good_of(int id) {
+	vec4 g = texelFetch(palette, ivec2(id, 3), 0);
+	return int(g.r * 255.0 + 0.5) + int(g.g * 255.0 + 0.5) * 256;
 }
 
 int culture_of(vec4 inf) {
@@ -63,6 +69,10 @@ float edge_to(int id, vec4 inf, ivec2 p) {
 	} else if (border_mode == 2) {
 		if (religion_of(id) != religion_of(nid)) {
 			return 0.75;          // fronteira entre religiões
+		}
+	} else if (border_mode == 3) {
+		if (good_of(id) != good_of(nid)) {
+			return 0.75;          // fronteira entre produtos
 		}
 	} else if (owner_of(id, inf) != owner_of(nid, ninf)) {
 		return 0.75;              // fronteira entre países

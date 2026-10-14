@@ -20,10 +20,10 @@ Protótipo de grand strategy em Godot 4.x, inspirado em Europa Universalis IV.
 | Zoom | Roda do mouse |
 | Pausar / continuar | Espaço |
 | Velocidade | `+` e `-` (1 a 5) |
-| Modo de mapa (político → terreno → cultura → religião*) | `T` ou botão na barra superior |
-| Ver província, cultura, religião, dono ou terreno | Passar o mouse sobre o mapa |
+| Modo de mapa (político → terreno → cultura → religião* → produtos*) | `T` ou botão na barra superior |
+| Ver província, cultura, religião, produto, dono ou terreno | Passar o mouse sobre o mapa |
 
-\* O modo religião só aparece com o mapa importado do EU4.
+\* Os modos religião e produtos só aparecem com o mapa importado do EU4.
 
 ## Estrutura
 - `scripts/main.gd` — câmera, interface, escolha de país e entrada.
@@ -59,7 +59,7 @@ O script lê `map/` (provinces.bmp, definition.csv, default.map, e se houver cli
 `data/eu4/map.json` + `assets/eu4/province_ids.png` (~5000 províncias, mundo todo, ~190 países).
 O Godot passa a usar essa pasta automaticamente (o mapa importado dentro do jogo, em `user://eu4/`, tem prioridade sobre ela); para voltar ao mapa de exemplo, apague `data/eu4` e `assets/eu4`.
 - Esses arquivos são derivados de dados da Paradox: já estão no `.gitignore`. **Não publique no GitHub nem distribua.**
-- Nomes de países e províncias vêm da localização em inglês; o terreno vem do heightmap e do clima do jogo, e a cultura e a religião de cada província também são importadas. As religiões (cores e grupos) vêm de `common/religions`; os nomes ficam em português (`data/religioes_pt.json`) e aparecem no **modo de mapa religião**.
+- Nomes de países e províncias vêm da localização em inglês; o terreno vem do heightmap e do clima do jogo, e a cultura e a religião de cada província também são importadas. As religiões (cores e grupos) vêm de `common/religions`; os nomes ficam em português (`data/religioes_pt.json`) e aparecem no **modo de mapa religião**. Também vêm o produto de cada província (`common/tradegoods` e `common/prices`: cor e preço base; nomes em `data/produtos_pt.json`, **modo de mapa produtos**) e o desenvolvimento separado em imposto, produção e efetivo (mostrado no painel da província).
 - Testado só com uma árvore de arquivos de exemplo no formato do EU4; se algo não bater na sua versão do jogo, me diga a mensagem de erro.
 
 ## Dono de cada província (`tools/data/donos_1444.csv`)

@@ -72,7 +72,7 @@ func _build_ui() -> void:
 	hb.add_child(spacer)
 
 	mode_button = Button.new()
-	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura, religião (T)"
+	mode_button.tooltip_text = "Modo de mapa: político, terreno, cultura, religião, produtos (T)"
 	mode_button.pressed.connect(_toggle_map_mode)
 	hb.add_child(mode_button)
 
@@ -293,7 +293,7 @@ func _refresh_top_bar() -> void:
 	mode_button.text = "Mapa: %s" % MapView.MAP_MODE_NAMES[map.map_mode]
 
 
-## Alterna político -> terreno -> cultura -> religião -> político (pula os modos sem dados no mapa).
+## Alterna político -> terreno -> cultura -> religião -> produtos -> político (pula os modos sem dados no mapa).
 func _toggle_map_mode() -> void:
 	var mode := map.map_mode
 	for i in MapView.MAP_MODE_NAMES.size():
@@ -319,6 +319,11 @@ func _show_province(pid: int) -> void:
 		if p["owner"] != "":
 			owner_name = "%s (%s)" % [map.countries[p["owner"]]["name"], p["owner"]]
 		txt += "Dono: %s\nTerreno: %s\nDesenvolvimento: %d" % [owner_name, p["terrain"], p["development"]]
+		if p.has("base_tax"):
+			txt += "\n   imposto %d · produção %d · efetivo %d" % [p["base_tax"], p["base_production"], p["base_manpower"]]
+		var gid: String = p.get("trade_goods", "")
+		if map.trade_goods.has(gid):
+			txt += "\nProduto: %s (preço %s)" % [map.trade_goods[gid]["name"], _num(map.trade_goods[gid]["price"])]
 		var cid: String = p.get("culture", "")
 		if map.cultures.has(cid):
 			var grp: String = map.cultures[cid]["group"]
@@ -331,6 +336,14 @@ func _show_province(pid: int) -> void:
 			txt += "\nCosteira"
 	info_label.text = txt
 	side_panel.show()
+
+
+## Número com vírgula decimal (2.5 -> "2,5"; 3.0 -> "3").
+static func _num(x: float) -> String:
+	var t := str(snappedf(x, 0.01))
+	if t.ends_with(".0"):
+		t = t.left(-2)
+	return t.replace(".", ",")
 
 
 func _on_month_passed() -> void:

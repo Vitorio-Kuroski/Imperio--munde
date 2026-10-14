@@ -93,7 +93,7 @@ func _rel(p: String) -> String:
 	if rel.begins_with("map/"):
 		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
-			"common/cultures/", "common/religions/"]:
+			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -265,7 +265,13 @@ func _state_at(items: Array) -> Dictionary:
 	for e in dated:
 		if e[0] <= CUTOFF:
 			for kv in e[1]:
-				if kv[0] != "":
+				if kv[0] == "":
+					continue
+				if (kv[0] as String).begins_with("add_base_") and kv[1] is String:
+					# add_base_tax = 1 etc.: soma ao valor base (base_tax)
+					var base: String = (kv[0] as String).substr(4)
+					st[base] = str(float(str(st.get(base, "0"))) + float(kv[1]))
+				else:
 					st[kv[0]] = kv[1]
 	return st
 
@@ -440,6 +446,8 @@ func _import() -> String:
 	var culture := {}
 	var religion := {}
 	var dev := {}
+	var dev_parts := {}             # id -> [imposto, produção, efetivo]
+	var goods := {}
 	var files := _list("history/provinces/")
 	for fi in files.size():
 		if fi % 200 == 0:
@@ -458,10 +466,13 @@ func _import() -> String:
 			culture[pid] = st["culture"]
 		if st.get("religion") is String:
 			religion[pid] = st["religion"]
-		var d := 0
+		if st.get("trade_goods") is String:
+			goods[pid] = st["trade_goods"]
+		var parts := []
 		for k in ["base_tax", "base_production", "base_manpower"]:
-			d += int(round(float(str(st.get(k, "0")))))
-		dev[pid] = d
+			parts.append(int(round(float(str(st.get(k, "0"))))))
+		dev_parts[pid] = parts
+		dev[pid] = parts[0] + parts[1] + parts[2]
 
 	# ---- localização (opcional)
 	_set_status("Lendo países e culturas...")
@@ -551,6 +562,7 @@ func _import() -> String:
 
 	# ---- religiões (grupos e cores de common/religions; nomes em português de data/religioes_pt.json)
 	var religions := _religions(religion.values(), loc)
+	var trade_goods := _trade_goods(goods.values(), loc)
 
 	# ---- map.json
 	_set_status("Gravando os dados...")
@@ -581,6 +593,11 @@ func _import() -> String:
 			prov["base_development"] = prov["development"]
 			prov["culture"] = culture.get(pid, "")
 			prov["religion"] = religion.get(pid, "")
+			prov["trade_goods"] = goods.get(pid, "")
+			var parts: Array = dev_parts.get(pid, [0, 0, 0])
+			prov["base_tax"] = parts[0]
+			prov["base_production"] = parts[1]
+			prov["base_manpower"] = parts[2]
 			var coastal := false
 			for q in neigh[pid]:
 				if sea.has(q):
@@ -592,10 +609,56 @@ func _import() -> String:
 	if f == null:
 		return "Não consegui gravar " + OUT_DIR + "/map.json"
 	f.store_string(JSON.stringify({"width": w, "height": h, "countries": countries, "cultures": cultures,
-			"religions": religions, "provinces": provinces}))
+			"religions": religions, "trade_goods": trade_goods, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
+
+
+## Lista de produtos {id, name, color, price}: os de common/tradegoods (cor) com o preço base de
+## common/prices, mais os usados nas províncias que não estiverem lá. Nomes de data/produtos_pt.json.
+func _trade_goods(used: Array, loc: Dictionary) -> Array:
+	var pt: Dictionary = {}
+	if FileAccess.file_exists("res://data/produtos_pt.json"):
+		pt = JSON.parse_string(FileAccess.get_file_as_string("res://data/produtos_pt.json"))
+	var prices := {}
+	for f in _list("common/prices/"):
+		for g in _parse(_text(f)):
+			if g[1] is Array:
+				for kv in g[1]:
+					if kv[0] == "base_price" and str(kv[1]).is_valid_float():
+						prices[g[0]] = float(kv[1])
+	var out := []
+	var seen := {}
+	for f in _list("common/tradegoods/"):
+		for g in _parse(_text(f)):
+			if not (g[1] is Array) or seen.has(g[0]):
+				continue
+			var col := []
+			for kv in g[1]:
+				if kv[0] == "color" and kv[1] is Array:
+					for x in kv[1]:
+						if x[0] == "" and str(x[1]).is_valid_float():
+							col.append(float(x[1]))
+					break
+			if col.size() < 3:
+				continue
+			if col[0] <= 1.0 and col[1] <= 1.0 and col[2] <= 1.0:
+				col = [col[0] * 255, col[1] * 255, col[2] * 255]
+			seen[g[0]] = true
+			out.append({"id": g[0], "name": pt.get(g[0], loc.get(g[0], (g[0] as String).capitalize())),
+					"color": [mini(255, int(round(col[0]))), mini(255, int(round(col[1]))), mini(255, int(round(col[2])))],
+					"price": prices.get(g[0], 1.0)})
+	var rest := {}
+	for gid in used:
+		if gid != "" and not seen.has(gid):
+			rest[gid] = true
+	var keys := rest.keys()
+	keys.sort()
+	for gid in keys:
+		out.append({"id": gid, "name": pt.get(gid, loc.get(gid, (gid as String).capitalize())),
+				"color": hashed_color(gid), "price": prices.get(gid, 1.0)})
+	return out
 
 
 ## Lista de religiões {id, name, group, color}: todas as de common/religions (na ordem do arquivo)

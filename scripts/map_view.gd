@@ -2,7 +2,7 @@ class_name MapView
 extends Sprite2D
 ## Mapa político baseado em imagem de IDs + shader.
 ## assets/province_ids.png guarda o id de cada província (R = byte baixo, G = byte alto).
-## A cor de cada província vive numa textura-paleta; mudar o dono atualiza só 3 pixels.
+## A cor de cada província vive numa textura-paleta; mudar o dono atualiza só 4 pixels.
 
 const SEA_COLOR := Color(0.16, 0.30, 0.46)
 const UNOWNED_COLOR := Color(0.45, 0.43, 0.38)
@@ -22,8 +22,8 @@ const TERRAIN_COLORS := {
 	"pântano": Color8(90, 120, 100),
 }
 
-enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO }
-const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião"]
+enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO, PRODUTOS }
+const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião", "produtos"]
 
 var map_w: int
 var map_h: int
@@ -34,6 +34,8 @@ var cultures: Dictionary = {}      # id -> dict (name, group, color)
 var culture_index: Dictionary = {} # id -> 1..N (0 = nenhuma)
 var religions: Dictionary = {}     # id -> dict (name, group, color); vazio se o mapa não tiver religiões
 var religion_index: Dictionary = {} # id -> 1..N (0 = nenhuma)
+var trade_goods: Dictionary = {}   # id -> dict (name, color, price); vazio se o mapa não tiver produtos
+var trade_good_index: Dictionary = {} # id -> 1..N (0 = nenhum)
 var id_image: Image
 var palette_image: Image
 var palette_tex: ImageTexture
@@ -78,6 +80,11 @@ func load_map(map_scale: float) -> void:
 		religions[r["id"]] = r
 		religion_index[r["id"]] = n
 		n += 1
+	n = 1
+	for g in data.get("trade_goods", []):
+		trade_goods[g["id"]] = g
+		trade_good_index[g["id"]] = n
+		n += 1
 
 	var ids_tex: Texture2D
 	if ids_path.begins_with("user://"):
@@ -88,7 +95,7 @@ func load_map(map_scale: float) -> void:
 		ids_tex = load(ids_path) as Texture2D
 		id_image = ids_tex.get_image()
 
-	palette_image = Image.create(provinces.size(), 3, false, Image.FORMAT_RGBA8)
+	palette_image = Image.create(provinces.size(), 4, false, Image.FORMAT_RGBA8)
 	for p in provinces:
 		_write_palette(int(p["id"]))
 	palette_tex = ImageTexture.create_from_image(palette_image)
@@ -116,6 +123,8 @@ func province_color(pid: int) -> Color:
 		return culture_color(p.get("culture", ""))
 	if map_mode == MapMode.RELIGIAO:
 		return religion_color(p.get("religion", ""))
+	if map_mode == MapMode.PRODUTOS:
+		return trade_good_color(p.get("trade_goods", ""))
 	var tag: String = p["owner"]
 	if tag == "" or not countries.has(tag):
 		return UNOWNED_COLOR
@@ -137,6 +146,13 @@ func religion_color(rid: String) -> Color:
 	return Color8(int(c[0]), int(c[1]), int(c[2]))
 
 
+func trade_good_color(gid: String) -> Color:
+	if not trade_goods.has(gid):
+		return UNOWNED_COLOR
+	var c: Array = trade_goods[gid]["color"]
+	return Color8(int(c[0]), int(c[1]), int(c[2]))
+
+
 ## O modo de mapa tem dados neste mapa? (cultura e religião só existem em alguns mapas)
 func has_map_mode(mode: MapMode) -> bool:
 	match mode:
@@ -144,6 +160,8 @@ func has_map_mode(mode: MapMode) -> bool:
 			return not cultures.is_empty()
 		MapMode.RELIGIAO:
 			return not religions.is_empty()
+		MapMode.PRODUTOS:
+			return not trade_goods.is_empty()
 	return true
 
 
@@ -157,6 +175,8 @@ func _write_palette(pid: int) -> void:
 	var rel_idx: int = religion_index.get(p.get("religion", ""), 0)
 	palette_image.set_pixel(pid, 2, Color((owner_idx >> 8) / 255.0, (rel_idx & 255) / 255.0,
 			(rel_idx >> 8) / 255.0, 1.0))
+	var good_idx: int = trade_good_index.get(p.get("trade_goods", ""), 0)
+	palette_image.set_pixel(pid, 3, Color((good_idx & 255) / 255.0, (good_idx >> 8) / 255.0, 0.0, 1.0))
 	palette_image.set_pixel(pid, 1, Color((owner_idx & 255) / 255.0, (cult_idx & 255) / 255.0,
 			(cult_idx >> 8) / 255.0, 1.0 if p["sea"] else 0.0))
 
@@ -172,12 +192,14 @@ func set_map_mode(mode: MapMode) -> void:
 	if mode == map_mode:
 		return
 	map_mode = mode
-	# nos modos cultura e religião as bordas fortes separam culturas/religiões em vez de países
+	# nos modos cultura, religião e produtos as bordas fortes separam culturas/religiões/produtos
 	var bm := 0
 	if mode == MapMode.CULTURA:
 		bm = 1
 	elif mode == MapMode.RELIGIAO:
 		bm = 2
+	elif mode == MapMode.PRODUTOS:
+		bm = 3
 	mat.set_shader_parameter("border_mode", bm)
 	for p in provinces:
 		_write_palette(int(p["id"]))

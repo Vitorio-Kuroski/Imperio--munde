@@ -8,6 +8,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   common/country_tags/*.txt, common/countries/*.txt   (cores dos paises; opcionais)
   common/cultures/*.txt                        (grupos de cultura; opcional)
   common/religions/*.txt                       (religioes, grupos e cores; opcional)
+  common/tradegoods/*.txt, common/prices/*.txt (produtos, cores e precos; opcional)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -114,7 +115,15 @@ def state_at(items, cutoff):
     for d, v in sorted(dated, key=lambda t: t[0]):
         if d <= cutoff:
             for k2, v2 in v:
-                if k2 is not None:
+                if k2 is None:
+                    continue
+                if k2.startswith("add_base_") and isinstance(v2, str):
+                    # add_base_tax = 1 etc.: soma ao valor base (base_tax)
+                    try:
+                        st[k2[4:]] = str(float(st.get(k2[4:], 0) or 0) + float(v2))
+                    except ValueError:
+                        pass
+                else:
                     st[k2] = v2
     return st
 
@@ -286,6 +295,8 @@ def main():
     print("Lendo historia das provincias...", flush=True)
     owner = {}
     dev = {}
+    dev_parts = {}      # pid -> (imposto, producao, efetivo)
+    goods = {}
     culture = {}
     religion = {}
     for f in glob.glob(os.path.join(root, "history", "provinces", "*.txt")):
@@ -299,14 +310,18 @@ def main():
         o = st.get("owner")
         if isinstance(o, str) and o:
             owner[pid] = o
-        for k, dst in (("culture", culture), ("religion", religion)):
+        for k, dst in (("culture", culture), ("religion", religion), ("trade_goods", goods)):
             v = st.get(k)
             if isinstance(v, str) and v:
                 dst[pid] = v
-        try:
-            dev[pid] = int(round(sum(float(st.get(k, 0) or 0) for k in ("base_tax", "base_production", "base_manpower"))))
-        except (TypeError, ValueError):
-            dev[pid] = 0
+        parts = []
+        for k in ("base_tax", "base_production", "base_manpower"):
+            try:
+                parts.append(int(round(float(st.get(k, 0) or 0))))
+            except (TypeError, ValueError):
+                parts.append(0)
+        dev_parts[pid] = tuple(parts)
+        dev[pid] = sum(parts)
 
     # ---------------------------------------------------------- paises
     print("Lendo paises...", flush=True)
@@ -424,6 +439,38 @@ def main():
     for rid in sorted(set(religion.values()) - seen - {""}):
         religions.append({"id": rid, "name": nice(rid), "group": "", "color": hashed_color(rid)})
 
+    # ---------------------------------------------------------- produtos (common/tradegoods + prices)
+    with open("data/produtos_pt.json", encoding="utf-8") as f:
+        goods_pt = json.load(f)
+    prices = {}
+    for pf in sorted(glob.glob(os.path.join(root, "common", "prices", "*.txt"))):
+        for gname, gval in parse_script(read_text(pf)):
+            if isinstance(gval, list):
+                for k, v in gval:
+                    if k == "base_price" and isinstance(v, str):
+                        try:
+                            prices[gname] = float(v)
+                        except ValueError:
+                            pass
+    trade_goods, seen = [], set()
+    for tf in sorted(glob.glob(os.path.join(root, "common", "tradegoods", "*.txt"))):
+        for gname, gval in parse_script(read_text(tf)):
+            if not isinstance(gval, list) or gname in seen:
+                continue
+            col = next((v for k, v in gval if k == "color" and isinstance(v, list)), None)
+            vals = [float(v) for k, v in (col or []) if k is None and re.fullmatch(r"-?[\d.]+", v)]
+            if len(vals) < 3:
+                continue
+            if max(vals[:3]) <= 1.0:
+                vals = [v * 255 for v in vals]
+            seen.add(gname)
+            trade_goods.append({"id": gname, "name": goods_pt.get(gname) or pretty(gname),
+                                "color": [min(255, int(v + 0.5)) for v in vals[:3]],
+                                "price": prices.get(gname, 1.0)})
+    for gid in sorted(set(goods.values()) - seen):
+        trade_goods.append({"id": gid, "name": goods_pt.get(gid) or pretty(gid), "color": hashed_color(gid),
+                            "price": prices.get(gid, 1.0)})
+
     # ---------------------------------------------------------- map.json
     provinces = []
     for pid in range(n_prov):
@@ -447,13 +494,15 @@ def main():
         if not sea:
             prov["culture"] = culture.get(pid, "")
             prov["religion"] = religion.get(pid, "")
+            prov["trade_goods"] = goods.get(pid, "")
+            prov["base_tax"], prov["base_production"], prov["base_manpower"] = dev_parts.get(pid, (0, 0, 0))
             prov["coastal"] = any(q in sea_ids for q in neigh[pid])
             prov["base_development"] = prov["development"]
         provinces.append(prov)
 
     with open("data/eu4/map.json", "w", encoding="utf-8") as f:
         json.dump({"width": W, "height": H, "countries": countries, "cultures": cultures,
-                   "religions": religions, "provinces": provinces},
+                   "religions": religions, "trade_goods": trade_goods, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])
