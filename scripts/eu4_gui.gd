@@ -19,6 +19,9 @@ var files := {}                     # nome do .gui -> árvore [[chave, valor]]
 var sprites := {}                   # nome -> {kind, texture, texture2?, frames?, border?, size?}
 var font_defs := {}                 # nome -> {fnt, page, color}
 var nodes := {}                     # nome do elemento -> Control (do último build)
+## Altura de tela usada nos blocos if_resolution dos .gui (o EU4 escolhe fundos e listas maiores
+## pela altura da tela; as telas daqui são desenhadas para 900 px, ver main._apply_gui_scale).
+var res_height := 900
 var _images := {}                   # caminho -> Image
 var _textures := {}                 # caminho -> Texture2D
 var _frames := {}                   # "caminho#quadro#n" -> AtlasTexture
@@ -349,7 +352,24 @@ func _place(c: Control, items: Array, size: Vector2) -> void:
 	c.offset_bottom = pos.y + size.y
 
 
+## Junta ao fim dos itens os blocos if_resolution que valem para `res_height` (como chave repetida
+## vale a última, eles sobrepõem os valores normais).
+func _resolve(items: Array) -> Array:
+	var extra := []
+	for kv in items:
+		if (kv[0] as String).to_lower() == "if_resolution" and kv[1] is Array:
+			var lo := int(str(_val(kv[1], "min_height", "0")).to_float())
+			var hi := int(str(_val(kv[1], "max_height", "100000")).to_float())
+			if res_height >= lo and res_height <= hi:
+				for x in kv[1]:
+					var k := (x[0] as String).to_lower()
+					if k != "min_height" and k != "max_height" and k != "min_width" and k != "max_width":
+						extra.append(x)
+	return items if extra.is_empty() else items + extra
+
+
 func _element(kind: String, items: Array) -> Control:
+	items = _resolve(items)
 	var name := str(_val(items, "name", ""))
 	var c: Control = null
 	match kind:
