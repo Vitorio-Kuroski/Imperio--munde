@@ -13,6 +13,7 @@ const DIM := Color(0.38, 0.38, 0.38)
 
 var view: Eu4CountryView
 var root: Control
+var _pt := {}
 
 
 func setup(v: Eu4CountryView) -> bool:
@@ -21,6 +22,10 @@ func setup(v: Eu4CountryView) -> bool:
 	if root == null:
 		return false
 	Eu4CountryView._hide(root, "countryideaview_ideagroupunlock")
+	if FileAccess.file_exists("res://data/tecnologias_pt.json"):
+		var d = JSON.parse_string(FileAccess.get_file_as_string("res://data/tecnologias_pt.json"))
+		if d is Dictionary:
+			_pt = d
 	return true
 
 
@@ -33,8 +38,8 @@ func _first_value(m: Dictionary) -> String:
 		return ""
 	var k: String = m.keys()[0]
 	var v := float(m[k])
-	return (("%+d%%" % roundi(v * 100.0)) if absf(v) < 1.0 and v != floorf(v) else ("%+d" % int(v)) \
-			if v == floorf(v) else ("%+.1f" % v)).replace(".", ",")
+	# como no EU4: efeitos fracionários em porcentagem com uma casa ("+20,0%"), os outros com duas ("+1,00")
+	return (("%+.1f%%" % (v * 100.0)) if absf(v) < 1.0 and v != floorf(v) else ("%+.2f" % v)).replace(".", ",")
 
 
 func _idea_icon(idea: Dictionary, px: int, on: bool, tip: String) -> TextureRect:
@@ -60,8 +65,8 @@ func fill(tag: String) -> void:
 		var img := ft.get_image() if ft else null
 		shield.set_flag(ImageTexture.create_from_image(img) if img else null)
 	var un := power.national_unlocked(tag) if power and power.state.has(tag) else 0
-	view._txt(root, "unique_ideas_idea_title", ("Ideias nacionais" if (str(nat.get("id", ""))).begins_with(tag) \
-			else str(nat.get("name", ""))) if not nat.is_empty() else "Sem ideias nacionais")
+	view._txt(root, "unique_ideas_idea_title", str(nat.get("name", "Ideias nacionais")) if not nat.is_empty() \
+			else "Sem ideias nacionais")
 	var start: Dictionary = nat.get("start", {})
 	var keys := start.keys()
 	for i in 2:
@@ -103,35 +108,68 @@ func fill(tag: String) -> void:
 	if up:
 		up.set_value(un / 7.0)
 		up.tooltip_text = "%d/7 ideias nacionais" % un
-	# vagas de grupos: metade em cada coluna
+	# todas as vagas de grupos (como no EU4), alternando esquerda e direita: grupo adotado, vaga livre
+	# ou "Liberada em <tecnologia administrativa> (nível)"
 	var slots := power.idea_slots(tag) if power and power.state.has(tag) else 0
 	var adopted: Array = power.adopted(tag) if power and power.state.has(tag) else []
-	var total := maxi(slots, adopted.size())
-	var left := root.find_child("ideagroups_listbox_left", true, false) as Control
-	var right := root.find_child("ideagroups_listbox_right", true, false) as Control
-	var nl := (total + 1) / 2
-	_fill_column(left, tag, adopted, 0, nl)
-	_fill_column(right, tag, adopted, nl, total - nl)
+	var max_slots: int = power._slots_at[power._slots_at.size() - 1] if power and not power._slots_at.is_empty() else slots
+	var total := maxi(maxi(slots, adopted.size()), max_slots)
+	var cols := [root.find_child("ideagroups_listbox_left", true, false) as Control,
+			root.find_child("ideagroups_listbox_right", true, false) as Control]
+	for col in cols:
+		view.gui.fill_list(col, "", 0)
+	for k in total:
+		_slot(cols[k % 2], tag, adopted, slots, k)
 
 
-func _fill_column(list: Control, tag: String, adopted: Array, from: int, count: int) -> void:
+## Nível adm que libera a vaga `k` (0 = primeira): [nível, nome da tecnologia] ou [] se nenhum.
+func _unlock_tech(k: int) -> Array:
+	var sa: PackedInt32Array = view.power._slots_at
+	for lvl in sa.size():
+		if sa[lvl] >= k + 1:
+			var names: Array = _pt.get("nomes", {}).get("adm", [])
+			var techs: Array = view.map.technologies.get("adm", [])
+			var nm := str(names[lvl]) if lvl < names.size() else (str(techs[lvl].get("name", "")) if lvl < techs.size() else "")
+			return [lvl, nm]
+	return []
+
+
+func _slot(list: Control, tag: String, adopted: Array, slots: int, k: int) -> void:
 	var gui := view.gui
-	gui.fill_list(list, "", 0)
-	for k in count:
-		var i := from + k
-		if i < adopted.size():
-			var row := gui.add_item(list, "countryideaview_ideagroupitem")
-			if row:
-				row.get_parent().custom_minimum_size.y = 84
-				_group(row, tag, adopted[i])
-		else:
-			var row := gui.add_item(list, "countryideaview_ideagroupunlockitem")
-			if row:
-				row.get_parent().custom_minimum_size.y = 84
-				view._txt(row, "txt", "Vaga livre: escolher um grupo de ideias" if tag == view.player else "Vaga livre")
-				var b := row.find_child("unlock", true, false) as BaseButton
-				if b:
-					b.pressed.connect(func(): choose_group_requested.emit(tag))
+	if list == null:
+		return
+	if k < adopted.size():
+		var row := gui.add_item(list, "countryideaview_ideagroupitem")
+		if row:
+			row.get_parent().custom_minimum_size.y = 84
+			_group(row, tag, adopted[k])
+		return
+	var row := gui.add_item(list, "countryideaview_ideagroupunlockitem")
+	if row == null:
+		return
+	row.get_parent().custom_minimum_size.y = 84
+	var b := row.find_child("unlock", true, false) as BaseButton
+	var glow := row.find_child("available_idea_glow", true, false) as Control
+	var free := k < slots
+	if free:
+		view._txt(row, "txt", "Escolher um grupo de ideias" if tag == view.player else "Vaga livre")
+		if b:
+			b.pressed.connect(func(): choose_group_requested.emit(tag))
+	else:
+		var u := _unlock_tech(k)
+		view._txt(row, "txt", ("Liberada em\n%s (%d)" % [u[1], u[0]]) if not u.is_empty() else "Bloqueada")
+		if b:
+			b.disabled = true
+			b.modulate = Color(0.62, 0.62, 0.62)
+			b.tooltip_text = "Vaga liberada pela tecnologia administrativa %d" % u[0] if not u.is_empty() else ""
+	if glow:
+		glow.visible = free and tag == view.player
+	var l := row.find_child("txt", true, false) as Label
+	if l:
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		l.offset_top = 6
+		l.offset_bottom = 60
 
 
 func _group(row: Control, tag: String, g: Dictionary) -> void:

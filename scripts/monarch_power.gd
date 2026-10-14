@@ -43,7 +43,8 @@ func setup(m: MapView, c: GameClock) -> void:
 		national_ideas[g["id"]] = g
 	var acc := 0
 	for t in map.technologies.get("adm", []):
-		acc += int(t.get("modifiers", {}).get("allowed_idea_groups", 0))
+		# no EU4 allowed_idea_groups é o total de vagas naquele nível (1, 2, 3...), não um acréscimo
+		acc = maxi(acc, int(t.get("modifiers", {}).get("allowed_idea_groups", 0)))
 		_slots_at.append(acc)
 	for tag in map.countries:
 		var g: String = map.countries[tag].get("tech_group", "")
@@ -113,7 +114,7 @@ func research(tag: String, cat: String) -> bool:
 
 
 # ------------------------------------------------------------------ ideias
-## Vagas de grupos de ideias: soma de allowed_idea_groups nas tecnologias adm já pesquisadas.
+## Vagas de grupos de ideias: allowed_idea_groups da tecnologia adm mais alta já pesquisada (é um total).
 func idea_slots(tag: String) -> int:
 	if _slots_at.is_empty():
 		return 0

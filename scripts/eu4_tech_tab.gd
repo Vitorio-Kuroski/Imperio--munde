@@ -137,7 +137,10 @@ func _fill_table(t: Control, tag: String, cat: String, cur_units: Dictionary) ->
 	for i in mini(lvl + 1, techs.size()):
 		var mods: Dictionary = techs[i].get("modifiers", {})
 		for k in mods:
-			sums[k] = float(sums.get(k, 0.0)) + float(mods[k])
+			if k == "allowed_idea_groups":       # total do nível, não acréscimo
+				sums[k] = maxf(float(sums.get(k, 0.0)), float(mods[k]))
+			else:
+				sums[k] = float(sums.get(k, 0.0)) + float(mods[k])
 	var st: Dictionary = STATS[cat]
 	for n in st:
 		view._txt(t, n, _fmt(float(sums.get(st[n][0], 0.0)), st[n][1]))
