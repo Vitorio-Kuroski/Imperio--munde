@@ -10,16 +10,19 @@ const FOCUS := {"ADM": "Administrativo", "DIP": "Diplomático", "MIL": "Militar"
 signal techs_requested(tag: String)
 signal ideas_requested(tag: String)
 signal advisors_requested(tag: String)
+signal shown(tag: String)
 
 var tag := ""
 var power: MonarchPower           # main.gd define
 var _map: MapView
 var _label: Label
+var _scroll: ScrollContainer
 var _tech_button: Button
 var _ideas_button: Button
 var _advisors_button: Button
 var economy: Economy
 var institutions: Institutions
+var diplomacy: Diplomacy
 var _embrace_button: Button
 var _embrace_id := ""
 var advisors: Advisors
@@ -33,10 +36,13 @@ func _init() -> void:
 	offset_top = 44
 	var vb := VBoxContainer.new()
 	add_child(vb)
+	_scroll = ScrollContainer.new()          # o texto rola se não couber na tela
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vb.add_child(_scroll)
 	_label = Label.new()
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.custom_minimum_size.x = 320
-	vb.add_child(_label)
+	_scroll.add_child(_label)
 	_tech_button = Button.new()
 	_tech_button.text = "Ver tecnologias e unidades"
 	_tech_button.pressed.connect(func(): techs_requested.emit(tag))
@@ -170,8 +176,24 @@ func show_country(map: MapView, t: String) -> void:
 		if p["owner"] == t:
 			n += 1
 			dev += int(p["development"])
+	if diplomacy and diplomacy.enabled():
+		var at := 1
+		for i in lines.size():
+			if (lines[i] as String).begins_with("Capital:"):
+				at = i + 1
+		var dl := _diplomacy_lines(map, t)
+		for i in dl.size():
+			lines.insert(at + i, dl[i])
 	lines.append("Províncias: %d · desenvolvimento %d" % [n, dev])
 	_label.text = "\n".join(lines)
+	# altura do texto limitada à tela (os botões ficam sempre visíveis embaixo)
+	var buttons := 0
+	for b in [_tech_button, _ideas_button, _advisors_button, _embrace_button]:
+		if b.visible:
+			buttons += 1
+	var max_h := get_viewport_rect().size.y - 44.0 - 24.0 - buttons * 36.0
+	_scroll.custom_minimum_size = Vector2(336, minf(_label.get_combined_minimum_size().y, max_h))
+	shown.emit(t)
 	show()
 	reset_size()
 
@@ -180,6 +202,38 @@ func show_country(map: MapView, t: String) -> void:
 func refresh() -> void:
 	if visible and _map:
 		show_country(_map, tag)
+
+
+func _cname(map: MapView, t: String) -> String:
+	return map.countries[t]["name"] if map.countries.has(t) else t
+
+
+func _diplomacy_lines(map: MapView, t: String) -> Array:
+	var out := []
+	var ov := diplomacy.overlord(t)
+	if not ov.is_empty():
+		out.append("Suserano: %s (%s)" % [_cname(map, ov[0]), diplomacy.subject_name(ov[1])])
+	var subs := []
+	for s in diplomacy.subjects(t):
+		subs.append("%s (%s)" % [_cname(map, s[0]), diplomacy.subject_name(s[1])])
+	if not subs.is_empty():
+		out.append("Súditos: " + ", ".join(subs))
+	for pair in [["Aliados", diplomacy.allies(t)], ["Casamentos reais", diplomacy.marriages(t)],
+			["Garante", diplomacy.guarantees(t)], ["Garantido por", diplomacy.guarantors(t)]]:
+		if not pair[1].is_empty():
+			var names := []
+			for o in pair[1]:
+				names.append(_cname(map, o))
+			out.append("%s: %s" % [pair[0], ", ".join(names)])
+	if t == diplomacy.emperor:
+		out.append("Imperador do Sacro Império Romano")
+	elif diplomacy.is_elector(t):
+		out.append("Príncipe-eleitor do Sacro Império")
+	elif diplomacy.in_hre(t):
+		out.append("Membro do Sacro Império (imperador: %s)" % _cname(map, diplomacy.emperor))
+	if t == diplomacy.celestial_emperor:
+		out.append("Imperador celestial (Mandato do Céu)")
+	return out
 
 
 func _culture(map: MapView, cid: String) -> String:

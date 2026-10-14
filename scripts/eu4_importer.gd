@@ -104,7 +104,7 @@ func _rel(p: String) -> String:
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
 			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
-			"common/advisortypes/", "history/advisors/", "common/institutions/"]:
+			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -332,6 +332,11 @@ func _country_history(items: Array) -> Dictionary:
 				h["accepted_cultures"].append(v)
 			elif k == "remove_accepted_culture":
 				h["accepted_cultures"].erase(v)
+			elif k == "elector":
+				if v == "yes":
+					h["elector"] = true
+				else:
+					h.erase("elector")
 		elif k in ["monarch", "heir"] and v is Array:
 			var person := {}
 			for x in v:
@@ -563,6 +568,7 @@ func _import() -> String:
 	var dev_parts := {}             # id -> [imposto, produção, efetivo]
 	var goods := {}
 	var prov_buildings := {}
+	var hre := {}                   # províncias do Sacro Império em 1444
 	var cot := {}                   # centro de comércio (nível)
 	var files := _list("history/provinces/")
 	for fi in files.size():
@@ -582,6 +588,8 @@ func _import() -> String:
 			culture[pid] = st["culture"]
 		if st.get("religion") is String:
 			religion[pid] = st["religion"]
+		if st.get("hre") is String and st["hre"] == "yes":
+			hre[pid] = true
 		if st.get("trade_goods") is String:
 			goods[pid] = st["trade_goods"]
 		var parts := []
@@ -718,6 +726,16 @@ func _import() -> String:
 	var advisors := []
 	var advisor_types := _advisors(defs, advisors)
 	var inst_raw := _institutions()
+	var dip := _diplomacy()
+	var tag_set := {}
+	for c in countries:
+		tag_set[c["tag"]] = true
+	var diplomacy := []
+	for r in dip[0]:
+		if tag_set.has(r["first"]) and tag_set.has(r["second"]):
+			diplomacy.append(r)
+	var emperor: String = dip[1] if tag_set.has(dip[1]) else ""
+	var celestial: String = dip[2] if tag_set.has(dip[2]) else ""
 	var institutions := []
 	for e in inst_raw:
 		institutions.append(e[0])
@@ -773,6 +791,8 @@ func _import() -> String:
 				prov["buildings"] = prov_buildings[pid]
 			if cot.has(pid):
 				prov["center_of_trade"] = cot[pid]
+			if hre.has(pid):
+				prov["hre"] = true
 			var coastal := false
 			for q in neigh[pid]:
 				if sea.has(q):
@@ -812,7 +832,8 @@ func _import() -> String:
 			"technologies": technologies, "tech_groups": tech_groups, "units": units,
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
-			"institutions": institutions, "provinces": provinces}))
+			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
+			"celestial_emperor": celestial, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
@@ -1476,6 +1497,51 @@ func _eval_province(k: String, v: Variant, p: Dictionary, c: Variant) -> bool:
 	if kl == "province_id":
 		return (v as String).is_valid_int() and int(v) == int(p["id"])
 	return false
+
+
+func _date_or(s: String, default: int) -> int:
+	var p := s.split(".")
+	while p.size() < 3:
+		p.append("1")
+	if not (p[0].is_valid_int() and p[1].is_valid_int() and p[2].is_valid_int()):
+		return default
+	return int(p[0]) * 10000 + int(p[1]) * 100 + int(p[2])
+
+
+## Relações ativas na data (history/diplomacy) [{type, first, second, subject_type?}], imperador do
+## Sacro Império e imperador celestial.
+func _diplomacy() -> Array:
+	var rel := []
+	var emperor := ""
+	var celestial := ""
+	for f in _list("history/diplomacy/"):
+		var dated := []
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array):
+				continue
+			var dd := _date(kv[0])
+			if dd >= 0:
+				dated.append([dd, kv[1]])
+				continue
+			var d := {}
+			for x in kv[1]:
+				if x[0] != "" and x[1] is String:
+					d[x[0]] = x[1]
+			if d.has("first") and d.has("second") and _date_or(d.get("start_date", "1.1.1"), 99999999) <= CUTOFF \
+					and CUTOFF < _date_or(d.get("end_date", "9999.1.1"), 99999999):
+				var r := {"type": kv[0], "first": d["first"], "second": d["second"]}
+				if d.has("subject_type"):
+					r["subject_type"] = d["subject_type"]
+				rel.append(r)
+		dated.sort_custom(func(a, b): return a[0] < b[0])
+		for e in dated:
+			if e[0] <= CUTOFF:
+				for x in e[1]:
+					if x[0] == "emperor" and x[1] is String:
+						emperor = "" if x[1] == "---" else x[1]
+					elif x[0] == "celestial_emperor" and x[1] is String:
+						celestial = "" if x[1] == "---" else x[1]
+	return [rel, emperor, celestial]
 
 
 ## Instituições [{id, name, color, bonus, start_date, start_province}, trigger history ou null].

@@ -29,9 +29,15 @@ const TERRAIN_COLORS := {
 	"intransitável": Color8(95, 90, 85),
 }
 
-enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO, PRODUTOS, COMERCIO, REGIOES, INSTITUICOES }
+enum MapMode { POLITICO, TERRENO, CULTURA, RELIGIAO, PRODUTOS, COMERCIO, REGIOES, INSTITUICOES, DIPLOMACIA }
 const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião", "produtos", "comércio", "regiões",
-		"instituições"]
+		"instituições", "diplomacia"]
+## Cores do modo diplomacia (relação com o país em foco).
+const DIPLO_COLORS := {"self": Color(0.13, 0.55, 0.22), "subject": Color(0.45, 0.78, 0.40),
+		"overlord": Color(0.80, 0.55, 0.18), "ally": Color(0.22, 0.45, 0.85), "marriage": Color(0.82, 0.45, 0.72),
+		"guarantee": Color(0.45, 0.72, 0.85), "same_bloc": Color(0.70, 0.70, 0.35)}
+const DIPLO_NAMES := {"self": "o país", "subject": "súdito", "overlord": "suserano", "ally": "aliado",
+		"marriage": "casamento real", "guarantee": "garantia", "same_bloc": "súdito do mesmo suserano"}
 
 var map_w: int
 var map_h: int
@@ -62,6 +68,11 @@ var idea_groups: Array = []        # grupos de ideias (category adm/dip/mil, bon
 var national_ideas: Array = []     # ideias nacionais/de grupo/genéricas (start, bonus, ideas); países têm "ideas"
 var institutions: Array = []       # instituições (id, name, color, bonus, start_date, start_province)
 var inst_view: Institutions        # presença atual (para o modo de mapa instituições)
+var diplo_view: Diplomacy          # relações (modo diplomacia)
+var diplo_focus := ""              # país em foco no modo diplomacia
+var diplomacy: Array = []          # relações de 1444 (type, first, second, subject_type)
+var emperor := ""                  # imperador do Sacro Império
+var celestial_emperor := ""
 var advisor_types: Array = []      # tipos de conselheiro (category, modifiers)
 var advisors: Array = []           # conselheiros históricos (name, location, skill, type, date, death_date)
 var units: Dictionary = {}         # id -> {name, type, unit_type, atributos, tech, level}
@@ -148,6 +159,9 @@ func load_map(map_scale: float) -> void:
 	idea_groups = data.get("idea_groups", [])
 	advisor_types = data.get("advisor_types", [])
 	institutions = data.get("institutions", [])
+	diplomacy = data.get("diplomacy", [])
+	emperor = data.get("emperor", "")
+	celestial_emperor = data.get("celestial_emperor", "")
 	advisors = data.get("advisors", [])
 	national_ideas = data.get("national_ideas", [])
 
@@ -213,6 +227,8 @@ func province_color(pid: int) -> Color:
 		return area_color(p.get("area", ""))
 	if map_mode == MapMode.INSTITUICOES:
 		return institution_color(pid)
+	if map_mode == MapMode.DIPLOMACIA:
+		return diplomacy_color(pid)
 	var tag: String = p["owner"]
 	if tag == "" or not countries.has(tag):
 		return UNOWNED_COLOR
@@ -246,6 +262,18 @@ func trade_node_color(nid: String) -> Color:
 		return UNOWNED_COLOR
 	var c: Array = trade_nodes[nid]["color"]
 	return Color8(int(c[0]), int(c[1]), int(c[2]))
+
+
+## Cor do modo diplomacia: relação do dono com o país em foco; os outros ficam cinza (o Sacro
+## Império em cinza dourado).
+func diplomacy_color(pid: int) -> Color:
+	var p: Dictionary = provinces[pid]
+	var rel := diplo_view.relation(diplo_focus, p["owner"]) if diplo_view else ""
+	if DIPLO_COLORS.has(rel):
+		return DIPLO_COLORS[rel]
+	if p["owner"] == "":
+		return Color(0.30, 0.29, 0.27)
+	return Color(0.52, 0.48, 0.36) if p.get("hre", false) else Color(0.42, 0.41, 0.38)
 
 
 ## Cor do modo instituições: a instituição mais recente, mais forte quanto maior a presença.
@@ -317,6 +345,8 @@ func has_map_mode(mode: MapMode) -> bool:
 			return not areas.is_empty()
 		MapMode.INSTITUICOES:
 			return not institutions.is_empty()
+		MapMode.DIPLOMACIA:
+			return not diplomacy.is_empty()
 	return true
 
 

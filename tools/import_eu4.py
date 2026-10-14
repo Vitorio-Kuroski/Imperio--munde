@@ -20,6 +20,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   common/ideas/*.txt                           (ideias nacionais e grupos de ideias; opcional)
   common/advisortypes/*.txt, history/advisors/*.txt (tipos de conselheiro e conselheiros historicos)
   common/institutions/*.txt                    (instituicoes: origem, bonus e onde ja existem em 1444)
+  history/diplomacy/*.txt                      (aliancas, suditos, casamentos, unioes, imperadores em 1444)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -136,6 +137,11 @@ def country_history(items, cutoff):
                 h["accepted_cultures"].append(v)
             elif k == "remove_accepted_culture" and v in h["accepted_cultures"]:
                 h["accepted_cultures"].remove(v)
+            elif k == "elector":
+                if v == "yes":
+                    h["elector"] = True
+                else:
+                    h.pop("elector", None)
         elif k in ("monarch", "heir") and isinstance(v, list):
             person = {}
             for kk, vv in v:
@@ -460,6 +466,43 @@ def eu4_institutions(root, cutoff):
                     hist = v
             out.append((inst, hist))
     return out
+
+
+def date_tuple(s):
+    p = (s or "").split(".")
+    try:
+        return tuple(int(x) for x in (p + ["1", "1"])[:3])
+    except ValueError:
+        return (9999, 1, 1)
+
+
+def eu4_diplomacy(root, cutoff):
+    """Relacoes ativas na data (history/diplomacy): [{type, first, second, subject_type?}], imperador do
+    Sacro Imperio e imperador celestial."""
+    rel, emperor, celestial = [], "", ""
+    for fn in sorted(glob.glob(os.path.join(root, "history", "diplomacy", "*.txt"))):
+        dated = []
+        for k, v in parse_script(read_text(fn)):
+            if not k or not isinstance(v, list):
+                continue
+            if DATE_RE.match(k):
+                dated.append((date_tuple(k), v))
+                continue
+            d = {kk: vv for kk, vv in v if kk and isinstance(vv, str)}
+            if "first" in d and "second" in d and \
+                    date_tuple(d.get("start_date", "1.1.1")) <= cutoff < date_tuple(d.get("end_date", "9999.1.1")):
+                r = {"type": k, "first": d["first"], "second": d["second"]}
+                if "subject_type" in d:
+                    r["subject_type"] = d["subject_type"]
+                rel.append(r)
+        for dte, v in sorted(dated, key=lambda t: t[0]):
+            if dte <= cutoff:
+                for kk, vv in v:
+                    if kk == "emperor" and isinstance(vv, str):
+                        emperor = "" if vv == "---" else vv
+                    elif kk == "celestial_emperor" and isinstance(vv, str):
+                        celestial = "" if vv == "---" else vv
+    return rel, emperor, celestial
 
 
 def parse_building(bid, items, names):
@@ -832,6 +875,7 @@ def main():
     dev_parts = {}      # pid -> (imposto, producao, efetivo)
     goods = {}
     prov_buildings = {}
+    hre = set()             # provincias do Sacro Imperio em 1444
     cot = {}            # centro de comercio (nivel)
     culture = {}
     religion = {}
@@ -846,6 +890,8 @@ def main():
         o = st.get("owner")
         if isinstance(o, str) and o:
             owner[pid] = o
+        if st.get("hre") == "yes":
+            hre.add(pid)
         for k, dst in (("culture", culture), ("religion", religion), ("trade_goods", goods)):
             v = st.get(k)
             if isinstance(v, str) and v:
@@ -1068,6 +1114,11 @@ def main():
     idea_groups, national_ideas = eu4_ideas(root, countries, groups, rel_group, loc)
     advisor_types, advisors = eu4_advisors(root, defs)
     inst_raw = eu4_institutions(root, cutoff)
+    diplomacy, emperor, celestial = eu4_diplomacy(root, cutoff)
+    used_tags = {c["tag"] for c in countries}
+    diplomacy = [r for r in diplomacy if r["first"] in used_tags and r["second"] in used_tags]
+    emperor = emperor if emperor in used_tags else ""
+    celestial = celestial if celestial in used_tags else ""
     institutions = [i for i, _ in inst_raw]
     country_of = {c["tag"]: c for c in countries}
 
@@ -1100,6 +1151,8 @@ def main():
                 prov["buildings"] = prov_buildings[pid]
             if pid in cot:
                 prov["center_of_trade"] = cot[pid]
+            if pid in hre:
+                prov["hre"] = True
             prov["base_tax"], prov["base_production"], prov["base_manpower"] = dev_parts.get(pid, (0, 0, 0))
             prov["coastal"] = any(q in sea_ids for q in neigh[pid])
             prov["base_development"] = prov["development"]
@@ -1127,7 +1180,8 @@ def main():
                    "technologies": technologies, "tech_groups": tech_groups, "units": units,
                    "idea_groups": idea_groups, "national_ideas": national_ideas,
                    "advisor_types": advisor_types, "advisors": advisors,
-                   "institutions": institutions, "provinces": provinces},
+                   "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
+                   "celestial_emperor": celestial, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])

@@ -1,0 +1,126 @@
+class_name Diplomacy
+extends RefCounted
+## Relações entre países no início (history/diplomacy do EU4, ativas em 11/11/1444): súditos
+## (vassalo, união pessoal, marca, dependências como apanágio), alianças, casamentos reais,
+## garantias e ligas comerciais; mais o Sacro Império (províncias "hre", imperador, eleitores) e o
+## imperador celestial. Por enquanto as relações são fixas (ainda não há ações diplomáticas).
+
+const SUBJECT_TYPES := ["vassal", "union", "march", "dependency"]
+const SUBJECT_NAMES := {"vassal": "vassalo", "union": "união pessoal", "march": "marca", "appanage": "apanágio",
+		"tributary_state": "estado tributário", "daimyo_vassal": "daimiô", "core_eyalet": "eyalet",
+		"eyalet": "eyalet", "colony": "colônia", "client_vassal": "estado cliente", "trade_company": "companhia"}
+
+var map: MapView
+var relations: Array = []        # [{type, first, second, subject_type?}]
+var emperor := ""
+var celestial_emperor := ""
+var _overlord := {}              # súdito -> [suserano, tipo]
+var _subjects := {}              # suserano -> [[súdito, tipo]]
+var _allies := {}                # tag -> [tags]
+var _marriages := {}
+var _guarantees := {}            # garantidor -> [garantidos]
+var _guarantors := {}            # garantido -> [garantidores]
+
+
+func setup(m: MapView) -> void:
+	map = m
+	relations = map.diplomacy
+	emperor = map.emperor
+	celestial_emperor = map.celestial_emperor
+	for r in relations:
+		var a: String = r["first"]
+		var b: String = r["second"]
+		var t: String = r["type"]
+		if t in SUBJECT_TYPES:
+			var kind: String = r.get("subject_type", t)
+			_overlord[b] = [a, kind]
+			_add(_subjects, a, [b, kind])
+		elif t == "alliance":
+			_add(_allies, a, b)
+			_add(_allies, b, a)
+		elif t == "royal_marriage":
+			_add(_marriages, a, b)
+			_add(_marriages, b, a)
+		elif t == "guarantee":
+			_add(_guarantees, a, b)
+			_add(_guarantors, b, a)
+
+
+func _add(d: Dictionary, k: String, v: Variant) -> void:
+	if not d.has(k):
+		d[k] = []
+	d[k].append(v)
+
+
+func enabled() -> bool:
+	return not relations.is_empty() or emperor != ""
+
+
+func overlord(tag: String) -> Array:
+	return _overlord.get(tag, [])
+
+
+## Suserano no topo da cadeia (o próprio país se não for súdito).
+func top_overlord(tag: String) -> String:
+	var t := tag
+	var guard := 0
+	while _overlord.has(t) and guard < 10:
+		t = _overlord[t][0]
+		guard += 1
+	return t
+
+
+func subjects(tag: String) -> Array:
+	return _subjects.get(tag, [])
+
+
+func allies(tag: String) -> Array:
+	return _allies.get(tag, [])
+
+
+func marriages(tag: String) -> Array:
+	return _marriages.get(tag, [])
+
+
+func guarantees(tag: String) -> Array:
+	return _guarantees.get(tag, [])
+
+
+func guarantors(tag: String) -> Array:
+	return _guarantors.get(tag, [])
+
+
+func subject_name(kind: String) -> String:
+	return SUBJECT_NAMES.get(kind, Eu4Importer.pretty_key(kind).to_lower())
+
+
+func in_hre(tag: String) -> bool:
+	var cap := int(map.countries.get(tag, {}).get("capital", 0))
+	return cap > 0 and cap < map.provinces.size() and map.provinces[cap].get("hre", false)
+
+
+func is_elector(tag: String) -> bool:
+	return map.countries.get(tag, {}).get("elector", false)
+
+
+## Relação de `other` vista por `focus` (para o modo de mapa diplomacia).
+func relation(focus: String, other: String) -> String:
+	if other == "" or focus == "":
+		return ""
+	if other == focus:
+		return "self"
+	if overlord(other).size() > 0 and overlord(other)[0] == focus:
+		return "subject"
+	if top_overlord(other) == focus:
+		return "subject"
+	if overlord(focus).size() > 0 and overlord(focus)[0] == other:
+		return "overlord"
+	if other in allies(focus):
+		return "ally"
+	if other in marriages(focus):
+		return "marriage"
+	if other in guarantees(focus) or other in guarantors(focus):
+		return "guarantee"
+	if overlord(focus).size() > 0 and top_overlord(other) == top_overlord(focus):
+		return "same_bloc"          # outro súdito do mesmo suserano
+	return ""
