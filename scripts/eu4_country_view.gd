@@ -17,9 +17,9 @@ signal summary_requested(tag: String)
 signal closed
 
 const TABS := {"tab_court": "court", "tab_gov": "gov", "tab_economy": "economy", "tab_technology": "tech",
-		"tab_ideas": "ideas",
+		"tab_ideas": "ideas", "tab_religion": "religion",
 		"tab_diplomacy": "summary"}
-const TAB_TIPS := {"tab_court": "Corte", "tab_gov": "Governo", "tab_economy": "Economia", "tab_technology": "Tecnologia", "tab_ideas": "Ideias",
+const TAB_TIPS := {"tab_court": "Corte", "tab_gov": "Governo", "tab_economy": "Economia", "tab_religion": "Religião", "tab_technology": "Tecnologia", "tab_ideas": "Ideias",
 		"tab_diplomacy": "Resumo: diplomacia, guerras, economia e instituições"}
 const POWER_ICONS := {"adm": "GFX_icon_powers_administrative", "dip": "GFX_icon_powers_diplomatic",
 		"mil": "GFX_icon_powers_military"}
@@ -54,6 +54,7 @@ var tab := "court"
 var tech_tab: Eu4TechTab
 var ideas_tab: Eu4IdeasTab
 var economy_tab: Eu4EconomyTab
+var religion_tab: Eu4ReligionTab
 var _tabs: Control
 var _court: Control
 var _gov: Control
@@ -75,6 +76,9 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 	economy_tab = Eu4EconomyTab.new()
 	if not economy_tab.setup(self):
 		economy_tab = null
+	religion_tab = Eu4ReligionTab.new()
+	if not religion_tab.setup(self):
+		religion_tab = null
 	ideas_tab = Eu4IdeasTab.new()
 	if ideas_tab.setup(self):
 		ideas_tab.choose_group_requested.connect(func(t: String): ideas_requested.emit(t))
@@ -94,6 +98,8 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 		pages.append(ideas_tab.root)
 	if economy_tab:
 		pages.append(economy_tab.root)
+	if religion_tab:
+		pages.append(religion_tab.root)
 	for v in pages:
 		var close := v.find_child("close_button", true, false) as BaseButton
 		if close:
@@ -192,6 +198,10 @@ func _on_tab(t: String) -> void:
 			if economy_tab:
 				tab = t
 				refresh()
+		"religion":
+			if religion_tab:
+				tab = t
+				refresh()
 		"tech":
 			if tech_tab:
 				tab = t
@@ -230,6 +240,8 @@ func refresh() -> void:
 		ideas_tab.root.visible = tab == "ideas"
 	if economy_tab:
 		economy_tab.root.visible = tab == "economy"
+	if religion_tab:
+		religion_tab.root.visible = tab == "religion"
 	var tw := _tabs.find_child("countryview_tabs", true, false)
 	for n in TABS:
 		var b := tw.find_child(n, false, false) as Eu4Gui.Button2 if tw else null
@@ -246,6 +258,8 @@ func refresh() -> void:
 			ideas_tab.fill(tag)
 		"economy":
 			economy_tab.fill(tag)
+		"religion":
+			religion_tab.fill(tag)
 
 
 func _gov_name(c: Dictionary) -> String:

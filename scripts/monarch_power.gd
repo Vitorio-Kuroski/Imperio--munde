@@ -217,6 +217,9 @@ func _sum_mods(tag: String) -> Dictionary:
 		add.call(institutions.modifiers(tag))
 	if economy:
 		add.call(economy.modifiers(tag))
+	var rid: String = map.countries.get(tag, {}).get("religion", "")      # efeitos da religião do país
+	if map.religions.has(rid):
+		add.call(map.religions[rid].get("modifiers", {}))
 	return out
 
 

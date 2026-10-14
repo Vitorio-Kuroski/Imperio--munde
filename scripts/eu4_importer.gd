@@ -1031,6 +1031,14 @@ func _trade() -> Array:
 					if x[0] == t[1] and x[1] is String and (x[1] as String).is_valid_float():
 						rules[t[2]] = _int_if_whole(float(x[1]))
 						break
+	for f in _list("common/static_modifiers/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "base_values" and kv[1] is Array and not rules.has("base_values"):
+				var bv := {}
+				for x in kv[1]:
+					if x[0] != "" and not bv.has(x[0]) and x[1] is String and (x[1] as String).is_valid_float():
+						bv[x[0]] = _int_if_whole(float(x[1]))
+				rules["base_values"] = bv
 	if _index.has("common/defines.lua"):
 		var text := _text("common/defines.lua")
 		for n in TRADE_DEFINES:
@@ -1140,6 +1148,15 @@ func _religions(used: Array, loc: Dictionary, rel_group: Dictionary) -> Array:
 				for kv in r[1]:
 					if kv[0] == "icon" and kv[1] is String and (kv[1] as String).is_valid_float():
 						rel["icon"] = int(float(kv[1]))
+						break
+				for kv in r[1]:
+					if kv[0] == "country" and kv[1] is Array:      # efeitos da religião no país
+						var mods := {}
+						for x in kv[1]:
+							if x[0] != "" and not mods.has(x[0]) and x[1] is String and (x[1] as String).is_valid_float():
+								mods[x[0]] = _int_if_whole(float(x[1]))
+						if not mods.is_empty():
+							rel["modifiers"] = mods
 						break
 				out.append(rel)
 	var rest := {}
@@ -1329,7 +1346,7 @@ func _make_ui() -> void:
 ## Telas do EU4 que o jogo monta (Eu4Gui): interface/<nome>.gui.
 const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
 		"countrygovernmentview", "countrytechnologyview", "countryideasview",
-		"countryeconomyview"]
+		"countryeconomyview", "countryreligionview"]
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",

@@ -403,6 +403,14 @@ def eu4_trade(root, loc):
                 v = next((to_num(x) for k, x in blocks[block] if k == key and to_num(x) is not None), None)
                 if v is not None:
                     rules[out] = v
+    for f in sorted(glob.glob(os.path.join(root, "common", "static_modifiers", "*.txt"))):
+        for k, v in parse_script(read_text(f)):
+            if k == "base_values" and isinstance(v, list) and "base_values" not in rules:
+                bv = {}
+                for kk, vv in v:
+                    if kk and kk not in bv and to_num(vv) is not None:
+                        bv[kk] = to_num(vv)
+                rules["base_values"] = bv
     dl = os.path.join(root, "common", "defines.lua")
     if os.path.isfile(dl):
         text = read_text(dl)
@@ -757,7 +765,7 @@ UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "
 # telas do EU4 que o jogo monta (scripts/eu4_gui.gd) e sprites extras (botoes dos modos de mapa)
 GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
              "countrygovernmentview", "countrytechnologyview", "countryideasview",
-             "countryeconomyview"]
+             "countryeconomyview", "countryreligionview"]
 GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic"]
@@ -1482,6 +1490,14 @@ def main():
                 icon = next((to_num(v) for k, v in rval if k == "icon" and to_num(v) is not None), None)
                 if icon is not None:
                     rel["icon"] = int(icon)
+                cm = next((v for k, v in rval if k == "country" and isinstance(v, list)), None)
+                if cm:      # efeitos da religiao no pais (so os numericos)
+                    mods = {}
+                    for k, v in cm:
+                        if k and k not in mods and to_num(v) is not None:
+                            mods[k] = to_num(v)
+                    if mods:
+                        rel["modifiers"] = mods
                 religions.append(rel)
     for rid in sorted(set(religion.values()) - seen - {""}):
         religions.append({"id": rid, "name": nice(rid), "group": "", "color": hashed_color(rid)})
