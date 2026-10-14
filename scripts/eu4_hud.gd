@@ -86,6 +86,9 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock, pw: MonarchPower, eco: Economy) 
 	_tip("icon_score", Loc.s("Desenvolvimento total e posição entre os países", "Total development and rank among countries"))
 	_tip("icon_corruption", Loc.t("corruption", "Corrupção"))
 	_tip("icon_missionary", Loc.t("HINT_MISSIONARY_TITLE", "Missionários"))
+	_tip("icon_merchant", Loc.t("HINT_MERCHANT_TITLE", "Mercadores"))
+	_tip("icon_settler", Loc.t("HINT_COLONIST_TITLE", "Colonos"))
+	_tip("icon_diplomat", Loc.t("HINT_DIPLOMAT_TITLE", "Diplomatas"))
 	refresh()
 	return true
 
@@ -157,6 +160,19 @@ func refresh() -> void:
 	for n in ["text_manpower", "text_sailors", "text_stability", "text_prestige", "text_merchants", "text_settlers",
 			"text_diplomats", "text_missionaries"]:
 		_text(n, "—")
+	# enviados como no EU4: livres/total (mercadores, colonos, diplomatas, missionários)
+	var base: Dictionary = map.trade_rules.get("base_values", {})
+	var tv: Trade = map.trade_view
+	if tv and tv.enabled():
+		var mt := int(tv._rule("base_merchants", 2)) + int(power.modifier(player, "merchants"))
+		_text("text_merchants", "%d/%d" % [maxi(0, mt - tv.merchants.get(player, []).size()), mt])
+		_tip("text_merchants", Loc.s("Mercadores livres/total (vão sozinhos aos nós de maior poder)",
+				"Free/total merchants (placed automatically in the strongest nodes)"))
+	if not base.is_empty():
+		var col := int(base.get("colonists", 0)) + int(power.modifier(player, "colonists"))
+		_text("text_settlers", "%d/%d" % [col, col])
+		var dip := int(base.get("diplomats", 0)) + int(power.modifier(player, "diplomats"))
+		_text("text_diplomats", "%d/%d" % [dip, dip])
 	if religion and religion.enabled():      # missionários livres/total, como no EU4
 		_text("text_missionaries", "%d/%d" % [religion.free_missionaries(player), religion.max_missionaries(player)])
 	if _dev_version != map.owner_version:

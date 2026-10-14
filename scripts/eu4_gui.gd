@@ -235,10 +235,11 @@ func _find(items: Array, name: String) -> Array:
 	return []
 
 
+## Valor da chave; repetida, vale a última definição (como no EU4: o topbar.gui tem font duas vezes).
 static func _val(items: Array, key: String, default: Variant = "") -> Variant:
-	for kv in items:
-		if (kv[0] as String).to_lower() == key:
-			return kv[1]
+	for i in range(items.size() - 1, -1, -1):
+		if (items[i][0] as String).to_lower() == key:
+			return items[i][1]
 	return default
 
 
