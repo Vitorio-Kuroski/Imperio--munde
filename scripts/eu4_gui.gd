@@ -375,6 +375,18 @@ func _element(kind: String, items: Array) -> Control:
 				b.tooltip_text = tip
 			c = b
 			_place(c, items, b.custom_minimum_size)
+		"scrollbartype":
+			var sl := ScrollBar2.new()
+			var parts := {}
+			for kv in items:
+				if kv[1] is Array and (kv[0] as String).to_lower() in ["guibuttontype", "buttontype"]:
+					parts[str(_val(kv[1], "name", ""))] = str(_val(kv[1], "quadtexturesprite", _val(kv[1], "spritetype", "")))
+			var sz := _vec(items, "size")
+			sl.setup(self, sz, parts.get(str(_val(items, "track", "")), ""), parts.get(str(_val(items, "slider", "")), ""),
+					parts.get(str(_val(items, "leftbutton", "")), ""), parts.get(str(_val(items, "rightbutton", "")), ""))
+			sl.set_value(str(_val(items, "startvalue", "0")).to_float())
+			_place(sl, items, sz)
+			c = sl
 		"listboxtype", "smoothlistboxtype":
 			var sc := ScrollContainer.new()
 			sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -526,6 +538,50 @@ class Progress extends Control:
 		_fill.visible = r > 0.0
 		_fill.position = Vector2.ZERO
 		_fill.size = Vector2(custom_minimum_size.x * r, custom_minimum_size.y)
+
+
+## Barra deslizante do EU4 (scrollbarType horizontal): setas nas pontas, trilho e o botão na
+## posição do valor (0 a 1). Só mostra o valor (o jogo ainda não tem o que ela regularia).
+class ScrollBar2 extends Control:
+	var _knob: Control
+	var _track_w := 0.0
+	var value := 0.0
+
+	func setup(g: Eu4Gui, sz: Vector2, track: String, knob: String, left: String, right: String) -> void:
+		mouse_filter = Control.MOUSE_FILTER_PASS
+		custom_minimum_size = sz
+		size = sz
+		var arrow := 0.0
+		for a in [[left, 0.0], [right, -1.0]]:
+			if g.sprites.has(a[0]):
+				var ic := Icon.new()
+				ic.set_sprite(g, a[0], 0)
+				ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				arrow = ic.custom_minimum_size.x
+				ic.position = Vector2(0.0 if a[1] == 0.0 else sz.x - arrow, (sz.y - ic.custom_minimum_size.y) / 2.0)
+				add_child(ic)
+		if g.sprites.has(track):
+			var t := g._icon(track, 0, Vector2(sz.x - 2.0 * arrow, sz.y))
+			t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			t.position = Vector2(arrow, 0)
+			t.size = Vector2(sz.x - 2.0 * arrow, sz.y)
+			add_child(t)
+			move_child(t, 0)
+		_track_w = sz.x - 2.0 * arrow
+		if g.sprites.has(knob):
+			var k := Icon.new()
+			k.set_sprite(g, knob, 0)
+			k.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_knob = k
+			add_child(k)
+		set_meta("arrow", arrow)
+
+	func set_value(v: float) -> void:
+		value = clampf(v, 0.0, 1.0)
+		if _knob:
+			var arrow: float = get_meta("arrow", 0.0)
+			var kw := _knob.custom_minimum_size.x
+			_knob.position = Vector2(arrow + (_track_w - kw) * value, (size.y - _knob.custom_minimum_size.y) / 2.0)
 
 
 ## Botão do EU4: quadros do sprite = normal, mouse em cima, apertado, desativado (com menos

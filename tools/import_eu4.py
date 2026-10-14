@@ -710,7 +710,8 @@ UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "
 
 # telas do EU4 que o jogo monta (scripts/eu4_gui.gd) e sprites extras (botoes dos modos de mapa)
 GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
-             "countrygovernmentview", "countrytechnologyview", "countryideasview"]
+             "countrygovernmentview", "countrytechnologyview", "countryideasview",
+             "countryeconomyview"]
 GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic"]
@@ -723,13 +724,13 @@ SPRITE_KINDS = ["spritetype", "frameanimatedspritetype", "textspritetype", "corn
                 "maskedshieldtype", "progressbartype"]
 
 
-def load_rgba(path):
-    """Imagem RGBA (alfa todo zerado vira opaco), ou None."""
+def load_rgba(path, fix_alpha=True):
+    """Imagem RGBA (alfa todo zerado vira opaco, se fix_alpha), ou None."""
     try:
         im = Image.open(path).convert("RGBA")
     except OSError:
         return None
-    if im.getchannel("A").getextrema()[1] == 0:
+    if fix_alpha and im.getchannel("A").getextrema()[1] == 0:
         im = im.convert("RGB").convert("RGBA")
     return im
 
@@ -816,7 +817,7 @@ def make_gui(root):
         src = rel if rel in files else re.sub(r"\.(dds|tga)$", lambda m: ".tga" if m.group(1) == "dds" else ".dds", rel)
         res = ""
         if src in files:
-            im = load_rgba(files[src])
+            im = load_rgba(files[src], src.endswith(".tga"))   # .dds transparentes de proposito
             if im is not None:
                 res = os.path.splitext(rel)[0] + ".png"
                 dst = os.path.join(out, *res.split("/"))

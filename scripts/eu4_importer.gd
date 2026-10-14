@@ -1269,7 +1269,8 @@ func _make_ui() -> void:
 
 ## Telas do EU4 que o jogo monta (Eu4Gui): interface/<nome>.gui.
 const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
-		"countrygovernmentview", "countrytechnologyview", "countryideasview"]
+		"countrygovernmentview", "countrytechnologyview", "countryideasview",
+		"countryeconomyview"]
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",
@@ -1315,7 +1316,8 @@ func _gui_texture(path: String, done: Dictionary) -> String:
 		src = rel.get_basename() + (".tga" if rel.get_extension() == "dds" else ".dds")
 	var out := ""
 	if _index.has(src):
-		var img := _load_icon(src)
+		# nas telas, alfa todo zerado só é erro de leitura em .tga (há .dds transparentes de propósito)
+		var img := _load_icon(src, src.ends_with(".tga"))
 		if img != null:
 			out = rel.get_basename() + ".png"
 			DirAccess.make_dir_recursive_absolute((OUT_DIR + "/gui/" + out).get_base_dir())
@@ -1425,7 +1427,7 @@ func _make_gui() -> void:
 
 
 ## .dds ou .tga -> Image RGBA8 (null se não der). Alfa todo zerado vira opaco.
-func _load_icon(rel: String) -> Image:
+func _load_icon(rel: String, fix_alpha := true) -> Image:
 	var b := _bytes(rel)
 	var img: Image = null
 	if rel.ends_with(".dds"):
@@ -1437,7 +1439,7 @@ func _load_icon(rel: String) -> Image:
 	if img == null or img.is_empty():
 		return null
 	img.convert(Image.FORMAT_RGBA8)
-	if img.get_used_rect().size == Vector2i.ZERO:
+	if fix_alpha and img.get_used_rect().size == Vector2i.ZERO:
 		img.convert(Image.FORMAT_RGB8)
 		img.convert(Image.FORMAT_RGBA8)
 	return img
