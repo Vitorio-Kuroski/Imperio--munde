@@ -1,0 +1,58 @@
+{
+  "nomes": {
+    "adm": ["Governo tribal", "Tribos avançadas", "Monarquia feudal", "Administração medieval", "Templos",
+      "Ideias nacionais", "Oficina", "Pensamento renascentista", "Tribunal", "A foice", "Teocracia moderna",
+      "Manufatura têxtil", "Administração moderna inicial", "Drenagem melhorada", "Experimentação científica",
+      "Administração militar", "Metalurgia", "Universidade", "Soberania nacional", "Catedral", "Governo absoluto",
+      "Desmatamento", "A Constituição", "Medindo o mundo", "Títulos e tontinas", "Produção melhorada",
+      "Separação dos poderes", "Burocracia moderna", "Arado de Rotherham", "Direitos do Homem",
+      "Produção avançada", "Ideais revolucionários", "Rotação de quatro campos"],
+    "dip": ["Primeiros navios", "Mercadores e comércio", "A barca", "A primeira caraca", "Mercado",
+      "Instrumentos financeiros básicos", "Estaleiros", "Ambições navais", "Docas", "Caracas e caravelas",
+      "A flauta", "Cais", "Nau de guerra", "Companhias de carta", "A galeaça", "O galeão",
+      "Direito marítimo", "Navio mercante", "Linha de batalha", "O galeão de guerra", "Profissionalização naval",
+      "O xaveco", "Limões", "Fragatas pesadas", "A fragata do arquipélago", "Navios de três pontes",
+      "O navio das Índias Orientais", "Castigos públicos", "Sociedades anônimas", "Cadetes aspirantes",
+      "Companhias de seguro", "Projeto naval superior", "O padrão-ouro"]
+  },
+  "efeitos": {
+    "trade_range": "alcance comercial", "military_tactics": "táticas militares", "combat_width": "largura de combate",
+    "trade_efficiency": "eficiência comercial", "production_efficiency": "eficiência de produção",
+    "naval_morale": "moral naval", "range": "alcance de colonização", "naval_maintenance": "manutenção naval",
+    "infantry_shock": "choque da infantaria", "infantry_fire": "fogo da infantaria",
+    "allowed_idea_groups": "grupos de ideias", "governing_capacity": "capacidade de governo",
+    "global_colonial_growth": "crescimento colonial", "cavalry_shock": "choque da cavalaria",
+    "cavalry_fire": "fogo da cavalaria", "supply_limit": "limite de suprimento",
+    "naval_engagement_width": "largura de combate naval", "land_morale": "moral terrestre",
+    "artillery_shock": "choque da artilharia", "artillery_fire": "fogo da artilharia",
+    "num_accepted_cultures": "culturas aceitas", "maneuver_value": "manobra",
+    "development_cost_modifier": "custo de desenvolvimento", "administrative_efficiency": "eficiência administrativa",
+    "yearly_corruption": "corrupção anual"
+  },
+  "absolutos": ["trade_range", "military_tactics", "combat_width", "range", "infantry_shock", "infantry_fire",
+    "allowed_idea_groups", "governing_capacity", "global_colonial_growth", "cavalry_shock", "cavalry_fire",
+    "naval_engagement_width", "land_morale", "artillery_shock", "artillery_fire", "num_accepted_cultures",
+    "maneuver_value", "naval_morale", "yearly_corruption"],
+  "instituicoes": {
+    "feudalism": "Feudalismo", "renaissance": "Renascimento", "new_world_i": "Colonialismo",
+    "printing_press": "Imprensa", "global_trade": "Comércio global", "manufactories": "Manufaturas",
+    "enlightenment": "Iluminismo", "industrialization": "Industrialização"
+  },
+  "liberacoes": {
+    "despotic_monarchy": "monarquia despótica", "feudal_monarchy": "monarquia feudal",
+    "oligarchic_republic": "república oligárquica", "merchants": "república mercantil",
+    "theocratic_government": "governo teocrático", "administrative_monarchy": "monarquia administrativa",
+    "administrative_republic": "república administrativa", "absolute_monarchy": "monarquia absoluta",
+    "republican_dictatorship": "ditadura republicana", "constitutional_monarchy": "monarquia constitucional",
+    "constitutional_republic": "república constitucional", "enlightened_despotism": "despotismo esclarecido",
+    "bureaucratic_despotism": "despotismo burocrático", "revolutionary_republic": "república revolucionária",
+    "revolutionary_empire": "império revolucionário", "may_support_rebels": "apoiar rebeldes",
+    "may_fabricate_claims": "fabricar reivindicações", "may_force_march": "marcha forçada",
+    "may_drill": "treinar exércitos", "may_build_flagships": "navios-almirantes", "allow_client_states": "estados clientes",
+    "reduced_naval_attrition": "menos atrito naval", "may_study_technology": "estudar tecnologia",
+    "may_steal_maps": "roubar mapas", "may_sabotage_reputation": "sabotar reputação",
+    "may_slander_merchants": "difamar mercadores", "may_sow_discontent": "semear descontentamento",
+    "may_agitate_for_liberty": "agitar pela liberdade", "may_corrupt_officials": "corromper oficiais",
+    "may_infiltrate_administration": "infiltrar administração", "may_sabotage_recruitment": "sabotar recrutamento"
+  }
+}

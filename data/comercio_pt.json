@@ -1,0 +1,10 @@
+{
+  "centros": {
+    "staple_port": "Porto natural",
+    "entrepot": "Entreposto",
+    "world_port": "Porto mundial",
+    "emporium": "Empório",
+    "market_town": "Cidade mercantil",
+    "world_trade_center": "Centro comercial mundial"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "nomes": {
+    "marketplace": "Mercado", "workshop": "Oficina", "temple": "Templo", "barracks": "Quartel",
+    "shipyard": "Estaleiro", "fort_15th": "Castelo", "coastal_defence": "Defesa costeira",
+    "courthouse": "Tribunal", "dock": "Doca", "regimental_camp": "Acampamento regimental",
+    "fort_16th": "Forte bastionado", "naval_battery": "Bateria naval", "cathedral": "Catedral",
+    "university": "Universidade", "trade_depot": "Entreposto comercial", "grand_shipyard": "Grande estaleiro",
+    "training_fields": "Campo de treinamento", "fort_17th": "Forte estrelado", "stock_exchange": "Bolsa de valores",
+    "counting_house": "Casa de contabilidade", "town_hall": "Paço municipal", "drydock": "Doca seca",
+    "conscription_center": "Centro de recrutamento", "fort_18th": "Fortaleza", "manufactory": "Manufatura",
+    "wharf": "Cais", "weapons": "Fábrica de armas", "textile": "Tecelagem", "plantations": "Plantação",
+    "tradecompany": "Feitoria", "farm_estate": "Fazenda", "mills": "Moinhos", "furnace": "Fundição",
+    "ramparts": "Muralhas", "soldier_households": "Casas de soldados",
+    "impressment_offices": "Recrutamento naval", "state_house": "Casa de governo",
+    "native_earthwork": "Terrapleno", "native_palisade": "Paliçada", "native_fortified_house": "Casa fortificada",
+    "native_ceremonial_fire_pit": "Fogueira cerimonial", "native_irrigation": "Irrigação",
+    "native_storehouse": "Armazém", "native_longhouse": "Casa comprida", "native_sweat_lodge": "Tenda do suor",
+    "native_great_trail": "Grande trilha", "native_three_sisters_field": "Campo das três irmãs"
+  },
+  "efeitos": {
+    "province_trade_power_modifier": "poder de comércio", "local_production_efficiency": "eficiência de produção",
+    "local_tax_modifier": "imposto", "local_manpower_modifier": "efetivo", "naval_forcelimit": "limite de frota",
+    "ship_recruit_speed": "tempo de construção de navios", "local_ship_repair": "reparo de navios",
+    "fort_level": "nível de forte", "blockade_force_required": "força para bloqueio",
+    "hostile_disembark_speed": "tempo de desembarque inimigo", "hostile_fleet_attrition": "atrito de frota inimiga",
+    "local_state_maintenance_modifier": "manutenção do estado", "local_autonomy": "autonomia",
+    "local_governing_cost": "custo de governo", "allowed_num_of_buildings": "vagas de construção",
+    "local_sailors_modifier": "marinheiros", "land_forcelimit": "limite de tropas",
+    "local_missionary_strength": "força missionária", "local_development_cost": "custo de desenvolvimento",
+    "trade_goods_size": "produção de mercadorias", "trade_goods_size_modifier": "produção de mercadorias",
+    "global_trade_goods_size_modifier": "produção de mercadorias do país", "local_hostile_attrition": "atrito inimigo",
+    "local_defensiveness": "defesa do forte", "local_defender_dice_roll_bonus": "dado do defensor",
+    "local_manpower": "efetivo (mil homens)", "local_sailors": "marinheiros", "local_ship_cost": "custo de navios",
+    "statewide_governing_cost": "custo de governo do estado", "min_local_autonomy": "autonomia mínima",
+    "local_governing_cost_increase": "custo de governo", "local_hostile_movement_speed": "velocidade inimiga",
+    "advisor_cost": "custo de conselheiros", "monthly_reform_progress_building": "progresso de reforma",
+    "tribal_development_growth": "crescimento tribal", "diplomatic_reputation": "reputação diplomática"
+  },
+  "absolutos": ["fort_level", "naval_forcelimit", "land_forcelimit", "allowed_num_of_buildings", "local_sailors",
+    "local_manpower", "hostile_fleet_attrition", "diplomatic_reputation", "local_defender_dice_roll_bonus",
+    "local_hostile_attrition", "min_local_autonomy", "local_governing_cost_increase", "trade_goods_size"]
+}

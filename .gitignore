@@ -1,0 +1,9 @@
+.godot/
+*.translation
+/android/
+.DS_Store
+__pycache__/
+data/eu4/
+assets/eu4/
+tools/data/raw/
+/build/

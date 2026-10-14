@@ -1,0 +1,60 @@
+{
+  "terrenos": {
+    "glacier": "geleira", "farmlands": "fazendas", "forest": "floresta", "hills": "colinas", "woods": "bosque",
+    "mountain": "montanhas", "impassable_mountains": "intransitável", "grasslands": "planície", "jungle": "selva",
+    "marsh": "pântano", "desert": "deserto", "coastal_desert": "deserto costeiro", "coastline": "litoral",
+    "drylands": "terras secas", "highlands": "planalto", "savannah": "savana", "steppe": "estepe",
+    "ocean": "mar", "inland_ocean": "mar"
+  },
+  "continentes": {
+    "europe": "Europa", "asia": "Ásia", "africa": "África", "north_america": "América do Norte",
+    "south_america": "América do Sul", "oceania": "Oceania"
+  },
+  "superregioes": {
+    "india_superregion": "Índia", "east_indies_superregion": "Índias Orientais", "oceania_superregion": "Oceania",
+    "china_superregion": "China", "europe_superregion": "Europa Ocidental", "eastern_europe_superregion": "Europa Oriental",
+    "tartary_superregion": "Tartária", "far_east_superregion": "Extremo Oriente", "africa_superregion": "África Ocidental",
+    "southern_africa_superregion": "África Oriental e Austral", "south_america_superregion": "América do Sul",
+    "andes_superregion": "Andes", "north_america_superregion": "América do Norte",
+    "central_america_superregion": "América Central", "near_east_superregion": "Oriente Próximo",
+    "persia_superregion": "Pérsia", "west_american_sea_superregion": "Mares do Oeste da América",
+    "east_american_sea_superregion": "Mares do Leste da América", "north_european_sea_superregion": "Mares do Norte da Europa",
+    "south_european_sea_superregion": "Mares do Sul da Europa", "west_african_sea_superregion": "Mares da África Ocidental",
+    "east_african_sea_superregion": "Mares da África Oriental", "indian_pacific_sea_superregion": "Mares do Índico e Pacífico",
+    "north_pacific_sea_superregion": "Mares do Norte do Pacífico"
+  },
+  "regioes": {
+    "france_region": "França", "scandinavia_region": "Escandinávia", "low_countries_region": "Países Baixos",
+    "italy_region": "Itália", "north_german_region": "Norte da Alemanha", "south_german_region": "Sul da Alemanha",
+    "russia_region": "Rússia", "ural_region": "Urais", "iberia_region": "Ibéria", "british_isles_region": "Ilhas Britânicas",
+    "baltic_region": "Báltico", "poland_region": "Polônia", "ruthenia_region": "Rutênia", "crimea_region": "Crimeia",
+    "balkan_region": "Bálcãs", "carpathia_region": "Cárpatos", "egypt_region": "Egito", "maghreb_region": "Magrebe",
+    "mashriq_region": "Maxerreque", "anatolia_region": "Anatólia", "persia_region": "Pérsia", "khorasan_region": "Coração",
+    "caucasia_region": "Cáucaso", "arabia_region": "Arábia", "niger_region": "Níger", "guinea_region": "Guiné",
+    "sahel_region": "Sahel", "horn_of_africa_region": "Chifre da África", "east_africa_region": "África Oriental",
+    "central_africa_region": "África Central", "kongo_region": "Congo", "central_asia_region": "Ásia Central",
+    "south_africa_region": "África do Sul", "west_siberia_region": "Sibéria Ocidental", "east_siberia_region": "Sibéria Oriental",
+    "mongolia_region": "Mongólia", "manchuria_region": "Manchúria", "korea_region": "Coreia", "tibet_region": "Tibete",
+    "hindusthan_region": "Industão", "bengal_region": "Bengala", "west_india_region": "Índia Ocidental",
+    "deccan_region": "Decão", "coromandel_region": "Coromandel", "burma_region": "Birmânia", "japan_region": "Japão",
+    "australia_region": "Austrália", "south_china_region": "Sul da China", "xinan_region": "Xinan",
+    "north_china_region": "Norte da China", "brazil_region": "Brasil", "la_plata_region": "Prata",
+    "colombia_region": "Colômbia", "peru_region": "Peru", "upper_peru_region": "Alto Peru", "malaya_region": "Malásia",
+    "moluccas_region": "Molucas", "indonesia_region": "Indonésia", "oceanea_region": "Oceania",
+    "indo_china_region": "Indochina", "canada_region": "Canadá", "great_lakes_region": "Grandes Lagos",
+    "northeast_america_region": "Nordeste da América", "southeast_america_region": "Sudeste da América",
+    "mississippi_region": "Mississípi", "great_plains_region": "Grandes Planícies", "california_region": "Califórnia",
+    "cascadia_region": "Cascádia", "hudson_bay_region": "Baía de Hudson", "mexico_region": "México",
+    "rio_grande_region": "Rio Grande", "central_america_region": "América Central", "carribeans_region": "Caribe",
+    "baltic_sea_region": "Mar Báltico", "north_atlantic_region": "Atlântico Norte",
+    "american_east_coast_region": "Costa Leste Americana", "mediterrenean_region": "Mediterrâneo",
+    "caribbean_sea_region": "Mar do Caribe", "west_african_sea_region": "Mar da África Ocidental",
+    "west_indian_ocean_region": "Oeste do Índico", "arabian_sea_region": "Mar da Arábia",
+    "east_indian_ocean_region": "Leste do Índico", "south_indian_ocean_region": "Sul do Índico",
+    "south_china_sea_region": "Mar do Sul da China", "east_china_sea_region": "Mar do Leste da China",
+    "north_west_pacific_region": "Noroeste do Pacífico", "south_west_pacific_region": "Sudoeste do Pacífico",
+    "south_east_pacific_region": "Sudeste do Pacífico", "north_east_pacific_region": "Nordeste do Pacífico",
+    "pacific_south_america_region": "Pacífico Sul-Americano", "atlantic_south_america_region": "Atlântico Sul-Americano",
+    "south_atlantic_region": "Atlântico Sul"
+  }
+}
