@@ -29,6 +29,7 @@ var side_panel: PanelContainer
 var info_label: Label
 var prov_icons: HFlowContainer     # ícones da província (produto, religião, construções, instituições)
 var tooltip: MapTooltip
+var eu4_hud: Eu4Hud               # interface montada com os .gui do EU4 (null sem as telas importadas)
 var country_panel: CountryPanel
 var tech_window: TechWindow
 var ideas_window: IdeasWindow
@@ -65,6 +66,7 @@ func _ready() -> void:
 	camera.make_current()
 
 	_build_ui()
+	_setup_eu4_hud()
 	_apply_eu4_theme()
 	clock.changed.connect(_refresh_top_bar)
 	clock.month_passed.connect(_on_month_passed)
@@ -85,6 +87,29 @@ func _apply_eu4_theme() -> void:
 			(w as Control).remove_theme_stylebox_override("panel")
 	tooltip.theme_type_variation = "Eu4Small"
 	top_bar.theme_type_variation = "Eu4Small"
+
+
+## Barra superior, data/velocidade e modos de mapa do próprio EU4, se as telas foram importadas.
+func _setup_eu4_hud() -> void:
+	var g := Eu4Gui.open(map.gui_dir) if map.gui_dir != "" else null
+	if g == null:
+		return
+	eu4_hud = Eu4Hud.new()
+	ui.add_child(eu4_hud)
+	ui.move_child(eu4_hud, 0)            # atrás dos painéis e janelas
+	if not eu4_hud.setup(g, map, clock, power, economy):
+		eu4_hud.queue_free()
+		eu4_hud = null
+		return
+	top_bar.hide()
+	country_panel.top_margin = 112.0
+	country_panel.bottom_margin = 240.0
+	eu4_hud.shield_pressed.connect(func():
+		if player_tag != "":
+			country_panel.show_country(map, player_tag))
+	eu4_hud.zoom_requested.connect(func(f: float):
+		camera.zoom = (camera.zoom * f).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
+		_clamp_camera())
 
 
 func _build_ui() -> void:
@@ -402,6 +427,9 @@ func _refresh_top_bar() -> void:
 	pause_button.text = "▶" if clock.paused else "⏸"
 	speed_label.text = "Vel. %d/5" % clock.speed
 	mode_button.text = "Mapa: %s" % MapView.MAP_MODE_NAMES[map.map_mode]
+	if eu4_hud:
+		eu4_hud.player = player_tag
+		eu4_hud.refresh()
 
 
 ## Alterna político -> terreno -> cultura -> religião -> produtos -> comércio -> regiões -> político (pula os modos sem dados no mapa).
@@ -589,7 +617,8 @@ func _process(delta: float) -> void:
 
 func _update_tooltip() -> void:
 	var m := get_viewport().get_mouse_position()
-	var over_ui := start_panel.visible or top_bar.get_global_rect().has_point(m) \
+	var over_ui := start_panel.visible or get_viewport().gui_get_hovered_control() != null \
+			or (top_bar.visible and top_bar.get_global_rect().has_point(m)) \
 			or (side_panel.visible and side_panel.get_global_rect().has_point(m)) \
 			or (country_panel.visible and country_panel.get_global_rect().has_point(m)) \
 			or (tech_window.visible and tech_window.get_global_rect().has_point(m)) \

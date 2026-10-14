@@ -660,7 +660,7 @@ def gfx_sprites(root):
         def walk(items):
             for k, v in items:
                 if isinstance(v, list):
-                    d = {kk.lower(): vv for kk, vv in v if kk.lower() in ("name", "texturefile") and isinstance(vv, str)}
+                    d = {kk.lower(): vv for kk, vv in v if kk and kk.lower() in ("name", "texturefile") and isinstance(vv, str)}
                     if "name" in d and "texturefile" in d:
                         out.setdefault(d["name"], re.sub(r"[\\/]+", "/", d["texturefile"]).lower())
                     walk(v)
@@ -706,6 +706,164 @@ UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "
                ("button", "gfx/interface/button_straight_255_32.dds", 0),
                ("scroll_track", "gfx/interface/scroll_track.dds", 0),
                ("scroll_grabber", "gfx/interface/scroll_drager.dds", 0)]
+
+
+# telas do EU4 que o jogo monta (scripts/eu4_gui.gd) e sprites extras (botoes dos modos de mapa)
+GUI_FILES = ["topbar", "speed_controls", "minimappanel"]
+GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
+                     "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
+                     "GFX_mapmode_diplomatic"]
+SPRITE_KINDS = ["spritetype", "frameanimatedspritetype", "textspritetype", "corneredtilespritetype",
+                "maskedshieldtype", "progressbartype"]
+
+
+def load_rgba(path):
+    """Imagem RGBA (alfa todo zerado vira opaco), ou None."""
+    try:
+        im = Image.open(path).convert("RGBA")
+    except OSError:
+        return None
+    if im.getchannel("A").getextrema()[1] == 0:
+        im = im.convert("RGB").convert("RGBA")
+    return im
+
+
+def make_gui(root):
+    """Telas do EU4 em assets/eu4/gui/: gui.json (arvores dos .gui, sprites e fontes usados), texturas
+    em PNG e fontes (.fnt + pagina em PNG). Mesma saida do importador do jogo."""
+    import shutil
+    out = "assets/eu4/gui"
+    if os.path.isdir(out):
+        shutil.rmtree(out)
+    idir = os.path.join(root, "interface")
+    if not os.path.isdir(idir):
+        return
+    gui_by_low, gfx_files = {}, []
+    for d, _, fs in os.walk(idir):
+        for f in fs:
+            if f.lower().endswith(".gui"):
+                gui_by_low.setdefault(f.lower(), os.path.join(d, f))
+            elif f.lower().endswith(".gfx"):
+                gfx_files.append(os.path.relpath(os.path.join(d, f), root).replace(os.sep, "/"))
+    files = {}
+    for d, _, fs in os.walk(os.path.join(root, "gfx")):
+        if "flags" in os.path.relpath(d, root).replace(os.sep, "/").lower().split("/"):
+            continue
+        for f in fs:
+            full = os.path.join(d, f)
+            files.setdefault(os.path.relpath(full, root).replace(os.sep, "/").lower(), full)
+
+    def conv(items):
+        return [["" if k is None else k, conv(v) if isinstance(v, list) else v] for k, v in items]
+
+    trees, used, used_fonts = {}, set(), set()
+
+    def refs(items):
+        for k, v in items:
+            kl = (k or "").lower()
+            if isinstance(v, list):
+                refs(v)
+            elif kl in ("spritetype", "quadtexturesprite"):
+                used.add(v)
+            elif kl in ("font", "buttonfont"):
+                used_fonts.add(v)
+
+    for g in GUI_FILES:
+        p = gui_by_low.get(g + ".gui")
+        if p:
+            trees[g] = conv(parse_script(read_text(p)))
+            refs(trees[g])
+    if not trees:
+        return
+    used.update(GUI_EXTRA_SPRITES)
+
+    def kv(items):
+        d = {}
+        for k, v in items:
+            if k and k.lower() not in d:
+                d[k.lower()] = v
+        return d
+
+    defs, font_defs = {}, {}
+
+    def collect(items):
+        for k, v in items:
+            if not isinstance(v, list):
+                continue
+            kl = (k or "").lower()
+            d = kv(v)
+            if kl in SPRITE_KINDS and "name" in d:
+                defs.setdefault(d["name"], (kl, d))
+            elif kl == "bitmapfont" and "name" in d:
+                font_defs.setdefault(d["name"], d)
+            else:
+                collect(v)
+
+    for rel in sorted(gfx_files):
+        collect(parse_script(read_text(os.path.join(root, *rel.split("/")))))
+    done = {}
+
+    def texture(path):
+        rel = re.sub(r"[\\/]+", "/", path.lower())
+        if rel in done:
+            return done[rel]
+        src = rel if rel in files else re.sub(r"\.(dds|tga)$", lambda m: ".tga" if m.group(1) == "dds" else ".dds", rel)
+        res = ""
+        if src in files:
+            im = load_rgba(files[src])
+            if im is not None:
+                res = os.path.splitext(rel)[0] + ".png"
+                dst = os.path.join(out, *res.split("/"))
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                im.save(dst)
+        done[rel] = res
+        return res
+
+    def xy(v):
+        if not isinstance(v, list):
+            return [0, 0]
+        d = kv(v)
+        return [int(float(d.get("x", "0") or 0)), int(float(d.get("y", "0") or 0))]
+
+    os.makedirs(out, exist_ok=True)
+    sprites = {}
+    for n in sorted(used):
+        if n not in defs:
+            continue
+        kind, d = defs[n]
+        s = {"kind": kind}
+        for key, dst in (("texturefile", "texture"), ("texturefile1", "texture"), ("texturefile2", "texture2")):
+            if isinstance(d.get(key), str) and dst not in s:
+                t = texture(d[key])
+                if t:
+                    s[dst] = t
+        if "texture" not in s:
+            continue
+        if "noofframes" in d:
+            s["frames"] = max(1, int(float(d["noofframes"])))
+        if "bordersize" in d:
+            s["border"] = xy(d["bordersize"])
+        if "size" in d:
+            s["size"] = xy(d["size"])
+        sprites[n] = s
+    fonts = {}
+    for n in sorted(used_fonts):
+        fd = font_defs.get(n, {})
+        path = str(fd.get("path", "gfx/fonts/" + n)).lower().replace("\\", "/")
+        base = path.rsplit("/", 1)[-1]
+        fnt = "gfx/fonts/" + base + ".fnt"
+        if fnt not in files:
+            continue
+        page = texture("gfx/fonts/" + base + ".tga")
+        if not page:
+            continue
+        dst = os.path.join(out, *fnt.split("/"))
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        with open(files[fnt], "rb") as fi, open(dst, "wb") as fo:
+            fo.write(fi.read())
+        fonts[n] = {"fnt": fnt, "page": page, "color": str(fd.get("color", "0xffffffff")).lower()}
+    with open(os.path.join(out, "gui.json"), "w", encoding="utf-8") as f:
+        json.dump({"files": trees, "sprites": sprites, "fonts": fonts}, f, ensure_ascii=False)
 
 
 def make_ui(root):
@@ -1367,6 +1525,7 @@ def main():
     # ---------------------------------------------------------- bandeiras (gfx/flags/TAG.tga)
     make_flags(root, countries)
     make_ui(root)
+    make_gui(root)
     icons = make_icons(root, trade_goods, religions, institutions, advisor_types, buildings, idea_groups,
                        national_ideas)
 

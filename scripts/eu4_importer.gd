@@ -44,6 +44,17 @@ static func remove_import() -> void:
 	for u in UI_TEXTURES:
 		if FileAccess.file_exists(OUT_DIR + "/ui/%s.png" % u[0]):
 			DirAccess.remove_absolute(OUT_DIR + "/ui/%s.png" % u[0])
+	_remove_tree(OUT_DIR + "/gui")
+
+
+static func _remove_tree(dir: String) -> void:
+	if not DirAccess.dir_exists_absolute(dir):
+		return
+	for f in DirAccess.get_files_at(dir):
+		DirAccess.remove_absolute(dir + "/" + f)
+	for d in DirAccess.get_directories_at(dir):
+		_remove_tree(dir + "/" + d)
+	DirAccess.remove_absolute(dir)
 
 
 # ------------------------------------------------------------------ fontes (pasta ou .zip)
@@ -84,7 +95,7 @@ func _walk(dir: String, depth: int) -> void:
 			continue
 		if low == "gfx":             # do gfx/ só interessam as bandeiras e os ícones da interface
 			for s2 in DirAccess.get_directories_at(dir + "/" + sub):
-				if s2.to_lower() in ["flags", "interface"]:
+				if s2.to_lower() in ["flags", "interface", "fonts"]:
 					_walk(dir + "/" + sub + "/" + s2, depth + 1)
 			continue
 		_walk(dir + "/" + sub, depth + 1)
@@ -99,6 +110,11 @@ func _rel(p: String) -> String:
 		return "gfx/flags/" + p.get_file().get_basename().to_upper() + ".tga"
 	# ícones: gfx/interface/... (.dds/.tga, em minúsculas) e os sprites das interface/*.gfx
 	var low := p.to_lower()
+	# telas (interface/*.gui) e fontes (gfx/fonts/*.fnt + página .tga/.dds)
+	if low.get_extension() == "gui" and (low.begins_with("interface/") or low.contains("/interface/")):
+		return "interface/" + p.get_file()
+	if low.get_extension() in ["fnt", "tga", "dds"] and (low.begins_with("fonts/") or low.contains("/fonts/")):
+		return "gfx/fonts/" + low.get_file()
 	if low.get_extension() == "gfx" and (low.begins_with("interface/") or low.contains("/interface/")):
 		var j := 0 if low.begins_with("interface/") else low.rfind("/interface/") + 1
 		return p.substr(j)
@@ -778,6 +794,7 @@ func _import() -> String:
 	_set_status("Gravando os dados...")
 	_make_flags(countries)
 	_make_ui()
+	_make_gui()
 	var icons := _make_icons(trade_goods, religions, institutions, advisor_types, buildings, idea_groups,
 			national_ideas)
 	var provinces := []
@@ -1248,6 +1265,153 @@ func _make_ui() -> void:
 		if int(u[2]) > 0:
 			img.resize(u[2], u[2], Image.INTERPOLATE_LANCZOS)
 		img.save_png(out)
+
+
+## Telas do EU4 que o jogo monta (Eu4Gui): interface/<nome>.gui.
+const GUI_FILES := ["topbar", "speed_controls", "minimappanel"]
+## Sprites usados pelo jogo além dos citados nos .gui (botões dos modos de mapa).
+const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
+		"GFX_mapmode_religion", "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas",
+		"GFX_mapmode_institutions", "GFX_mapmode_diplomatic"]
+const SPRITE_KINDS := ["spritetype", "frameanimatedspritetype", "textspritetype", "corneredtilespritetype",
+		"maskedshieldtype", "progressbartype"]
+
+
+func _kv(items: Array) -> Dictionary:
+	var d := {}
+	for kv in items:
+		var k := (kv[0] as String).to_lower()
+		if k != "" and not d.has(k):
+			d[k] = kv[1]
+	return d
+
+
+func _xy(v: Variant) -> Array:
+	if not (v is Array):
+		return [0, 0]
+	var d := _kv(v)
+	return [int(str(d.get("x", "0")).to_float()), int(str(d.get("y", "0")).to_float())]
+
+
+## Textura de um sprite (caminho do .gfx) -> PNG em gui/ ("gfx/interface/x.png"), ou "" se não houver.
+func _gui_texture(path: String, done: Dictionary) -> String:
+	var rel := path.to_lower().replace("\\", "/")
+	while rel.contains("//"):
+		rel = rel.replace("//", "/")
+	if done.has(rel):
+		return done[rel]
+	var src := rel
+	if not _index.has(src):
+		src = rel.get_basename() + (".tga" if rel.get_extension() == "dds" else ".dds")
+	var out := ""
+	if _index.has(src):
+		var img := _load_icon(src)
+		if img != null:
+			out = rel.get_basename() + ".png"
+			DirAccess.make_dir_recursive_absolute((OUT_DIR + "/gui/" + out).get_base_dir())
+			img.save_png(OUT_DIR + "/gui/" + out)
+	done[rel] = out
+	return out
+
+
+func _collect_refs(items: Array, sprites: Dictionary, fonts: Dictionary) -> void:
+	for kv in items:
+		var k := (kv[0] as String).to_lower()
+		if kv[1] is Array:
+			_collect_refs(kv[1], sprites, fonts)
+		elif k in ["spritetype", "quadtexturesprite"]:
+			sprites[kv[1]] = true
+		elif k in ["font", "buttonfont"]:
+			fonts[kv[1]] = true
+
+
+func _collect_defs(items: Array, defs: Dictionary, font_defs: Dictionary) -> void:
+	for kv in items:
+		if not (kv[1] is Array):
+			continue
+		var k := (kv[0] as String).to_lower()
+		var d := _kv(kv[1])
+		if k in SPRITE_KINDS and d.has("name"):
+			if not defs.has(d["name"]):
+				defs[d["name"]] = [k, d]
+		elif k == "bitmapfont" and d.has("name"):
+			if not font_defs.has(d["name"]):
+				font_defs[d["name"]] = d
+		else:
+			_collect_defs(kv[1], defs, font_defs)
+
+
+## Telas do EU4 (GUI_FILES) em user://eu4/gui/: gui.json (árvores dos .gui já lidas, sprites e
+## fontes usados) + texturas em PNG + fontes (.fnt e página em PNG).
+func _make_gui() -> void:
+	_remove_tree(OUT_DIR + "/gui")
+	var by_low := {}
+	for k in _list("interface/"):
+		by_low[(k as String).to_lower()] = k
+	var files := {}
+	var used := {}
+	var used_fonts := {}
+	for g in GUI_FILES:
+		var rel: String = by_low.get("interface/%s.gui" % g, "")
+		if rel == "":
+			continue
+		var tree := _parse(_text(rel))
+		files[g] = tree
+		_collect_refs(tree, used, used_fonts)
+	if files.is_empty():
+		return
+	for n in GUI_EXTRA_SPRITES:
+		used[n] = true
+	_set_status("Lendo as telas do EU4...")
+	var defs := {}
+	var font_defs := {}
+	for k in _list("interface/"):
+		if (k as String).to_lower().ends_with(".gfx"):
+			_collect_defs(_parse(_text(k)), defs, font_defs)
+	DirAccess.make_dir_recursive_absolute(OUT_DIR + "/gui")
+	var done := {}
+	var sprites := {}
+	var names := used.keys()
+	names.sort()
+	for n in names:
+		if not defs.has(n):
+			continue
+		var kind: String = defs[n][0]
+		var d: Dictionary = defs[n][1]
+		var s := {"kind": kind}
+		for key in [["texturefile", "texture"], ["texturefile1", "texture"], ["texturefile2", "texture2"]]:
+			if d.has(key[0]) and d[key[0]] is String and not s.has(key[1]):
+				var t := _gui_texture(d[key[0]], done)
+				if t != "":
+					s[key[1]] = t
+		if not s.has("texture"):
+			continue
+		if d.has("noofframes"):
+			s["frames"] = maxi(1, int(str(d["noofframes"]).to_float()))
+		if d.has("bordersize"):
+			s["border"] = _xy(d["bordersize"])
+		if d.has("size"):
+			s["size"] = _xy(d["size"])
+		sprites[n] = s
+	var fonts := {}
+	var fnames := used_fonts.keys()
+	fnames.sort()
+	for n in fnames:
+		var fd: Dictionary = font_defs.get(n, {})
+		var path: String = str(fd.get("path", "gfx/fonts/" + n)).to_lower().replace("\\", "/")
+		var fnt := "gfx/fonts/" + path.get_file() + ".fnt"
+		if not _index.has(fnt):
+			continue
+		var page := _gui_texture("gfx/fonts/" + path.get_file() + ".tga", done)
+		if page == "":
+			continue
+		var f := FileAccess.open(OUT_DIR + "/gui/" + fnt, FileAccess.WRITE)
+		f.store_buffer(_bytes(fnt))
+		f.close()
+		fonts[n] = {"fnt": fnt, "page": page, "color": str(fd.get("color", "0xffffffff")).to_lower()}
+	var out := FileAccess.open(OUT_DIR + "/gui/gui.json", FileAccess.WRITE)
+	out.store_string(JSON.stringify({"files": files, "sprites": sprites, "fonts": fonts}))
+	out.close()
 
 
 ## .dds ou .tga -> Image RGBA8 (null se não der). Alfa todo zerado vira opaco.

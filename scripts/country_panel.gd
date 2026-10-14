@@ -29,6 +29,8 @@ var _embrace_button: Button
 var _embrace_id := ""
 var advisors: Advisors
 var _pt := {}
+var top_margin := 44.0            # espaço da barra superior (maior com a interface do EU4)
+var bottom_margin := 24.0
 
 
 func _init() -> void:
@@ -240,7 +242,8 @@ func show_country(map: MapView, t: String) -> void:
 	for b in [_tech_button, _ideas_button, _advisors_button, _embrace_button]:
 		if b.visible:
 			buttons += 1
-	var max_h := get_viewport_rect().size.y - 44.0 - 24.0 - buttons * 36.0 - (60.0 if _flag.visible else 0.0)
+	offset_top = top_margin
+	var max_h := get_viewport_rect().size.y - top_margin - bottom_margin - buttons * 36.0 - (60.0 if _flag.visible else 0.0)
 	_scroll.custom_minimum_size = Vector2(336, minf(_label.get_combined_minimum_size().y, max_h))
 	shown.emit(t)
 	show()

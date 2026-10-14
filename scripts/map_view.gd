@@ -94,6 +94,7 @@ var icons := {}                    # chave ("good:grain", "religion:catholic", "
 var _icons_tex: Texture2D          # atlas dos ícones da interface (vazio sem gfx/interface)
 var _icon_cache := {}
 var ui_dir := ""                   # pasta das texturas de interface do EU4 (Eu4Theme), ao lado do mapa
+var gui_dir := ""                  # pasta das telas do EU4 (Eu4Gui)
 var source := ""                   # de onde veio o mapa (caminho do map.json)
 
 
@@ -213,6 +214,7 @@ func load_map(map_scale: float) -> void:
 	elif ResourceLoader.exists(flags_path):
 		_flags_tex = load(flags_path) as Texture2D
 	ui_dir = ids_path.get_base_dir() + "/ui"
+	gui_dir = ids_path.get_base_dir() + "/gui"
 	# ícones da interface (icons.png: atlas com ICON_SIZE px por ícone)
 	var icons_path := ids_path.get_base_dir() + "/icons.png"
 	if icons_path.begins_with("user://"):
