@@ -352,26 +352,6 @@ func _place(c: Control, items: Array, size: Vector2) -> void:
 	c.offset_bottom = pos.y + size.y
 
 
-## Imagem esticada para baixo até `new_h`: mantém o topo e a borda de baixo (`keep` px) e repete
-## a faixa logo acima da borda (`band` px), que é só o fundo liso com as bordas laterais.
-static func stretch_down(img: Image, new_h: int, keep := 32, band := 6) -> Image:
-	var w := img.get_width()
-	var h := img.get_height()
-	if img.is_compressed():
-		img = img.duplicate()
-		img.decompress()
-	var out := Image.create(w, new_h, false, img.get_format())
-	var top := h - keep
-	out.blit_rect(img, Rect2i(0, 0, w, top), Vector2i.ZERO)
-	var y := top
-	while y < new_h - keep:
-		var n := mini(band, new_h - keep - y)
-		out.blit_rect(img, Rect2i(0, top - band, w, n), Vector2i(0, y))
-		y += n
-	out.blit_rect(img, Rect2i(0, h - keep, w, keep), Vector2i(0, new_h - keep))
-	return out
-
-
 ## Junta ao fim dos itens os blocos if_resolution que valem para `res_height` (como chave repetida
 ## vale a última, eles sobrepõem os valores normais).
 func _resolve(items: Array) -> Array:

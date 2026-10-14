@@ -161,37 +161,38 @@ func _open(name: String) -> Control:
 	c.offset_right = sp.x + sz.x
 	c.offset_bottom = sp.y + sz.y
 	add_child(c)
-	_stretch_background(c)
 	return c
 
 
-## Fundos das abas com altura fixa no EU4 (590 px): esticados para baixo até a altura do fundo
-## da aba Religião (o EU4 usa o _large em telas de 900–1079 px e o _huge a partir de 1080), para
-## todas as abas terem o mesmo tamanho.
-const STRETCH_BG := ["GFX_court_view_bg", "GFX_economy_view_bg", "GFX_technology_view_bg",
-		"GFX_country_ideas_view_bg", "GFX_local_government_view_bg"]
-var _tall_cache := {}
+## Altura do fundo de cada aba (590 px nas de tamanho fixo do EU4; a Religião usa o fundo _large
+## ou _huge pela altura da tela, if_resolution). As abas menores são aumentadas por inteiro
+## (`_fit_scale`) até a altura da Religião, em vez de esticar o fundo.
+const PAGE_BG := ["GFX_court_view_bg", "GFX_economy_view_bg", "GFX_technology_view_bg",
+		"GFX_country_ideas_view_bg", "GFX_local_government_view_bg", "GFX_country_religion_view_bg_large",
+		"GFX_country_religion_view_bg_huge", "GFX_country_religion_view_bg"]
 
 
-func _stretch_background(root: Control) -> void:
-	# o mesmo fundo que a aba Religião usa nessa altura de tela (if_resolution do .gui)
-	var tall_bg := "GFX_country_religion_view_bg_huge" if gui.res_height >= 1080 else "GFX_country_religion_view_bg_large"
-	var tall := gui.frame_image(tall_bg, 0) if gui.sprites.has(tall_bg) and gui.res_height >= 900 else null
-	if tall == null:
-		return
+func _bg_height(root: Control) -> float:
+	var h := 0.0
 	for ch in root.get_children():
 		var ic := ch as Eu4Gui.Icon
-		if ic == null or not (ic.sprite in STRETCH_BG):
-			continue
-		if not _tall_cache.has(ic.sprite):
-			var img := gui.frame_image(ic.sprite, 0)
-			_tall_cache[ic.sprite] = ImageTexture.create_from_image(Eu4Gui.stretch_down(img, tall.get_height())) \
-					if img and img.get_height() < tall.get_height() else null
-		var tex: Texture2D = _tall_cache[ic.sprite]
-		if tex:
-			ic.set_tex(tex)
-			ic.custom_minimum_size = tex.get_size()
-			ic.size = tex.get_size()
+		if ic and ic.visible and ic.sprite in PAGE_BG:
+			h = maxf(h, ic.size.y)
+	return h
+
+
+## Escala da aba `page` para ficar com a altura da aba Religião; a barra de abas acompanha,
+## tudo a partir do canto de cima da aba.
+func _fit_scale(page: Control) -> void:
+	var s := 1.0
+	if religion_tab and page != religion_tab.root:
+		var h := _bg_height(page)
+		var target := _bg_height(religion_tab.root)
+		if h > 0.0 and target > h:
+			s = target / h
+	for c in [page, _tabs]:
+		c.pivot_offset = page.position - c.position
+		c.scale = Vector2(s, s)
 
 
 static func _hide(root: Control, n: String) -> void:
@@ -277,6 +278,10 @@ func refresh() -> void:
 		economy_tab.root.visible = tab == "economy"
 	if religion_tab:
 		religion_tab.root.visible = tab == "religion"
+	for pg in [_court, _gov, tech_tab.root if tech_tab else null, ideas_tab.root if ideas_tab else null,
+			economy_tab.root if economy_tab else null, religion_tab.root if religion_tab else null]:
+		if pg and pg.visible:
+			_fit_scale(pg)
 	var tw := _tabs.find_child("countryview_tabs", true, false)
 	for n in TABS:
 		var b := tw.find_child(n, false, false) as Eu4Gui.Button2 if tw else null
