@@ -637,7 +637,8 @@ def make_flags(root, countries):
     n = 0
     for c in with_flag:
         try:
-            img = Image.open(found[c["tag"]]).convert("RGBA").resize((FLAG_SIZE, FLAG_SIZE), Image.LANCZOS)
+            img = Image.open(found[c["tag"]]).convert("RGB").convert("RGBA").resize((FLAG_SIZE, FLAG_SIZE),
+                                                                                    Image.LANCZOS)
         except OSError:
             continue
         atlas.paste(img, ((n % FLAGS_PER_ROW) * FLAG_SIZE, (n // FLAGS_PER_ROW) * FLAG_SIZE))

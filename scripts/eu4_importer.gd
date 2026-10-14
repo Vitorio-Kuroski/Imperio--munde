@@ -1078,6 +1078,7 @@ func _make_flags(countries: Array) -> void:
 		var img := Image.new()
 		if img.load_tga_from_buffer(_bytes("gfx/flags/%s.tga" % c["tag"])) != OK:
 			continue
+		img.convert(Image.FORMAT_RGB8)       # bandeiras são opacas (e o leitor de TGA às vezes zera o alfa)
 		img.convert(Image.FORMAT_RGBA8)
 		img.resize(FLAG_SIZE, FLAG_SIZE, Image.INTERPOLATE_LANCZOS)
 		atlas.blit_rect(img, Rect2i(0, 0, FLAG_SIZE, FLAG_SIZE),

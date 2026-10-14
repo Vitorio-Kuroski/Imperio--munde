@@ -6,6 +6,7 @@ extends PanelContainer
 const OFFSET := Vector2(16, 18)
 
 var _swatch: ColorRect
+var _flag: TextureRect             # bandeira do dono (modos político e diplomacia)
 var _title: Label
 var _sub: Label
 var _last_pid := -2
@@ -37,6 +38,12 @@ func _init() -> void:
 	swatch_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	swatch_box.add_child(_swatch)
 	hb.add_child(swatch_box)
+	_flag = TextureRect.new()
+	_flag.custom_minimum_size = Vector2(28, 28)
+	_flag.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_flag.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_flag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hb.add_child(_flag)
 
 	var vb := VBoxContainer.new()
 	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -77,6 +84,12 @@ func update_for(map: MapView, pid: int, mouse: Vector2) -> void:
 func _fill(map: MapView, pid: int) -> void:
 	var p: Dictionary = map.provinces[pid]
 	_sub.text = p["name"]
+	var flag: Texture2D = null
+	if map.map_mode in [MapView.MapMode.POLITICO, MapView.MapMode.DIPLOMACIA] and not p["sea"]:
+		flag = map.flag_texture(p["owner"])
+	_flag.texture = flag
+	_flag.visible = flag != null
+	_swatch.get_parent().visible = flag == null
 	if p["sea"]:
 		_title.text = "Mar"
 		_swatch.color = MapView.SEA_COLOR

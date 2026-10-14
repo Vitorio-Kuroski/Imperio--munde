@@ -17,6 +17,7 @@ var power: MonarchPower           # main.gd define
 var _map: MapView
 var _label: Label
 var _scroll: ScrollContainer
+var _flag: TextureRect
 var _tech_button: Button
 var _ideas_button: Button
 var _advisors_button: Button
@@ -36,6 +37,11 @@ func _init() -> void:
 	offset_top = 44
 	var vb := VBoxContainer.new()
 	add_child(vb)
+	_flag = TextureRect.new()
+	_flag.custom_minimum_size = Vector2(56, 56)
+	_flag.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_flag.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+	vb.add_child(_flag)
 	_scroll = ScrollContainer.new()          # o texto rola se não couber na tela
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vb.add_child(_scroll)
@@ -75,6 +81,8 @@ func show_country(map: MapView, t: String) -> void:
 		hide()
 		return
 	var c: Dictionary = map.countries[t]
+	_flag.texture = map.flag_texture(t)
+	_flag.visible = _flag.texture != null
 	var lines := ["%s (%s)" % [c["name"], t]]
 	var gov := ""
 	if c.has("government"):
@@ -191,7 +199,7 @@ func show_country(map: MapView, t: String) -> void:
 	for b in [_tech_button, _ideas_button, _advisors_button, _embrace_button]:
 		if b.visible:
 			buttons += 1
-	var max_h := get_viewport_rect().size.y - 44.0 - 24.0 - buttons * 36.0
+	var max_h := get_viewport_rect().size.y - 44.0 - 24.0 - buttons * 36.0 - (60.0 if _flag.visible else 0.0)
 	_scroll.custom_minimum_size = Vector2(336, minf(_label.get_combined_minimum_size().y, max_h))
 	shown.emit(t)
 	show()

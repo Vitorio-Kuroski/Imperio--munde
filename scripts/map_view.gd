@@ -87,6 +87,8 @@ var mat: ShaderMaterial
 var selected_id := -1
 var map_mode := MapMode.POLITICO
 var owner_version := 0            # muda a cada troca de dono (Economy recalcula a renda)
+var _flags_tex: Texture2D          # atlas das bandeiras (vazio sem gfx/flags)
+var _flag_cache := {}              # tag -> AtlasTexture
 var source := ""                   # de onde veio o mapa (caminho do map.json)
 
 
@@ -197,6 +199,13 @@ func load_map(map_scale: float) -> void:
 	if rivers_tex:
 		mat.set_shader_parameter("rivers", rivers_tex)
 		mat.set_shader_parameter("has_rivers", true)
+	# bandeiras (flags.png ao lado do province_ids.png: atlas com FLAG_SIZE px por país)
+	var flags_path := ids_path.get_base_dir() + "/flags.png"
+	if flags_path.begins_with("user://"):
+		if FileAccess.file_exists(flags_path):
+			_flags_tex = ImageTexture.create_from_image(Image.load_from_file(flags_path))
+	elif ResourceLoader.exists(flags_path):
+		_flags_tex = load(flags_path) as Texture2D
 	mat.set_shader_parameter("palette", palette_tex)
 	mat.set_shader_parameter("map_size", Vector2(map_w, map_h))
 	mat.set_shader_parameter("selected_id", -1)
@@ -211,6 +220,20 @@ func load_map(map_scale: float) -> void:
 		trade_flows.visible = false
 		add_child(trade_flows)
 		trade_flows.setup(self)
+
+
+## Bandeira do país (null se não houver bandeiras importadas).
+func flag_texture(tag: String) -> Texture2D:
+	if _flags_tex == null or not countries.has(tag) or not countries[tag].has("flag"):
+		return null
+	if not _flag_cache.has(tag):
+		var i := int(countries[tag]["flag"])
+		var at := AtlasTexture.new()
+		at.atlas = _flags_tex
+		at.region = Rect2((i % Eu4Importer.FLAGS_PER_ROW) * Eu4Importer.FLAG_SIZE,
+				(i / Eu4Importer.FLAGS_PER_ROW) * Eu4Importer.FLAG_SIZE, Eu4Importer.FLAG_SIZE, Eu4Importer.FLAG_SIZE)
+		_flag_cache[tag] = at
+	return _flag_cache[tag]
 
 
 func province_color(pid: int) -> Color:

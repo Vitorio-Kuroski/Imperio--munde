@@ -20,6 +20,7 @@ var player_tag := ""
 var ui: CanvasLayer
 var top_bar: PanelContainer
 var country_label: Label
+var top_flag: TextureRect
 var date_label: Label
 var speed_label: Label
 var pause_button: Button
@@ -81,6 +82,11 @@ func _build_ui() -> void:
 	hb.add_theme_constant_override("separation", 14)
 	top_bar.add_child(hb)
 
+	top_flag = TextureRect.new()
+	top_flag.custom_minimum_size = Vector2(24, 24)
+	top_flag.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	top_flag.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	hb.add_child(top_flag)
 	country_label = Label.new()
 	country_label.custom_minimum_size.x = 640
 	hb.add_child(country_label)
@@ -167,6 +173,9 @@ func _build_ui() -> void:
 		var b := Button.new()
 		b.text = "%s  (%d prov.)" % [c["name"], int(counts.get(tag, 0))]
 		b.custom_minimum_size = Vector2(340, 32)
+		b.icon = map.flag_texture(tag)
+		b.add_theme_constant_override("icon_max_width", 24)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.pressed.connect(_start_game.bind(tag))
 		vb.add_child(b)
 
@@ -355,6 +364,7 @@ func _start_game(tag: String) -> void:
 
 
 func _refresh_top_bar() -> void:
+	top_flag.texture = map.flag_texture(player_tag) if player_tag != "" else null
 	if player_tag != "":
 		var mine := map.provinces_of(player_tag)
 		var dev := 0
