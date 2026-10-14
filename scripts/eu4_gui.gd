@@ -20,8 +20,8 @@ var sprites := {}                   # nome -> {kind, texture, texture2?, frames?
 var font_defs := {}                 # nome -> {fnt, page, color}
 var nodes := {}                     # nome do elemento -> Control (do último build)
 ## Altura de tela usada nos blocos if_resolution dos .gui (o EU4 escolhe fundos e listas maiores
-## pela altura da tela; as telas daqui são desenhadas para 900 px, ver main._apply_gui_scale).
-var res_height := 900
+## pela altura da tela; as telas daqui usam o layout padrão, de 768 px, ver main._apply_gui_scale).
+var res_height := 768
 var _images := {}                   # caminho -> Image
 var _textures := {}                 # caminho -> Texture2D
 var _frames := {}                   # "caminho#quadro#n" -> AtlasTexture

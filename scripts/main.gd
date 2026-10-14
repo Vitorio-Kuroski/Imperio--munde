@@ -106,10 +106,10 @@ func _apply_eu4_theme() -> void:
 	top_bar.theme_type_variation = "Eu4Small"
 
 
-## As telas do EU4 usam sempre o layout "large" dos .gui (if_resolution de 900–1079 px: fundo e
-## listas mais altos que o padrão), desenhado para 900 px de altura; elas são reduzidas (ou
-## aumentadas) pela altura da tela ÷ 900, mantendo-se presas aos cantos.
-const EU4_GUI_HEIGHT := 900.0
+## As telas do EU4 usam o layout padrão dos .gui (o de telas com menos de 900 px: os blocos
+## if_resolution de 900+ px não valem), desenhado para 768 px de altura; elas são reduzidas (ou
+## aumentadas) pela altura da tela ÷ 768, mantendo-se presas aos cantos.
+const EU4_GUI_HEIGHT := 768.0
 var gui_scale := 1.0
 var gui_design_height := EU4_GUI_HEIGHT
 
@@ -132,7 +132,7 @@ func _setup_eu4_hud() -> void:
 	var g := Eu4Gui.open(map.gui_dir) if map.gui_dir != "" else null
 	if g == null:
 		return
-	g.res_height = int(gui_design_height)      # layout "large" em qualquer tela
+	g.res_height = int(gui_design_height)      # layout padrão em qualquer tela
 	eu4_hud = Eu4Hud.new()
 	eu4_hud.religion = religion
 	ui.add_child(eu4_hud)
