@@ -185,7 +185,7 @@ def to_num(v):
         return None
 
 
-def eu4_technologies(root, building_ids):
+def eu4_technologies(root, building_ids, loc=None):
     """Arvores adm/dip/mil (common/technologies) e grupos tecnologicos (common/technology.txt)."""
     techs = {}
     for cat in ("adm", "dip", "mil"):
@@ -198,6 +198,8 @@ def eu4_technologies(root, building_ids):
                 continue
             t = {"level": len(lst), "year": 0, "modifiers": {}, "buildings": [], "unlocks": [], "units": [],
                  "institutions": {}}
+            if loc and f"{cat}_tech_cs_{len(lst)}_name" in loc:
+                t["name"] = loc[f"{cat}_tech_cs_{len(lst)}_name"]
             for kk, vv in v:
                 if not kk:
                     continue
@@ -237,7 +239,7 @@ UNIT_NUM_KEYS = ("maneuver", "offensive_morale", "defensive_morale", "offensive_
                  "sail_speed", "trade_power")
 
 
-def eu4_units(root, technologies):
+def eu4_units(root, technologies, loc=None):
     """Unidades (common/units/<id>.txt) com o nivel e a arvore da tecnologia que as libera."""
     unlock = {}
     for cat in ("mil", "dip"):
@@ -247,7 +249,7 @@ def eu4_units(root, technologies):
     units = []
     for uf in sorted(glob.glob(os.path.join(root, "common", "units", "*.txt"))):
         uid = os.path.splitext(os.path.basename(uf))[0]
-        u = {"id": uid, "name": pretty_key(uid), "type": ""}
+        u = {"id": uid, "name": (loc or {}).get(uid) or pretty_key(uid), "type": ""}
         for k, v in parse_script(read_text(uf)):
             if k == "type" and isinstance(v, str):
                 u["type"] = v
@@ -304,7 +306,7 @@ def idea_mods(items):
     return out
 
 
-def eu4_ideas(root, countries, culture_group_of, religion_group_of):
+def eu4_ideas(root, countries, culture_group_of, religion_group_of, loc=None):
     """Grupos de ideias (com category) e ideias nacionais (free = yes). Cada pais recebe em "ideas" o
     primeiro conjunto livre (na ordem dos arquivos) cujo trigger ele cumpre: nacional > de grupo >
     generico (default_ideas)."""
@@ -315,7 +317,9 @@ def eu4_ideas(root, countries, culture_group_of, religion_group_of):
         for name, items in parse_script(read_text(fn)):
             if not name or not isinstance(items, list):
                 continue
-            st = {"id": name, "name": pt.get(name) or pretty_key(name, "_ideas"), "start": {}, "bonus": {}, "ideas": []}
+            loc = loc or {}
+            st = {"id": name, "name": pt.get(name) or loc.get(name) or pretty_key(name, "_ideas"), "start": {},
+                  "bonus": {}, "ideas": []}
             trigger, free = None, False
             # prefixo das ideias: "norse_ideas_x" e "fra_x" (FRA_ideas) viram "X"
             prefix = name.lower() + "_" if any(k and k.lower().startswith(name.lower() + "_") for k, _ in items) \
@@ -330,7 +334,7 @@ def eu4_ideas(root, countries, culture_group_of, religion_group_of):
                 elif k == "trigger" and isinstance(v, list):
                     trigger = v
                 elif k and k not in ("ai_will_do", "important") and isinstance(v, list):
-                    nm = pretty_key(k[len(prefix):] if k.lower().startswith(prefix) else k)
+                    nm = loc.get(k) or pretty_key(k[len(prefix):] if k.lower().startswith(prefix) else k)
                     st["ideas"].append({"id": k, "name": nm, "modifiers": idea_mods(v)})
             if free:
                 free_sets.append((st, trigger))
@@ -625,7 +629,7 @@ def eu4_terrain(root, ids, n_prov):
     return out, terrains
 
 
-def eu4_geography(root):
+def eu4_geography(root, loc=None):
     """Areas, regioes, super-regioes e continentes (map/area.txt etc.)."""
     with open("data/geografia_pt.json", encoding="utf-8") as f:
         pt = json.load(f)
@@ -647,7 +651,8 @@ def eu4_geography(root):
     for rname, items in blocks("region.txt"):
         if rname == "random_new_world_region":
             continue
-        g["regions"].append({"id": rname, "name": pt["regioes"].get(rname) or pretty_key(rname, "_region"),
+        g["regions"].append({"id": rname, "name": pt["regioes"].get(rname) or (loc or {}).get(rname)
+                             or pretty_key(rname, "_region"),
                              "superregion": super_of_region.get(rname, "")})
         for k, v in items:
             if k == "areas" and isinstance(v, list):
@@ -661,7 +666,8 @@ def eu4_geography(root):
         k = hashlib.md5(aname.encode()).digest()
         col = [int(c * 255) for c in colorsys.hsv_to_rgb((hh + (k[0] - 128) / 2600) % 1.0,
                min(1, max(0.3, ss + (k[1] - 128) / 900)), min(1, max(0.4, vv + (k[2] - 128) / 700)))]
-        g["areas"].append({"id": aname, "name": pretty_key(aname, "_area"), "region": reg, "color": col})
+        g["areas"].append({"id": aname, "name": (loc or {}).get(aname) or pretty_key(aname, "_area"), "region": reg,
+                           "color": col})
         for kk, x in items:
             if kk is None and x.isdigit():
                 pid = int(x)
@@ -719,11 +725,14 @@ def main():
             for pid in ids_in_block(ctext, key):
                 climates.setdefault(pid, set()).add(key)
 
+    # localizacao em ingles (todos os arquivos; a primeira definicao de cada chave vale, como no jogo)
+    loc = {}
+    for f in find_loc(root, "*_l_english.yml"):
+        for m in re.finditer(r'^\s*([A-Za-z0-9_]+):\d*\s+"(.*)"\s*$', read_text(f), re.M):
+            loc.setdefault(m.group(1), m.group(2))
+
     # nomes de provincias (localizacao em ingles)
-    prov_names = {}
-    for f in find_loc(root, "*prov_names*_l_english.yml"):
-        for m in re.finditer(r'^\s*PROV(\d+):\d*\s+"(.*)"\s*$', read_text(f), re.M):
-            prov_names.setdefault(int(m.group(1)), m.group(2))
+    prov_names = {int(k[4:]): v for k, v in loc.items() if re.fullmatch(r"PROV\d+", k)}
 
     # ---------------------------------------------------------- bitmap -> imagem de ids
     print("Lendo provinces.bmp...", flush=True)
@@ -864,10 +873,7 @@ def main():
     for f in glob.glob(os.path.join(root, "common", "country_tags", "*.txt")):
         for m in re.finditer(r'^\s*([A-Z0-9]{3})\s*=\s*"([^"]+)"', read_text(f), re.M):
             tags[m.group(1)] = m.group(2)
-    names = {}
-    for f in find_loc(root, "*countries*_l_english.yml"):
-        for m in re.finditer(r'^\s*([A-Z0-9]{3}):\d*\s+"(.*)"\s*$', read_text(f), re.M):
-            names.setdefault(m.group(1), m.group(2))
+    names = {k: v for k, v in loc.items() if re.fullmatch(r"[A-Z0-9]{3}", k)}
 
     for hf in glob.glob(os.path.join(root, "history", "countries", "*.txt")):
         m = re.match(r"\s*([A-Z0-9]{3})\s*-\s*(.+?)\.txt$", os.path.basename(hf))
@@ -936,11 +942,6 @@ def main():
                     if isinstance(cval, list) and cname not in ("graphical_culture", "male_names",
                                                                 "female_names", "dynasty_names"):
                         groups[cname] = gname
-    loc = {}
-    for f in find_loc(root, "*_l_english.yml"):
-        for m in re.finditer(r'^\s*([a-z_]+):\d*\s+"(.*)"\s*$', read_text(f), re.M):
-            loc.setdefault(m.group(1), m.group(2))
-
     def pretty(key):
         return loc.get(key) or key.replace("_", " ").title()
 
@@ -1051,9 +1052,9 @@ def main():
                             node_of.setdefault(int(x), nname)
             trade_nodes.append(node)
 
-    geo = eu4_geography(root)
-    technologies, tech_groups = eu4_technologies(root, {b["id"] for b in buildings})
-    units = eu4_units(root, technologies)
+    geo = eu4_geography(root, loc)
+    technologies, tech_groups = eu4_technologies(root, {b["id"] for b in buildings}, loc)
+    units = eu4_units(root, technologies, loc)
     adjacencies = []
     ap_ = os.path.join(root, "map", "adjacencies.csv")
     if os.path.isfile(ap_):
@@ -1064,7 +1065,7 @@ def main():
                                     "through": int(q[3]) if q[3].lstrip("-").isdigit() else -1})
 
     # ---------------------------------------------------------- ideias (common/ideas)
-    idea_groups, national_ideas = eu4_ideas(root, countries, groups, rel_group)
+    idea_groups, national_ideas = eu4_ideas(root, countries, groups, rel_group, loc)
     advisor_types, advisors = eu4_advisors(root, defs)
     inst_raw = eu4_institutions(root, cutoff)
     institutions = [i for i, _ in inst_raw]

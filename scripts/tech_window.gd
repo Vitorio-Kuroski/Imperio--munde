@@ -110,7 +110,7 @@ func show_for(map: MapView, tag: String) -> void:
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			l.custom_minimum_size.x = 600
 			var mark := "✓" if n <= lvl else ("→" if n == lvl + 1 else "  ")
-			var nm: String = names[n] if n < names.size() else "Tecnologia %s %d" % [cat[1].to_lower(), n]
+			var nm: String = names[n] if n < names.size() else str(t.get("name", "Tecnologia %s %d" % [cat[1].to_lower(), n]))
 			l.text = "%s %d · %d · %s%s" % [mark, n, int(t["year"]), nm, _details(map, t, tag)]
 			l.add_theme_color_override("font_color", DONE if n <= lvl else (NEXT if n == lvl + 1 else LATER))
 			list.add_child(l)

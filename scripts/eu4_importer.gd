@@ -25,7 +25,8 @@ var done := false
 var _mutex := Mutex.new()
 var _index := {}                    # caminho relativo -> [zip (-1 = pasta), caminho completo]
 var _zips: Array[FileAccess] = []
-var _zip_entries: Array[Dictionary] = []    # por zip: nome -> [método, tam. comprimido, tam. real, crc, offset]
+var _zip_entries: Array[Dictionary] = []
+var _loc := {}                      # localização em inglês (nomes oficiais quando não há tradução)    # por zip: nome -> [método, tam. comprimido, tam. real, crc, offset]
 var _high_re := RegEx.create_from_string("[\\x{80}-\\x{FF}]")
 var _tok := RegEx.create_from_string("#[^\\n]*|\"[^\"]*\"|[{}=]|[^\\s{}=#\"]+")
 
@@ -707,6 +708,7 @@ func _import() -> String:
 	var trade_nodes := _trade_nodes(loc, node_of)
 
 	# ---- geografia (áreas, regiões, super-regiões, continentes) e estreitos
+	_loc = loc
 	var geo := _geography()
 	var tech_groups := []
 	var technologies := _technologies(buildings, tech_groups)
@@ -1205,7 +1207,7 @@ func _geography() -> Dictionary:
 	for e in _blocks("map/region.txt"):
 		if e[0] == "random_new_world_region":
 			continue
-		g["regions"].append({"id": e[0], "name": pt["regioes"].get(e[0], pretty_key(e[0], "_region")),
+		g["regions"].append({"id": e[0], "name": pt["regioes"].get(e[0], _loc.get(e[0], pretty_key(e[0], "_region"))),
 				"superregion": super_of_region.get(e[0], "")})
 		for kv in e[1]:
 			if kv[0] == "areas" and kv[1] is Array:
@@ -1219,7 +1221,7 @@ func _geography() -> Dictionary:
 		var bc := Color8(base[0], base[1], base[2])
 		var c2 := Color.from_hsv(fposmod(bc.h + (k[0] - 128) / 2600.0, 1.0),
 				clampf(bc.s + (k[1] - 128) / 900.0, 0.3, 1.0), clampf(bc.v + (k[2] - 128) / 700.0, 0.4, 1.0))
-		g["areas"].append({"id": e[0], "name": pretty_key(e[0], "_area"), "region": reg,
+		g["areas"].append({"id": e[0], "name": _loc.get(e[0], pretty_key(e[0], "_area")), "region": reg,
 				"color": [int(c2.r * 255), int(c2.g * 255), int(c2.b * 255)]})
 		for x in e[1]:
 			if x[0] == "" and str(x[1]).is_valid_int():
@@ -1257,6 +1259,9 @@ func _technologies(buildings: Array, groups: Array) -> Dictionary:
 				continue
 			var t := {"level": lst.size(), "year": 0, "modifiers": {}, "buildings": [], "unlocks": [], "units": [],
 					"institutions": {}}
+			var lk := "%s_tech_cs_%d_name" % [cat, lst.size()]
+			if _loc.has(lk):
+				t["name"] = _loc[lk]
 			for x in kv[1]:
 				var k: String = x[0]
 				var v = x[1]
@@ -1349,7 +1354,8 @@ func _ideas(countries: Array, culture_group_of: Dictionary, religion_group_of: D
 			if e[0] == "" or not (e[1] is Array):
 				continue
 			var name: String = e[0]
-			var st := {"id": name, "name": pt.get(name, pretty_key(name, "_ideas")), "start": {}, "bonus": {}, "ideas": []}
+			var st := {"id": name, "name": pt.get(name, _loc.get(name, pretty_key(name, "_ideas"))), "start": {},
+					"bonus": {}, "ideas": []}
 			var trigger = null
 			var free := false
 			# prefixo das ideias: "norse_ideas_x" e "fra_x" (FRA_ideas) viram "X"
@@ -1372,7 +1378,8 @@ func _ideas(countries: Array, culture_group_of: Dictionary, religion_group_of: D
 				elif k == "trigger" and kv[1] is Array:
 					trigger = kv[1]
 				elif k != "" and not (k in ["ai_will_do", "important"]) and kv[1] is Array:
-					st["ideas"].append({"id": k, "name": pretty_key(k.substr(prefix.length()) if k.to_lower().begins_with(prefix) else k),
+					st["ideas"].append({"id": k, "name": _loc.get(k,
+							pretty_key(k.substr(prefix.length()) if k.to_lower().begins_with(prefix) else k)),
 							"modifiers": _idea_mods(kv[1])})
 			if free:
 				free_sets.append([st, trigger])
@@ -1551,7 +1558,7 @@ func _units(technologies: Dictionary) -> Array:
 	var out := []
 	for f in _list("common/units/"):
 		var uid := f.get_file().get_basename()
-		var u := {"id": uid, "name": pretty_key(uid), "type": ""}
+		var u := {"id": uid, "name": _loc.get(uid, pretty_key(uid)), "type": ""}
 		for kv in _parse(_text(f)):
 			if kv[0] == "type" and kv[1] is String:
 				u["type"] = kv[1]
