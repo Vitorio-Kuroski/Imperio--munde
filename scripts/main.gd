@@ -31,6 +31,7 @@ var prov_icons: HFlowContainer     # ícones da província (produto, religião, 
 var tooltip: MapTooltip
 var eu4_hud: Eu4Hud               # interface montada com os .gui do EU4 (null sem as telas importadas)
 var province_view: Eu4ProvinceView  # tela da província do EU4 (no lugar do painel de texto)
+var country_view: Eu4CountryView    # tela do país do EU4 (no lugar do painel do país; este vira o "resumo")
 var country_panel: CountryPanel
 var tech_window: TechWindow
 var ideas_window: IdeasWindow
@@ -107,7 +108,7 @@ func _setup_eu4_hud() -> void:
 	country_panel.bottom_margin = 240.0
 	eu4_hud.shield_pressed.connect(func():
 		if player_tag != "":
-			country_panel.show_country(map, player_tag))
+			_show_country(player_tag))
 	province_view = Eu4ProvinceView.new()
 	ui.add_child(province_view)
 	ui.move_child(province_view, 1)
@@ -116,6 +117,39 @@ func _setup_eu4_hud() -> void:
 	else:
 		province_view.queue_free()
 		province_view = null
+	country_view = Eu4CountryView.new()
+	ui.add_child(country_view)
+	ui.move_child(country_view, 2)
+	if country_view.setup(g, map, clock):
+		country_view.power = power
+		country_view.economy = economy
+		country_view.advisors = advisors
+		country_view.institutions = institutions
+		country_view.fmt_mods = ideas_window.fmt_mods
+		country_view.techs_requested.connect(func(t: String):
+			ideas_window.hide()
+			advisors_window.hide()
+			tech_window.show_for(map, t))
+		country_view.ideas_requested.connect(func(t: String):
+			tech_window.hide()
+			advisors_window.hide()
+			ideas_window.show_for(map, t))
+		country_view.advisors_requested.connect(func(t: String):
+			tech_window.hide()
+			ideas_window.hide()
+			advisors_window.show_for(map, t))
+		country_view.summary_requested.connect(func(t: String):
+			country_panel.show_country(map, t))
+		country_view.shown.connect(func(t: String):
+			if map.diplo_focus != t:
+				map.diplo_focus = t
+				if map.map_mode == MapView.MapMode.DIPLOMACIA:
+					map.refresh_colors())
+		if province_view:
+			province_view.owner_requested.connect(_show_country)
+	else:
+		country_view.queue_free()
+		country_view = null
 	eu4_hud.zoom_requested.connect(func(f: float):
 		camera.zoom = (camera.zoom * f).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 		_clamp_camera())
@@ -261,6 +295,8 @@ func _build_ui() -> void:
 		advisors_window.show_for(map, t))
 	var refresh_all := func(_t):
 		country_panel.refresh()
+		if country_view:
+			country_view.refresh()
 		tech_window.refresh()
 		ideas_window.refresh()
 		advisors_window.refresh()
@@ -415,7 +451,8 @@ func _start_game(tag: String) -> void:
 	camera.zoom = Vector2(1.2, 1.2)
 	map.select(cap)
 	_show_province(cap)
-	country_panel.show_country(map, tag)
+	if country_view == null:
+		country_panel.show_country(map, tag)
 	_refresh_top_bar()
 
 
@@ -452,6 +489,17 @@ func _toggle_map_mode() -> void:
 	_refresh_top_bar()
 	if map.selected_id >= 0:
 		_show_province(map.selected_id)
+
+
+## Tela do país: a do EU4 (fecha a da província, que fica no mesmo lugar) ou o painel de texto.
+func _show_country(tag: String) -> void:
+	if country_view:
+		if province_view:
+			province_view.hide()
+		country_panel.hide()
+		country_view.show_country(tag)
+	else:
+		country_panel.show_country(map, tag)
 
 
 func _show_province(pid: int) -> void:
@@ -656,7 +704,11 @@ func _unhandled_input(event: InputEvent) -> void:
 					map.select(pid)
 					_show_province(pid)
 					var owner: String = map.provinces[pid]["owner"] if pid >= 0 else ""
-					country_panel.show_country(map, owner if owner != "" else player_tag)
+					if country_view:
+						country_view.hide()        # a tela do país e a da província ficam no mesmo lugar
+						country_panel.hide()
+					else:
+						country_panel.show_country(map, owner if owner != "" else player_tag)
 			MOUSE_BUTTON_WHEEL_UP:
 				camera.zoom = (camera.zoom * 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 			MOUSE_BUTTON_WHEEL_DOWN:

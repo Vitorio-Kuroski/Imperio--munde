@@ -261,6 +261,38 @@ func build(name: String) -> Control:
 	return _element("windowtype", w)
 
 
+## Enche uma lista (listboxType) com `count` cópias da janela `item` (windowType); devolve as cópias.
+func fill_list(list: Control, item: String, count: int) -> Array:
+	var out := []
+	var vb := list.get_node_or_null("Items") if list else null
+	if vb == null:
+		return out
+	for ch in vb.get_children():
+		vb.remove_child(ch)
+		ch.queue_free()
+	var w := find_window(item)
+	if w.is_empty():
+		return out
+	var sz := _vec(w, "size")
+	for i in count:
+		var holder := Control.new()
+		holder.custom_minimum_size = sz
+		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var c := _element("windowtype", w)
+		c.anchor_left = 0
+		c.anchor_top = 0
+		c.anchor_right = 0
+		c.anchor_bottom = 0
+		c.offset_left = 0
+		c.offset_top = 0
+		c.offset_right = sz.x
+		c.offset_bottom = sz.y
+		holder.add_child(c)
+		vb.add_child(holder)
+		out.append(c)
+	return out
+
+
 func _place(c: Control, items: Array, size: Vector2) -> void:
 	var a: Vector2 = ANCHORS.get(str(_val(items, "orientation", "upper_left")).to_lower(), Vector2.ZERO)
 	var o: Vector2 = ANCHORS.get(str(_val(items, "origo", "upper_left")).to_lower(), Vector2.ZERO)
@@ -332,6 +364,18 @@ func _element(kind: String, items: Array) -> Control:
 				b.tooltip_text = tip
 			c = b
 			_place(c, items, b.custom_minimum_size)
+		"listboxtype", "smoothlistboxtype":
+			var sc := ScrollContainer.new()
+			sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+			sc.mouse_filter = Control.MOUSE_FILTER_PASS
+			var sz := _vec(items, "size")
+			_place(sc, items, sz if sz.x > 0 and sz.y > 0 else Vector2(300, 200))
+			var vb := VBoxContainer.new()
+			vb.name = "Items"
+			vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			vb.add_theme_constant_override("separation", int(str(_val(items, "spacing", "0")).to_float()))
+			sc.add_child(vb)
+			c = sc
 		"overlappingelementsboxtype":
 			c = HBoxContainer.new()
 			c.mouse_filter = Control.MOUSE_FILTER_IGNORE

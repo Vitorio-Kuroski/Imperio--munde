@@ -7,6 +7,7 @@ extends Control
 ## elementos de KEEP aparecem).
 
 signal closed
+signal owner_requested(tag: String)
 
 ## Elementos do .gui que aparecem (os outros e as janelas sem nenhum deles ficam escondidos).
 const KEEP := ["provinceview_bg", "province_terrain", "trade_icon", "military_icon", "institution_icon",
@@ -85,6 +86,14 @@ func setup(g: Eu4Gui, m: MapView, inst: Institutions) -> bool:
 	_tip("prod_base_icon", "Produção base")
 	_tip("mp_base_icon", "Efetivo base")
 	_tip("development_icon", "Desenvolvimento")
+	var banner := _n("province_banner")
+	if banner:
+		banner.mouse_filter = Control.MOUSE_FILTER_STOP
+		banner.gui_input.connect(func(e: InputEvent):
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT and pid >= 0:
+				var o: String = map.provinces[pid]["owner"]
+				if o != "":
+					owner_requested.emit(o))
 	hide()
 	return true
 
@@ -157,7 +166,8 @@ func show_province(id: int) -> void:
 	var owner: String = p["owner"]
 	_show("have_capital", owner != "" and int(map.countries.get(owner, {}).get("capital", -1)) == id)
 	_tip("have_capital", "Capital de " + str(map.countries.get(owner, {}).get("name", "")))
-	_tip("province_banner", "Dono: %s" % (map.countries[owner]["name"] if map.countries.has(owner) else "ninguém"))
+	_tip("province_banner", "Dono: %s (clique para abrir o país)" % (map.countries[owner]["name"] \
+			if map.countries.has(owner) else "ninguém"))
 	# terreno
 	var eu4_t := ""
 	for t in map.terrains.values():
