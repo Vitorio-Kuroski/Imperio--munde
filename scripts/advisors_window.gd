@@ -73,6 +73,8 @@ func show_for(map: MapView, tag: String) -> void:
 		var l := _label("Contratado: " + (_desc(tag, h) if not h.is_empty() else "ninguém"))
 		l.add_theme_color_override("font_color", Color(0.62, 0.85, 0.55) if not h.is_empty() else Color(0.72, 0.72, 0.70))
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if not h.is_empty() and map.icon_texture("advisor:" + h["type"]):
+			row.add_child(MapView.icon_rect(map.icon_texture("advisor:" + h["type"]), 44))
 		row.add_child(l)
 		if tag == player and not h.is_empty():
 			var b := Button.new()
@@ -87,6 +89,10 @@ func show_for(map: MapView, tag: String) -> void:
 			var r := HBoxContainer.new()
 			var cl := _label("   " + _desc(tag, cands[i]))
 			cl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var ptex := map.icon_texture("advisor:" + cands[i]["type"])
+			if ptex:
+				cl.text = _desc(tag, cands[i])
+				r.add_child(MapView.icon_rect(ptex, 36))
 			r.add_child(cl)
 			if tag == player:
 				var b := Button.new()

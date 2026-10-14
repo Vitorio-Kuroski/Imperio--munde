@@ -38,7 +38,7 @@ static func has_import() -> bool:
 
 ## Apaga o mapa importado (o jogo volta ao mapa padrão).
 static func remove_import() -> void:
-	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png"]:
+	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png", "icons.png"]:
 		if FileAccess.file_exists(OUT_DIR + "/" + f):
 			DirAccess.remove_absolute(OUT_DIR + "/" + f)
 
@@ -76,12 +76,13 @@ func _walk(dir: String, depth: int) -> void:
 	for sub in d.get_directories():
 		var low: String = sub.to_lower()
 		# não desce em pastas grandes que não interessam
-		if low in ["sound", "music", "interface", "tutorial", "dlc", "launcher", "events", "decisions",
+		if low in ["sound", "music", "tutorial", "dlc", "launcher", "events", "decisions",
 				"missions", "gui", "fonts", "shaders", "assets"]:
 			continue
-		if low == "gfx":             # do gfx/ só interessam as bandeiras
-			if DirAccess.dir_exists_absolute(dir + "/" + sub + "/flags"):
-				_walk(dir + "/" + sub + "/flags", depth + 1)
+		if low == "gfx":             # do gfx/ só interessam as bandeiras e os ícones da interface
+			for s2 in DirAccess.get_directories_at(dir + "/" + sub):
+				if s2.to_lower() in ["flags", "interface"]:
+					_walk(dir + "/" + sub + "/" + s2, depth + 1)
 			continue
 		_walk(dir + "/" + sub, depth + 1)
 
@@ -93,6 +94,16 @@ func _rel(p: String) -> String:
 	if p.get_extension().to_lower() == "tga" and (p.begins_with("flags/") or p.contains("/flags/")) \
 			and _flag_re.search(p.get_file()) != null:
 		return "gfx/flags/" + p.get_file().get_basename().to_upper() + ".tga"
+	# ícones: gfx/interface/... (.dds/.tga, em minúsculas) e os sprites das interface/*.gfx
+	var low := p.to_lower()
+	if low.get_extension() == "gfx" and (low.begins_with("interface/") or low.contains("/interface/")):
+		var j := 0 if low.begins_with("interface/") else low.rfind("/interface/") + 1
+		return p.substr(j)
+	if low.get_extension() in ["dds", "tga"] and (low.begins_with("gfx/interface/") or low.contains("/gfx/interface/")
+			or low.begins_with("interface/")):
+		if low.begins_with("interface/"):     # .zip feito da própria pasta gfx
+			return "gfx/" + low
+		return low.substr(0 if low.begins_with("gfx/interface/") else low.find("/gfx/interface/") + 1)
 	var best := -1
 	for t in TOPS:
 		var i := 0
@@ -763,6 +774,8 @@ func _import() -> String:
 	# ---- map.json
 	_set_status("Gravando os dados...")
 	_make_flags(countries)
+	var icons := _make_icons(trade_goods, religions, institutions, advisor_types, buildings, idea_groups,
+			national_ideas)
 	var provinces := []
 	for pid in n_prov:
 		var c := cnt[pid]
@@ -844,7 +857,7 @@ func _import() -> String:
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
-			"celestial_emperor": celestial, "wars": wars, "provinces": provinces}))
+			"celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
@@ -1042,8 +1055,13 @@ func _religions(used: Array, loc: Dictionary, rel_group: Dictionary) -> Array:
 					col = [col[0] * 255, col[1] * 255, col[2] * 255]
 				seen[r[0]] = true
 				rel_group[r[0]] = g[0]
-				out.append({"id": r[0], "name": nice.call(r[0]), "group": nice.call(g[0]),
-						"color": [int(col[0]), int(col[1]), int(col[2])]})
+				var rel := {"id": r[0], "name": nice.call(r[0]), "group": nice.call(g[0]),
+						"color": [int(col[0]), int(col[1]), int(col[2])]}
+				for kv in r[1]:
+					if kv[0] == "icon" and kv[1] is String and (kv[1] as String).is_valid_float():
+						rel["icon"] = int(float(kv[1]))
+						break
+				out.append(rel)
 	var rest := {}
 	for r in used:
 		if r != "" and not seen.has(r):
@@ -1086,6 +1104,200 @@ func _make_flags(countries: Array) -> void:
 		c["flag"] = n
 		n += 1
 	atlas.save_png(OUT_DIR + "/flags.png")
+
+
+const ICON_SIZE := 48
+const ICONS_PER_ROW := 32
+
+
+## Sprites das interface/*.gfx: nome -> caminho da textura (minúsculo, com /).
+func _gfx_sprites() -> Dictionary:
+	var out := {}
+	var stack := []
+	for f in _list("interface/"):
+		if f.get_extension().to_lower() == "gfx":
+			stack.append(_parse(_text(f)))
+		while not stack.is_empty():
+			var items: Array = stack.pop_back()
+			var found := []
+			for kv in items:            # (em ordem: os blocos são visitados como no script Python)
+				if kv[1] is Array:
+					found.append(kv[1])
+			for k in range(found.size() - 1, -1, -1):
+				stack.append(found[k])
+			var nm := ""
+			var tex := ""
+			for kv in items:
+				var kk := (kv[0] as String).to_lower()
+				if kv[1] is String:
+					if kk == "name":
+						nm = kv[1]
+					elif kk == "texturefile":
+						tex = kv[1]
+			if nm != "" and tex != "" and not out.has(nm):
+				var t := tex.to_lower().replace("\\", "/")
+				while t.contains("//"):
+					t = t.replace("//", "/")
+				out[nm] = t
+	return out
+
+
+## (chave, caminho, quadro) de cada ícone; quadro = índice numa tira (-1 = imagem inteira).
+func _icon_sources(trade_goods: Array, religions: Array, institutions: Array, advisor_types: Array,
+		buildings: Array, idea_groups: Array, national: Array) -> Array:
+	var sp := _gfx_sprites()
+	var src := []
+	for i in trade_goods.size():
+		src.append(["good:" + trade_goods[i]["id"], "gfx/interface/resources.dds", i])
+	for r in religions:
+		if r.has("icon"):
+			src.append(["religion:" + r["id"], "gfx/interface/icon_religion.dds", int(r["icon"]) - 1])
+	for inst in institutions:
+		src.append(["inst:" + inst["id"], sp.get("GFX_icon_institution_" + inst["id"],
+				"gfx/interface/institutions/%s.dds" % inst["id"]), -1])
+	for t in advisor_types:
+		src.append(["advisor:" + t["id"], sp.get("GFX_advisor_" + t["id"], "gfx/interface/advisors/%s.tga" % t["id"]),
+				-1])
+	for b in buildings:
+		if sp.has("GFX_" + b["id"]):
+			src.append(["building:" + b["id"], sp["GFX_" + b["id"]], -1])
+	for g in idea_groups:
+		src.append(["group:" + g["id"], sp.get("GFX_idea_" + g["id"], "gfx/interface/ideas/idea_%s.dds" % g["id"]), -1])
+	var mods := []
+	for st in idea_groups + national:
+		for idea in st["ideas"]:
+			var m: Dictionary = idea["modifiers"]
+			if not m.is_empty() and not (m.keys()[0] in mods):
+				mods.append(m.keys()[0])
+	for m in mods:
+		src.append(["mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % (m as String).to_lower(), -1])
+	return src
+
+
+## Ícones da interface (produtos, religiões, instituições, conselheiros, construções, grupos de
+## ideias e ideias) num atlas user://eu4/icons.png (ICON_SIZE px); devolve chave -> posição.
+func _make_icons(trade_goods: Array, religions: Array, institutions: Array, advisor_types: Array,
+		buildings: Array, idea_groups: Array, national: Array) -> Dictionary:
+	if FileAccess.file_exists(OUT_DIR + "/icons.png"):
+		DirAccess.remove_absolute(OUT_DIR + "/icons.png")
+	if _list("gfx/interface/").is_empty():
+		return {}
+	_set_status("Lendo os ícones...")
+	var cells: Array[Image] = []
+	var index := {}
+	var cache := {}
+	for s in _icon_sources(trade_goods, religions, institutions, advisor_types, buildings, idea_groups, national):
+		var rel: String = (s[1] as String).to_lower()
+		if not _index.has(rel):         # .dds <-> .tga
+			var alt := rel.get_basename() + (".tga" if rel.get_extension() == "dds" else ".dds")
+			if not _index.has(alt):
+				continue
+			rel = alt
+		if not cache.has(rel):
+			cache[rel] = _load_icon(rel)
+		var img: Image = cache[rel]
+		if img == null:
+			continue
+		var frame: int = s[2]
+		if frame >= 0:
+			var fw := img.get_height()
+			if (frame + 1) * fw > img.get_width():
+				continue
+			img = img.get_region(Rect2i(frame * fw, 0, fw, fw))
+		else:
+			img = img.duplicate()
+		img.resize(ICON_SIZE, ICON_SIZE, Image.INTERPOLATE_LANCZOS)
+		index[s[0]] = cells.size()
+		cells.append(img)
+	if cells.is_empty():
+		return {}
+	var rows := (cells.size() + ICONS_PER_ROW - 1) / ICONS_PER_ROW
+	var atlas := Image.create(ICONS_PER_ROW * ICON_SIZE, rows * ICON_SIZE, false, Image.FORMAT_RGBA8)
+	for i in cells.size():
+		atlas.blit_rect(cells[i], Rect2i(0, 0, ICON_SIZE, ICON_SIZE),
+				Vector2i((i % ICONS_PER_ROW) * ICON_SIZE, (i / ICONS_PER_ROW) * ICON_SIZE))
+	atlas.save_png(OUT_DIR + "/icons.png")
+	return index
+
+
+## .dds ou .tga -> Image RGBA8 (null se não der). Alfa todo zerado vira opaco.
+func _load_icon(rel: String) -> Image:
+	var b := _bytes(rel)
+	var img: Image = null
+	if rel.ends_with(".dds"):
+		img = _dds(b)
+	else:
+		img = Image.new()
+		if img.load_tga_from_buffer(b) != OK:
+			return null
+	if img == null or img.is_empty():
+		return null
+	img.convert(Image.FORMAT_RGBA8)
+	if img.get_used_rect().size == Vector2i.ZERO:
+		img.convert(Image.FORMAT_RGB8)
+		img.convert(Image.FORMAT_RGBA8)
+	return img
+
+
+## Leitor de DDS (o Godot não carrega DDS de um buffer): RGB(A) sem compressão com máscaras
+## e DXT1/3/5 (descomprimido pelo próprio Image).
+func _dds(b: PackedByteArray) -> Image:
+	if b.size() < 128 or b.slice(0, 4).get_string_from_ascii() != "DDS ":
+		return null
+	var h := b.decode_u32(12)
+	var w := b.decode_u32(16)
+	var pf_flags := b.decode_u32(80)
+	var four := b.slice(84, 88).get_string_from_ascii()
+	if w == 0 or h == 0 or w > 8192 or h > 8192:
+		return null
+	if pf_flags & 0x4:              # DDPF_FOURCC
+		var fmt := {"DXT1": Image.FORMAT_DXT1, "DXT3": Image.FORMAT_DXT3, "DXT5": Image.FORMAT_DXT5}
+		if not fmt.has(four):
+			return null
+		var size := ((w + 3) / 4) * ((h + 3) / 4) * (8 if four == "DXT1" else 16)
+		if b.size() < 128 + size:
+			return null
+		var img := Image.create_from_data(w, h, false, fmt[four], b.slice(128, 128 + size))
+		img.decompress()
+		return img
+	var bits := b.decode_u32(88)
+	var bpp := bits / 8
+	if bpp < 2 or bpp > 4 or b.size() < 128 + w * h * bpp:
+		return null
+	var masks := [b.decode_u32(92), b.decode_u32(96), b.decode_u32(100),
+			b.decode_u32(104) if pf_flags & 0x1 else 0]
+	var shift := []
+	var scale := []
+	for m in masks:
+		var sh := 0
+		var mm: int = m
+		if mm == 0:
+			shift.append(0)
+			scale.append(0.0)
+			continue
+		while mm & 1 == 0:
+			mm >>= 1
+			sh += 1
+		shift.append(sh)
+		scale.append(255.0 / float(mm))
+	var out := PackedByteArray()
+	out.resize(w * h * 4)
+	var o := 0
+	var p := 128
+	for i in w * h:
+		var v: int
+		if bpp == 4:
+			v = b.decode_u32(p)
+		elif bpp == 3:
+			v = b[p] | (b[p + 1] << 8) | (b[p + 2] << 16)
+		else:
+			v = b.decode_u16(p)
+		p += bpp
+		for c in 3:
+			out[o + c] = int(((v & masks[c]) >> shift[c]) * scale[c] + 0.5) if masks[c] != 0 else 0
+		out[o + 3] = int(((v & masks[3]) >> shift[3]) * scale[3] + 0.5) if masks[3] != 0 else 255
+		o += 4
+	return Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, out)
 
 
 ## BMP de 8 bits (paleta) -> [largura, altura, índices de cima para baixo]; [] se não der.

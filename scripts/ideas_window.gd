@@ -81,7 +81,7 @@ func show_for(map: MapView, tag: String) -> void:
 		for i in nat["ideas"].size():
 			var idea: Dictionary = nat["ideas"][i]
 			_line("%s %s: %s" % ["✓" if i < un else "  ", idea["name"], fmt_mods(idea["modifiers"])],
-					DONE if i < un else LATER)
+					DONE if i < un else LATER, map.idea_icon(idea))
 		_line("Ambição (todas as 7): " + fmt_mods(nat["bonus"]), DONE if un >= nat["ideas"].size() else LATER)
 
 	# grupos adotados
@@ -89,11 +89,12 @@ func show_for(map: MapView, tag: String) -> void:
 		var grp: Dictionary = power.idea_groups[g["id"]]
 		var cat: String = grp["category"]
 		var n := int(g["n"])
-		_head("%s (%s) — %d/%d" % [grp["name"], _pt.get("categorias", {}).get(cat.to_upper(), cat), n, grp["ideas"].size()])
+		_head("%s (%s) — %d/%d" % [grp["name"], _pt.get("categorias", {}).get(cat.to_upper(), cat), n, grp["ideas"].size()],
+				map.icon_texture("group:" + g["id"]))
 		for i in grp["ideas"].size():
 			var idea: Dictionary = grp["ideas"][i]
 			_line("%s %s: %s" % ["✓" if i < n else ("→" if i == n else "  "), idea["name"], fmt_mods(idea["modifiers"])],
-					DONE if i < n else (NEXT if i == n else LATER))
+					DONE if i < n else (NEXT if i == n else LATER), map.idea_icon(idea))
 		_line("Bônus (grupo completo): " + fmt_mods(grp["bonus"]), DONE if n >= grp["ideas"].size() else LATER)
 		if tag == player and n < grp["ideas"].size():
 			var b := Button.new()
@@ -119,6 +120,8 @@ func show_for(map: MapView, tag: String) -> void:
 					var b := Button.new()
 					b.text = grp["name"]
 					b.tooltip_text = "Bônus: " + fmt_mods(grp["bonus"])
+					b.icon = map.icon_texture("group:" + gid)
+					b.add_theme_constant_override("icon_max_width", 28)
 					b.pressed.connect(func():
 						power.adopt(tag, gid)
 						refresh())
@@ -134,22 +137,22 @@ func show_for(map: MapView, tag: String) -> void:
 	reset_size()
 
 
-func _head(text: String) -> void:
+func _head(text: String, icon: Texture2D = null) -> void:
 	var l := Label.new()
 	l.text = text
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size.x = 620
+	l.custom_minimum_size.x = 620 if icon == null else 580
 	l.add_theme_font_size_override("font_size", 17)
-	_list.add_child(l)
+	_list.add_child(MapView.with_icon(icon, l, 36))
 
 
-func _line(text: String, color: Color) -> void:
+func _line(text: String, color: Color, icon: Texture2D = null) -> void:
 	var l := Label.new()
 	l.text = text
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size.x = 620
+	l.custom_minimum_size.x = 620 if _map == null or _map.icons.is_empty() else 590
 	l.add_theme_color_override("font_color", color)
-	_list.add_child(l)
+	_list.add_child(MapView.with_icon(icon, l, 24, _map != null and not _map.icons.is_empty()))
 
 
 ## {"global_tax_modifier": 0.1, "prestige": 1} -> "imposto +10%, prestígio anual +1"

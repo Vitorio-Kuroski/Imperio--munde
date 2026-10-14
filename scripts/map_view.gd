@@ -89,6 +89,10 @@ var map_mode := MapMode.POLITICO
 var owner_version := 0            # muda a cada troca de dono (Economy recalcula a renda)
 var _flags_tex: Texture2D          # atlas das bandeiras (vazio sem gfx/flags)
 var _flag_cache := {}              # tag -> AtlasTexture
+var icons := {}                    # chave ("good:grain", "religion:catholic", "inst:feudalism", "advisor:artist",
+                                   # "building:temple", "group:trade_ideas", "mod:global_tax_modifier") -> posição
+var _icons_tex: Texture2D          # atlas dos ícones da interface (vazio sem gfx/interface)
+var _icon_cache := {}
 var source := ""                   # de onde veio o mapa (caminho do map.json)
 
 
@@ -168,6 +172,7 @@ func load_map(map_scale: float) -> void:
 	emperor = data.get("emperor", "")
 	celestial_emperor = data.get("celestial_emperor", "")
 	wars = data.get("wars", [])
+	icons = data.get("icons", {})
 	advisors = data.get("advisors", [])
 	national_ideas = data.get("national_ideas", [])
 
@@ -206,6 +211,13 @@ func load_map(map_scale: float) -> void:
 			_flags_tex = ImageTexture.create_from_image(Image.load_from_file(flags_path))
 	elif ResourceLoader.exists(flags_path):
 		_flags_tex = load(flags_path) as Texture2D
+	# ícones da interface (icons.png: atlas com ICON_SIZE px por ícone)
+	var icons_path := ids_path.get_base_dir() + "/icons.png"
+	if icons_path.begins_with("user://"):
+		if FileAccess.file_exists(icons_path):
+			_icons_tex = ImageTexture.create_from_image(Image.load_from_file(icons_path))
+	elif ResourceLoader.exists(icons_path):
+		_icons_tex = load(icons_path) as Texture2D
 	mat.set_shader_parameter("palette", palette_tex)
 	mat.set_shader_parameter("map_size", Vector2(map_w, map_h))
 	mat.set_shader_parameter("selected_id", -1)
@@ -234,6 +246,53 @@ func flag_texture(tag: String) -> Texture2D:
 				(i / Eu4Importer.FLAGS_PER_ROW) * Eu4Importer.FLAG_SIZE, Eu4Importer.FLAG_SIZE, Eu4Importer.FLAG_SIZE)
 		_flag_cache[tag] = at
 	return _flag_cache[tag]
+
+
+## Ícone da interface do EU4 pela chave ("good:grain"...); null se não houver.
+func icon_texture(key: String) -> Texture2D:
+	if _icons_tex == null or not icons.has(key):
+		return null
+	if not _icon_cache.has(key):
+		var i := int(icons[key])
+		var at := AtlasTexture.new()
+		at.atlas = _icons_tex
+		at.region = Rect2((i % Eu4Importer.ICONS_PER_ROW) * Eu4Importer.ICON_SIZE,
+				(i / Eu4Importer.ICONS_PER_ROW) * Eu4Importer.ICON_SIZE, Eu4Importer.ICON_SIZE, Eu4Importer.ICON_SIZE)
+		_icon_cache[key] = at
+	return _icon_cache[key]
+
+
+## Ícone da ideia: o do seu primeiro efeito.
+func idea_icon(idea: Dictionary) -> Texture2D:
+	var m: Dictionary = idea.get("modifiers", {})
+	return icon_texture("mod:" + str(m.keys()[0])) if not m.is_empty() else null
+
+
+## TextureRect quadrado de `px` pixels com dica (para fileiras de ícones na interface).
+static func icon_rect(tex: Texture2D, px: int, tip := "") -> TextureRect:
+	var r := TextureRect.new()
+	r.texture = tex
+	r.custom_minimum_size = Vector2(px, px)
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	r.tooltip_text = tip
+	if tip == "":
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return r
+
+
+## `c` com o ícone à esquerda (ou o próprio `c` se não houver ícone; com `keep_space`, um vão do
+## tamanho do ícone para alinhar com as linhas que têm).
+static func with_icon(tex: Texture2D, c: Control, px := 28, keep_space := false) -> Control:
+	if tex == null and not keep_space:
+		return c
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 6)
+	hb.add_child(icon_rect(tex, px))
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hb.add_child(c)
+	return hb
 
 
 func province_color(pid: int) -> Color:

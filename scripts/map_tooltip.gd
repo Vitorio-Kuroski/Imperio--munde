@@ -6,7 +6,7 @@ extends PanelContainer
 const OFFSET := Vector2(16, 18)
 
 var _swatch: ColorRect
-var _flag: TextureRect             # bandeira do dono (modos político e diplomacia)
+var _flag: TextureRect             # bandeira do dono (modos político e diplomacia) ou ícone (religião, produtos, instituições)
 var _title: Label
 var _sub: Label
 var _last_pid := -2
@@ -87,6 +87,15 @@ func _fill(map: MapView, pid: int) -> void:
 	var flag: Texture2D = null
 	if map.map_mode in [MapView.MapMode.POLITICO, MapView.MapMode.DIPLOMACIA] and not p["sea"]:
 		flag = map.flag_texture(p["owner"])
+	elif not p["sea"]:
+		match map.map_mode:
+			MapView.MapMode.RELIGIAO:
+				flag = map.icon_texture("religion:" + str(p.get("religion", "")))
+			MapView.MapMode.PRODUTOS:
+				flag = map.icon_texture("good:" + str(p.get("trade_goods", "")))
+			MapView.MapMode.INSTITUICOES:
+				if map.inst_view and map.inst_view.focus() != "":
+					flag = map.icon_texture("inst:" + map.inst_view.focus())
 	_flag.texture = flag
 	_flag.visible = flag != null
 	_swatch.get_parent().visible = flag == null

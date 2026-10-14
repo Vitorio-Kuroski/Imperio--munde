@@ -23,6 +23,8 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   history/diplomacy/*.txt                      (aliancas, suditos, casamentos, unioes, imperadores em 1444)
   history/wars/*.txt                           (guerras ativas e dos ultimos 10 anos, com batalhas)
   gfx/flags/TAG.tga                            (bandeiras -> assets/eu4/flags.png, 64 px cada)
+  gfx/interface/... + interface/*.gfx          (icones de produtos, religioes, instituicoes, conselheiros,
+                                               construcoes e ideias -> assets/eu4/icons.png, 48 px cada)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -647,6 +649,108 @@ def make_flags(root, countries):
     atlas.save(out, optimize=True)
 
 
+ICON_SIZE, ICONS_PER_ROW = 48, 32
+
+
+def gfx_sprites(root):
+    """Sprites das interface/*.gfx: nome -> caminho da textura (minusculo, com /)."""
+    out = {}
+    for fn in sorted(glob.glob(os.path.join(root, "interface", "**", "*.gfx"), recursive=True)):
+        def walk(items):
+            for k, v in items:
+                if isinstance(v, list):
+                    d = {kk.lower(): vv for kk, vv in v if kk.lower() in ("name", "texturefile") and isinstance(vv, str)}
+                    if "name" in d and "texturefile" in d:
+                        out.setdefault(d["name"], re.sub(r"[\\/]+", "/", d["texturefile"]).lower())
+                    walk(v)
+        walk(parse_script(read_text(fn)))
+    return out
+
+
+def icon_sources(root, trade_goods, religions, institutions, advisor_types, buildings, idea_groups, national):
+    """Lista de (chave, caminho relativo, quadro) dos icones; quadro = indice numa tira (ou -1).
+    Mesma regra do importador do jogo."""
+    sprites = gfx_sprites(root)
+    src = []
+    for i, g in enumerate(trade_goods):
+        src.append(("good:" + g["id"], "gfx/interface/resources.dds", i))
+    for r in religions:
+        if "icon" in r:
+            src.append(("religion:" + r["id"], "gfx/interface/icon_religion.dds", r["icon"] - 1))
+    for inst in institutions:
+        src.append(("inst:" + inst["id"], sprites.get("GFX_icon_institution_" + inst["id"],
+                                                     "gfx/interface/institutions/%s.dds" % inst["id"]), -1))
+    for t in advisor_types:
+        src.append(("advisor:" + t["id"], sprites.get("GFX_advisor_" + t["id"],
+                                                     "gfx/interface/advisors/%s.tga" % t["id"]), -1))
+    for b in buildings:
+        if "GFX_" + b["id"] in sprites:
+            src.append(("building:" + b["id"], sprites["GFX_" + b["id"]], -1))
+    for g in idea_groups:
+        src.append(("group:" + g["id"], sprites.get("GFX_idea_" + g["id"], "gfx/interface/ideas/idea_%s.dds" % g["id"]),
+                    -1))
+    mods = []
+    for st in list(idea_groups) + list(national):
+        for idea in st["ideas"]:
+            first = next(iter(idea["modifiers"]), "")
+            if first and first not in mods:
+                mods.append(first)
+    for m in mods:
+        src.append(("mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % m.lower(), -1))
+    return src
+
+
+def make_icons(root, trade_goods, religions, institutions, advisor_types, buildings, idea_groups, national):
+    """Atlas assets/eu4/icons.png (ICON_SIZE px) e o dicionario chave -> posicao."""
+    out = "assets/eu4/icons.png"
+    if os.path.isfile(out):
+        os.remove(out)
+    files = {}
+    gdir = os.path.join(root, "gfx", "interface")
+    if not os.path.isdir(gdir):
+        return {}
+    for d, _, fs in os.walk(gdir):
+        for f in fs:
+            full = os.path.join(d, f)
+            files[os.path.relpath(full, root).replace(os.sep, "/").lower()] = full
+    cells, index, cache = [], {}, {}
+    for key, rel, frame in icon_sources(root, trade_goods, religions, institutions, advisor_types, buildings,
+                                        idea_groups, national):
+        rel = rel.lower()
+        if rel not in files:     # .dds <-> .tga
+            alt = re.sub(r"\.(dds|tga)$", lambda m: ".tga" if m.group(1) == "dds" else ".dds", rel)
+            if alt not in files:
+                continue
+            rel = alt
+        if rel not in cache:
+            try:
+                im = Image.open(files[rel]).convert("RGBA")
+            except OSError:
+                cache[rel] = None
+                continue
+            if im.getchannel("A").getextrema()[1] == 0:      # alfa todo zerado: trata como opaco
+                im = im.convert("RGB").convert("RGBA")
+            cache[rel] = im
+        im = cache[rel]
+        if im is None:
+            continue
+        if frame >= 0:
+            fw = im.height
+            if (frame + 1) * fw > im.width:
+                continue
+            im = im.crop((frame * fw, 0, (frame + 1) * fw, fw))
+        index[key] = len(cells)
+        cells.append(im.resize((ICON_SIZE, ICON_SIZE), Image.LANCZOS))
+    if not cells:
+        return {}
+    rows = (len(cells) + ICONS_PER_ROW - 1) // ICONS_PER_ROW
+    atlas = Image.new("RGBA", (ICONS_PER_ROW * ICON_SIZE, rows * ICON_SIZE))
+    for i, im in enumerate(cells):
+        atlas.paste(im, ((i % ICONS_PER_ROW) * ICON_SIZE, (i // ICONS_PER_ROW) * ICON_SIZE))
+    atlas.save(out, optimize=True)
+    return index
+
+
 def find_loc(root, pattern):
     files = sorted(glob.glob(os.path.join(root, "localisation", pattern)))
     files += sorted(glob.glob(os.path.join(root, "localisation", "**", pattern), recursive=True))
@@ -1130,8 +1234,11 @@ def main():
                     vals = [v * 255 for v in vals]
                 seen.add(rname)
                 rel_group[rname] = gname
-                religions.append({"id": rname, "name": nice(rname), "group": nice(gname),
-                                  "color": [int(v) for v in vals[:3]]})
+                rel = {"id": rname, "name": nice(rname), "group": nice(gname), "color": [int(v) for v in vals[:3]]}
+                icon = next((to_num(v) for k, v in rval if k == "icon" and to_num(v) is not None), None)
+                if icon is not None:
+                    rel["icon"] = int(icon)
+                religions.append(rel)
     for rid in sorted(set(religion.values()) - seen - {""}):
         religions.append({"id": rid, "name": nice(rid), "group": "", "color": hashed_color(rid)})
 
@@ -1226,6 +1333,8 @@ def main():
 
     # ---------------------------------------------------------- bandeiras (gfx/flags/TAG.tga)
     make_flags(root, countries)
+    icons = make_icons(root, trade_goods, religions, institutions, advisor_types, buildings, idea_groups,
+                       national_ideas)
 
     # ---------------------------------------------------------- map.json
     provinces = []
@@ -1286,7 +1395,7 @@ def main():
                    "idea_groups": idea_groups, "national_ideas": national_ideas,
                    "advisor_types": advisor_types, "advisors": advisors,
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
-                   "celestial_emperor": celestial, "wars": wars, "provinces": provinces},
+                   "celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])

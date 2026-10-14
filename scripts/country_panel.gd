@@ -18,6 +18,7 @@ var _map: MapView
 var _label: Label
 var _scroll: ScrollContainer
 var _flag: TextureRect
+var _icons: HFlowContainer        # religião, conselheiros, instituições adotadas e grupos de ideias
 var _tech_button: Button
 var _ideas_button: Button
 var _advisors_button: Button
@@ -41,7 +42,15 @@ func _init() -> void:
 	_flag.custom_minimum_size = Vector2(56, 56)
 	_flag.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_flag.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
-	vb.add_child(_flag)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 8)
+	vb.add_child(top)
+	top.add_child(_flag)
+	_icons = HFlowContainer.new()
+	_icons.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_icons.custom_minimum_size.x = 240
+	_icons.add_theme_constant_override("h_separation", 3)
+	top.add_child(_icons)
 	_scroll = ScrollContainer.new()          # o texto rola se não couber na tela
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vb.add_child(_scroll)
@@ -73,6 +82,35 @@ func _init() -> void:
 	hide()
 
 
+## Ícones ao lado da bandeira (só com os ícones do EU4 importados), cada um com dica.
+func _fill_icons(map: MapView, t: String) -> void:
+	for ch in _icons.get_children():
+		_icons.remove_child(ch)
+		ch.queue_free()
+	var c: Dictionary = map.countries[t]
+	var items := []
+	var rid: String = c.get("religion", "")
+	if map.religions.has(rid):
+		items.append(["religion:" + rid, "Religião: " + map.religions[rid]["name"]])
+	if advisors and advisors.enabled():
+		for cat in Advisors.CATS:
+			var h := advisors.get_hired(t, cat)
+			if not h.is_empty():
+				items.append(["advisor:" + h["type"], "%s: %s nível %d" % [h["name"],
+						advisors.types[h["type"]]["name"], int(h["skill"])]])
+	if institutions and institutions.enabled():
+		for inst in institutions.list:
+			if institutions.has_embraced(t, inst["id"]):
+				items.append(["inst:" + inst["id"], inst["name"] + " (adotada)"])
+	if power:
+		for g in power.adopted(t):
+			items.append(["group:" + g["id"], "%s %d/7" % [power.idea_groups[g["id"]]["name"], int(g["n"])]])
+	for it in items:
+		var tex := map.icon_texture(it[0])
+		if tex:
+			_icons.add_child(MapView.icon_rect(tex, 28, it[1]))
+
+
 ## Mostra o país `t` (vazio esconde o painel).
 func show_country(map: MapView, t: String) -> void:
 	tag = t
@@ -83,6 +121,7 @@ func show_country(map: MapView, t: String) -> void:
 	var c: Dictionary = map.countries[t]
 	_flag.texture = map.flag_texture(t)
 	_flag.visible = _flag.texture != null
+	_fill_icons(map, t)
 	var lines := ["%s (%s)" % [c["name"], t]]
 	var gov := ""
 	if c.has("government"):
@@ -156,6 +195,8 @@ func show_country(map: MapView, t: String) -> void:
 					_embrace_button.text = "Adotar %s (%s ducados)" % [inst["name"],
 							AdvisorsWindow._n(institutions.embrace_cost(t, iid))]
 					_embrace_button.disabled = not institutions.can_embrace(t, iid)
+					_embrace_button.icon = map.icon_texture("inst:" + iid)
+					_embrace_button.add_theme_constant_override("icon_max_width", 24)
 					_embrace_button.visible = true
 		if not parts.is_empty():
 			lines.append("Instituições: " + ", ".join(parts))

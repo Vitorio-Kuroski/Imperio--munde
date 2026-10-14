@@ -27,6 +27,7 @@ var pause_button: Button
 var mode_button: Button
 var side_panel: PanelContainer
 var info_label: Label
+var prov_icons: HFlowContainer     # ícones da província (produto, religião, construções, instituições)
 var tooltip: MapTooltip
 var country_panel: CountryPanel
 var tech_window: TechWindow
@@ -137,7 +138,12 @@ func _build_ui() -> void:
 	info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_label.custom_minimum_size.x = 340
 	info_label.text = "Clique em uma província."
-	side_panel.add_child(info_label)
+	var side_vb := VBoxContainer.new()
+	side_panel.add_child(side_vb)
+	prov_icons = HFlowContainer.new()
+	prov_icons.add_theme_constant_override("h_separation", 4)
+	side_vb.add_child(prov_icons)
+	side_vb.add_child(info_label)
 	side_panel.hide()
 
 	# Tela de escolha de país
@@ -400,6 +406,7 @@ func _show_province(pid: int) -> void:
 		side_panel.hide()
 		return
 	var p: Dictionary = map.provinces[pid]
+	_province_icons(p)
 	var txt := "%s\n" % p["name"]
 	if p["sea"]:
 		txt += "Águas navegáveis"
@@ -455,6 +462,36 @@ func _show_province(pid: int) -> void:
 	info_label.text = txt
 	side_panel.show()
 	_fit_side_panel.call_deferred()
+
+
+## Fileira de ícones: produto, religião, construções e instituições presentes (com dica).
+func _province_icons(p: Dictionary) -> void:
+	for c in prov_icons.get_children():
+		prov_icons.remove_child(c)
+		c.queue_free()
+	if p["sea"]:
+		prov_icons.hide()
+		return
+	var items := []
+	var gid: String = p.get("trade_goods", "")
+	if map.trade_goods.has(gid):
+		items.append(["good:" + gid, "Produto: " + map.trade_goods[gid]["name"]])
+	var rid: String = p.get("religion", "")
+	if map.religions.has(rid):
+		items.append(["religion:" + rid, "Religião: " + map.religions[rid]["name"]])
+	for bid in p.get("buildings", []):
+		if map.buildings.has(bid):
+			items.append(["building:" + bid, map.buildings[bid]["name"]])
+	if institutions.enabled():
+		for inst in institutions.list:
+			var pr := institutions.province_progress(inst["id"], int(p["id"]))
+			if pr > 0.0:
+				items.append(["inst:" + inst["id"], "%s %d%%" % [inst["name"], roundi(pr)]])
+	for it in items:
+		var tex := map.icon_texture(it[0])
+		if tex:
+			prov_icons.add_child(MapView.icon_rect(tex, 32, it[1]))
+	prov_icons.visible = prov_icons.get_child_count() > 0
 
 
 ## Ajusta o painel ao texto, mantendo-o colado no canto inferior esquerdo.
