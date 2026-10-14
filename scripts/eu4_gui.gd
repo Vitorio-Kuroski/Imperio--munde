@@ -276,15 +276,25 @@ func style_scrollbar(vs: VScrollBar) -> void:
 		sb.set_texture_margin_all(float(b[1]))
 		vs.add_theme_stylebox_override("scroll", sb)
 		vs.add_theme_stylebox_override("scroll_focus", sb)
-	if drag:
-		for st in [["grabber", Color.WHITE], ["grabber_highlight", Color(1.25, 1.2, 1.1)], ["grabber_pressed", Color(0.8, 0.8, 0.8)]]:
-			var g := StyleBoxTexture.new()
-			g.texture = drag
-			g.set_texture_margin_all(5.0)
-			g.modulate_color = st[1]
-			vs.add_theme_stylebox_override(st[0], g)
 	var up := sprite_frame("GFX_scroll_up", 0)
 	var down := sprite_frame("GFX_scroll_down", 0)
+	if drag:
+		# o Godot faz o botão do tamanho da parte visível da lista; o do EU4 tem tamanho fixo:
+		# o botão do Godot fica invisível (continua arrastável) e o do EU4 é desenhado no trilho
+		# na posição da rolagem (topo da lista = em cima, fim = embaixo)
+		for st in ["grabber", "grabber_highlight", "grabber_pressed"]:
+			vs.add_theme_stylebox_override(st, StyleBoxEmpty.new())
+		var uh: float = up.get_height() if up else 0.0
+		var dh: float = down.get_height() if down else 0.0
+		vs.draw.connect(func():
+			var span := vs.max_value - vs.min_value
+			if span <= 0.0 or vs.page >= span:
+				return
+			var k := drag.get_size()
+			var area: float = vs.size.y - uh - dh - k.y
+			var t := clampf((vs.value - vs.min_value) / (span - vs.page), 0.0, 1.0)
+			var y: float = uh + t * area
+			vs.draw_texture(drag, Vector2((vs.size.x - k.x) * 0.5, y)))
 	if up and down:
 		vs.add_theme_icon_override("decrement", up)
 		vs.add_theme_icon_override("decrement_highlight", up)
