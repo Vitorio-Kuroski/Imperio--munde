@@ -53,6 +53,9 @@ var religion_index: Dictionary = {} # id -> 1..N (0 = nenhuma)
 var trade_goods: Dictionary = {}   # id -> dict (name, color, price); vazio se o mapa não tiver produtos
 var trade_good_index: Dictionary = {} # id -> 1..N (0 = nenhum)
 var trade_nodes: Dictionary = {}   # id -> dict (name, color, location, inland, end, outgoing)
+var centers_of_trade: Array = []   # [{id, name, level, type coastal/inland, trade_power}]
+var trade_rules: Dictionary = {}   # regras do comércio (modificadores estáticos e defines do EU4)
+var trade_view: Trade              # simulação de comércio (main.gd define; dica do modo comércio)
 var trade_node_index: Dictionary = {} # id -> 1..N (0 = nenhum)
 var buildings: Dictionary = {}     # id -> dict (name, cost, time, modifiers, replaces, goods)
 var trade_flows: TradeFlows        # setas do modo comércio
@@ -175,6 +178,8 @@ func load_map(map_scale: float) -> void:
 	celestial_emperor = data.get("celestial_emperor", "")
 	wars = data.get("wars", [])
 	icons = data.get("icons", {})
+	centers_of_trade = data.get("centers_of_trade", [])
+	trade_rules = data.get("trade_rules", {})
 	advisors = data.get("advisors", [])
 	national_ideas = data.get("national_ideas", [])
 

@@ -136,10 +136,20 @@ func _fill(map: MapView, pid: int) -> void:
 			if map.trade_nodes.has(nid):
 				var n: Dictionary = map.trade_nodes[nid]
 				_title.text = "Nó: " + n["name"]
+				var bits := [p["name"]]
 				if int(n.get("location", 0)) == pid:
-					_sub.text = "%s · sede do nó" % p["name"]
+					bits.append("sede do nó")
 				elif int(p.get("center_of_trade", 0)) > 0:
-					_sub.text = "%s · centro de comércio %d" % [p["name"], int(p["center_of_trade"])]
+					bits.append("centro de comércio %d" % int(p["center_of_trade"]))
+				var tv: Trade = map.trade_view
+				if tv and tv.enabled() and not tv.total_value.is_empty():
+					var i := tv.node_of(pid)
+					if i >= 0:
+						bits.append("valor %s" % str(snappedf(tv.total_value[i], 0.1)).replace(".", ","))
+						var me: String = map.diplo_focus
+						if me != "" and tv.share(me, i) > 0.0:
+							bits.append("%s %d%%" % [me, roundi(tv.share(me, i) * 100.0)])
+				_sub.text = " · ".join(bits)
 			else:
 				_title.text = "Fora das rotas de comércio"
 			_swatch.color = map.trade_node_color(nid)

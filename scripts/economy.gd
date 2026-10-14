@@ -50,6 +50,7 @@ var clock: GameClock
 var power: MonarchPower
 var advisors: Advisors
 var diplomacy: Diplomacy               # main.gd define (vassalos)
+var trade: Trade                       # main.gd define (renda de comércio)
 var treasury := {}                     # tag -> ducados
 var loans := {}                        # tag -> [{amount, rate, expires (AAAAMMDD)}]
 var inflation := {}                    # tag -> %
@@ -132,7 +133,7 @@ func vassal_fee(tag: String) -> float:
 	return _tax(tag) * maxf(0.0, VASSAL_FEE + power.modifier(_overlord[tag], "vassal_income"))
 
 
-## Renda mensal: {"tax", "production", "gold", "vassals", "total"} (as outras linhas do EU4 são 0).
+## Renda mensal: {"tax", "production", "trade", "gold", "vassals", "total"} (as outras linhas do EU4 são 0).
 func income(tag: String) -> Dictionary:
 	if _inc_cache.has(tag):
 		return _inc_cache[tag]
@@ -143,7 +144,9 @@ func income(tag: String) -> Dictionary:
 	var vas := 0.0
 	for v in _vassals.get(tag, []):
 		vas += vassal_fee(v)
-	var out := {"tax": tax, "production": prod, "gold": gold, "vassals": vas, "total": tax + prod + gold + vas}
+	var tr := trade.income(tag) if trade else 0.0
+	var out := {"tax": tax, "production": prod, "trade": tr, "gold": gold, "vassals": vas,
+			"total": tax + prod + tr + gold + vas}
 	_inc_cache[tag] = out
 	return out
 
@@ -352,6 +355,8 @@ func _on_month() -> void:
 	if map.owner_version != _counted_version:   # só recalcula quando algum dono muda
 		_recount()
 	_inc_cache.clear()
+	if trade:
+		trade.recompute()
 	var today := _today()
 	for tag in treasury:
 		var inc := income(tag)

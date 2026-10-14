@@ -12,6 +12,7 @@ var power := MonarchPower.new()
 var economy := Economy.new()
 var advisors := Advisors.new()
 var institutions := Institutions.new()
+var trade := Trade.new()
 var diplomacy := Diplomacy.new()
 var camera: Camera2D
 var player_tag := ""
@@ -56,6 +57,9 @@ func _ready() -> void:
 	map.inst_view = institutions
 	diplomacy.setup(map)
 	economy.diplomacy = diplomacy
+	trade.setup(map, power)
+	economy.trade = trade
+	trade.recompute()
 	economy._recount()
 	power.economy = economy
 	map.diplo_view = diplomacy
@@ -510,6 +514,8 @@ func _show_country(tag: String) -> void:
 func _show_province(pid: int) -> void:
 	if province_view and (pid < 0 or not map.provinces[pid]["sea"]):
 		side_panel.hide()
+		if pid >= 0 and country_view:
+			country_view.hide()         # as duas telas ficam no mesmo lugar
 		province_view.show_province(pid)
 		return
 	if province_view:

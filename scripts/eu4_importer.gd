@@ -143,12 +143,13 @@ func _rel(p: String) -> String:
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
 			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
-			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/", "history/wars/"]:
+			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/", "history/wars/",
+			"common/centers_of_trade/", "common/static_modifiers/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
 		return rel
-	if rel == "common/technology.txt":
+	if rel == "common/technology.txt" or rel == "common/defines.lua":
 		return rel
 	return ""
 
@@ -376,6 +377,8 @@ func _country_history(items: Array) -> Dictionary:
 					h["elector"] = true
 				else:
 					h.erase("elector")
+			elif k == "mercantilism" and (v as String).is_valid_float():
+				h["mercantilism"] = _int_if_whole(float(v))
 		elif k in ["monarch", "heir"] and v is Array:
 			var person := {}
 			for x in v:
@@ -764,6 +767,7 @@ func _import() -> String:
 	var idea_groups := _ideas(countries, groups, rel_group, national_ideas)
 	var advisors := []
 	var advisor_types := _advisors(defs, advisors)
+	var trade := _trade()
 	var inst_raw := _institutions()
 	var dip := _diplomacy()
 	var wars := _wars()
@@ -877,6 +881,7 @@ func _import() -> String:
 			"technologies": technologies, "tech_groups": tech_groups, "units": units,
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
+			"centers_of_trade": trade[0], "trade_rules": trade[1],
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
 			"celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces}))
 	f.close()
@@ -980,6 +985,60 @@ func _buildings() -> Array:
 				if by_id["manufactory"].has(k):
 					b[k] = by_id["manufactory"][k]
 	return out
+
+
+## Constantes de comércio do common/defines.lua e modificadores estáticos usados no comércio.
+const TRADE_DEFINES := ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCHANT_PRESENT",
+		"TRADE_ADDED_VALUE_MODIFER", "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
+		"MERCHANT_MAX_POWER_BONUS"]
+const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_power"],
+		["coastal", "province_trade_power_modifier", "coastal_trade_power"],
+		["mercantilism", "global_prov_trade_power_modifier", "mercantilism_trade_power"],
+		["base_values", "merchants", "base_merchants"]]
+
+
+## [centros de comércio, regras de comércio] (mesma saída do import_eu4.py).
+func _trade() -> Array:
+	var cots := []
+	var cot_pt: Dictionary = _json("res://data/comercio_pt.json").get("centros", {})
+	for f in _list("common/centers_of_trade/"):
+		for kv in _parse(_text(f)):
+			if not (kv[1] is Array):
+				continue
+			var d := {}
+			for x in kv[1]:
+				if x[0] != "" and not d.has(x[0]):
+					d[x[0]] = x[1]
+			if not (d.get("level", null) is String) or not (d["level"] as String).is_valid_float():
+				continue
+			var tp: Variant = 0
+			if d.get("province_modifiers", null) is Array:
+				for x in d["province_modifiers"]:
+					if x[0] == "province_trade_power_value" and x[1] is String and (x[1] as String).is_valid_float():
+						tp = _int_if_whole(float(x[1]))
+						break
+			cots.append({"id": kv[0], "name": cot_pt.get(kv[0], _loc.get(kv[0], pretty_key(kv[0]))), "level": int(float(d["level"])),
+					"type": str(d.get("type", "")), "trade_power": tp})
+	var rules := {}
+	for f in _list("common/static_modifiers/"):
+		var blocks := {}
+		for kv in _parse(_text(f)):
+			if kv[0] != "" and kv[1] is Array and not blocks.has(kv[0]):
+				blocks[kv[0]] = kv[1]
+		for t in TRADE_STATIC:
+			if blocks.has(t[0]) and not rules.has(t[2]):
+				for x in blocks[t[0]]:
+					if x[0] == t[1] and x[1] is String and (x[1] as String).is_valid_float():
+						rules[t[2]] = _int_if_whole(float(x[1]))
+						break
+	if _index.has("common/defines.lua"):
+		var text := _text("common/defines.lua")
+		for n in TRADE_DEFINES:
+			var re := RegEx.create_from_string("\\b%s\\s*=\\s*(-?[0-9.]+)" % n)
+			var m := re.search(text)
+			if m and m.get_string(1).is_valid_float():
+				rules[(n as String).to_lower()] = _int_if_whole(float(m.get_string(1)))
+	return [cots, rules]
 
 
 func _int_if_whole(x: float) -> Variant:

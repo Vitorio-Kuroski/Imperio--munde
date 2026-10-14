@@ -147,6 +147,8 @@ def country_history(items, cutoff):
                     h["elector"] = True
                 else:
                     h.pop("elector", None)
+            elif k == "mercantilism" and to_num(v) is not None:
+                h["mercantilism"] = to_num(v)
         elif k in ("monarch", "heir") and isinstance(v, list):
             person = {}
             for kk, vv in v:
@@ -365,6 +367,50 @@ def eu4_ideas(root, countries, culture_group_of, religion_group_of, loc=None):
                 break
     national = [st for st, _ in free_sets if st["id"] in used]
     return groups, national
+
+
+# constantes de comercio do common/defines.lua (nome -> chave no map.json)
+TRADE_DEFINES = ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCHANT_PRESENT", "TRADE_ADDED_VALUE_MODIFER",
+                 "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
+                 "MERCHANT_MAX_POWER_BONUS"]
+# modificadores estaticos usados no comercio: (bloco, efeito, chave no map.json)
+TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power"),
+                ("coastal", "province_trade_power_modifier", "coastal_trade_power"),
+                ("mercantilism", "global_prov_trade_power_modifier", "mercantilism_trade_power"),
+                ("base_values", "merchants", "base_merchants")]
+
+
+def eu4_trade(root, loc):
+    """Centros de comercio (common/centers_of_trade) e regras de comercio (modificadores estaticos e defines)."""
+    cots = []
+    with open("data/comercio_pt.json", encoding="utf-8") as fp:
+        cot_pt = json.load(fp).get("centros", {})
+    for f in sorted(glob.glob(os.path.join(root, "common", "centers_of_trade", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not isinstance(val, list):
+                continue
+            d = {k: v for k, v in val if k}
+            pm = {k: v for k, v in d.get("province_modifiers", []) if k} if isinstance(d.get("province_modifiers"), list) else {}
+            if to_num(d.get("level")) is None:
+                continue
+            cots.append({"id": name, "name": cot_pt.get(name) or loc.get(name) or pretty_key(name), "level": int(to_num(d["level"])),
+                         "type": d.get("type", ""), "trade_power": to_num(pm.get("province_trade_power_value", "0")) or 0})
+    rules = {}
+    for f in sorted(glob.glob(os.path.join(root, "common", "static_modifiers", "*.txt"))):
+        blocks = {k: v for k, v in parse_script(read_text(f)) if k and isinstance(v, list)}
+        for block, key, out in TRADE_STATIC:
+            if block in blocks and out not in rules:
+                v = next((to_num(x) for k, x in blocks[block] if k == key and to_num(x) is not None), None)
+                if v is not None:
+                    rules[out] = v
+    dl = os.path.join(root, "common", "defines.lua")
+    if os.path.isfile(dl):
+        text = read_text(dl)
+        for name in TRADE_DEFINES:
+            m = re.search(r"\b%s\s*=\s*(-?[0-9.]+)" % name, text)
+            if m and to_num(m.group(1)) is not None:
+                rules[name.lower()] = to_num(m.group(1))
+    return cots, rules
 
 
 def eu4_advisors(root, defs):
@@ -1519,6 +1565,7 @@ def main():
     # ---------------------------------------------------------- ideias (common/ideas)
     idea_groups, national_ideas = eu4_ideas(root, countries, groups, rel_group, loc)
     advisor_types, advisors = eu4_advisors(root, defs)
+    centers_of_trade, trade_rules = eu4_trade(root, loc)
     inst_raw = eu4_institutions(root, cutoff)
     diplomacy, emperor, celestial = eu4_diplomacy(root, cutoff)
     wars = eu4_wars(root, cutoff)
@@ -1594,6 +1641,7 @@ def main():
                    "technologies": technologies, "tech_groups": tech_groups, "units": units,
                    "idea_groups": idea_groups, "national_ideas": national_ideas,
                    "advisor_types": advisor_types, "advisors": advisors,
+                   "centers_of_trade": centers_of_trade, "trade_rules": trade_rules,
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
                    "celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))

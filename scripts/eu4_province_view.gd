@@ -17,7 +17,8 @@ const KEEP := ["provinceview_bg", "province_terrain", "trade_icon", "military_ic
 		"total_value", "religion_title", "religion", "religion_icon", "culture_title", "culture", "hre_icon",
 		"demographics_header", "military_header", "trade_header", "manpower", "manpower_value", "supply",
 		"supply_value", "goodsproduced", "goodsproduced_value", "resource_icon", "resource_price_value",
-		"resource_price_gold", "tradenode_button", "modifiers"]
+		"resource_price_gold", "tradenode_button", "modifiers", "tradepower", "tradepower_value", "tradevalue",
+		"tradevalue_value"]
 ## Subjanelas que o jogo ainda não usa (têm elementos com os mesmos nomes dos de KEEP).
 const HIDE_WINDOWS := ["state_window", "buildings_window", "change_culture_view", "build_army_view", "build_navy_view",
 		"foreign_province_window", "client_state_selection", "transfer_occupation_window", "tradegoods_province_window",
@@ -82,6 +83,8 @@ func setup(g: Eu4Gui, m: MapView, inst: Institutions) -> bool:
 	_txt("manpower", "Efetivo:")
 	_txt("supply", "Suprimento:")
 	_txt("goodsproduced", "Bens produzidos:")
+	_txt("tradepower", "Poder comercial:")
+	_txt("tradevalue", "Valor comercial:")
 	_tip("tax_base_icon", "Imposto base")
 	_tip("prod_base_icon", "Produção base")
 	_tip("mp_base_icon", "Efetivo base")
@@ -235,6 +238,12 @@ func show_province(id: int) -> void:
 			res.tooltip_text = map.trade_goods[gid]["name"]
 	_txt("resource_price_value", _num(price) if gi >= 0 else "")
 	_tip("resource_price_value", "Preço de %s" % map.trade_goods[gid]["name"] if gi >= 0 else "")
+	var tv: Trade = map.trade_view
+	if tv and tv.enabled() and not tv.prov_power.is_empty():
+		_txt("tradepower_value", _num(tv.prov_power[id]))
+		_txt("tradevalue_value", _num(tv.prov_value[id]))
+		_tip("tradepower_value", "Desenvolvimento × 0,2 + centro de comércio, × (1 + costa, construções, mercantilismo)")
+		_tip("tradevalue_value", "Bens produzidos × preço (por ano)")
 	var nid: String = p.get("trade_node", "")
 	_txt("tradenode_button", map.trade_nodes[nid]["name"] if map.trade_nodes.has(nid) else "")
 	_tip("tradenode_button", "Nó de comércio" + (" · centro de comércio nível %d" % int(p["center_of_trade"]) \

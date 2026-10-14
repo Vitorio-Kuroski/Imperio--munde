@@ -184,6 +184,7 @@ func fill(tag: String) -> void:
 	var tips := {"tax": "Imposto base %d por ano ÷ 12 × (1 + modificador de impostos)" % bt,
 			"production": "Produção base %d × 0,2 × preço do produto por ano ÷ 12 × (1 + eficiência de produção)" % bp,
 			"gold": "Cada unidade de ouro produzida rende 40 ducados por ano (e gera inflação)",
+			"trade": _trade_tip(tag),
 			"vassals": "Vassalos pagam %d%% da renda de impostos deles" % roundi(100.0 * (Economy.VASSAL_FEE \
 					+ pw.modifier(tag, "vassal_income")))}
 	var incomes := root.find_child("incomes_listbox", true, false) as Control
@@ -256,6 +257,19 @@ func fill(tag: String) -> void:
 	var rl := root.find_child("countryeconomyview_repayloan", true, false) as Control
 	if rl and rl.visible:
 		_fill_loans()
+
+
+func _trade_tip(tag: String) -> String:
+	var tv: Trade = view.map.trade_view
+	if tv == null or not tv.enabled():
+		return "Sem nós de comércio no mapa"
+	var parts := []
+	for i in tv.collected.size():
+		if tv.collected[i].has(tag):
+			var nid: String = tv.nodes[i]
+			parts.append("%s: %s (%d%% do poder%s)" % [view.map.trade_nodes[nid]["name"], _n(tv.collected[i][tag]),
+					roundi(tv.share(tag, i) * 100.0), ", capital comercial" if i == tv.home(tag) else ", mercador"])
+	return "Coleta de comércio por mês:\n" + ("\n".join(parts) if not parts.is_empty() else "nenhuma")
 
 
 func _state(n: String, on: bool, tip: String) -> void:
