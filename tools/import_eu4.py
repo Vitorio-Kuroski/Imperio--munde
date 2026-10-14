@@ -17,6 +17,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   map/rivers.bmp (rios), map/adjacencies.csv (estreitos); opcionais
   common/technologies/*.txt, common/technology.txt (tecnologias e grupos tecnologicos; opcionais)
   common/units/*.txt                           (unidades: tipo, grupo, atributos; opcional)
+  common/ideas/*.txt                           (ideias nacionais e grupos de ideias; opcional)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -256,6 +257,97 @@ def eu4_units(root, technologies):
             u["tech"], u["level"] = unlock[uid]
         units.append(u)
     return units
+
+
+TRIGGER_KEYS = {"tag": "tag", "primary_culture": "primary_culture", "culture_group": "culture_group",
+                "religion": "religion", "religion_group": "religion_group", "technology_group": "tech_group",
+                "government": "government"}
+
+
+FALSE_AT_START = {"is_revolutionary", "is_revolution_target", "is_federation_nation", "is_colonial_nation",
+                  "is_client_nation", "has_country_flag", "primitives"}
+
+
+def eval_cond(k, v, ctx):
+    """Condicao de trigger do EU4 (so as que da para saber em 1444; o resto conta como falsa)."""
+    if not k:
+        return True
+    kl = k.lower()
+    if kl == "or":
+        return isinstance(v, list) and any(eval_cond(a, b, ctx) for a, b in v if a)
+    if kl == "and":
+        return isinstance(v, list) and all(eval_cond(a, b, ctx) for a, b in v if a)
+    if kl == "not":
+        return isinstance(v, list) and not any(eval_cond(a, b, ctx) for a, b in v if a)
+    if not isinstance(v, str):
+        return False
+    if kl == "always":
+        return v == "yes"
+    if kl in TRIGGER_KEYS:
+        return ctx.get(TRIGGER_KEYS[kl]) == v
+    if kl in FALSE_AT_START:
+        return v == "no"        # nada disso e verdade em 1444
+    return False
+
+
+def idea_mods(items):
+    out = {}
+    for k, v in items:
+        if k and isinstance(v, str):
+            n = to_num(v)
+            if n is not None:
+                out[k] = n
+            elif v == "yes":
+                out[k] = True
+    return out
+
+
+def eu4_ideas(root, countries, culture_group_of, religion_group_of):
+    """Grupos de ideias (com category) e ideias nacionais (free = yes). Cada pais recebe em "ideas" o
+    primeiro conjunto livre (na ordem dos arquivos) cujo trigger ele cumpre: nacional > de grupo >
+    generico (default_ideas)."""
+    with open("data/ideias_pt.json", encoding="utf-8") as f:
+        pt = json.load(f)["grupos"]
+    groups, free_sets = [], []
+    for fn in sorted(glob.glob(os.path.join(root, "common", "ideas", "*.txt"))):
+        for name, items in parse_script(read_text(fn)):
+            if not name or not isinstance(items, list):
+                continue
+            st = {"id": name, "name": pt.get(name) or pretty_key(name, "_ideas"), "start": {}, "bonus": {}, "ideas": []}
+            trigger, free = None, False
+            # prefixo das ideias: "norse_ideas_x" e "fra_x" (FRA_ideas) viram "X"
+            prefix = name.lower() + "_" if any(k and k.lower().startswith(name.lower() + "_") for k, _ in items) \
+                else name.lower().removesuffix("_ideas") + "_"
+            for k, v in items:
+                if k == "category" and isinstance(v, str):
+                    st["category"] = v.lower()
+                elif k in ("start", "bonus") and isinstance(v, list):
+                    st[k] = idea_mods(v)
+                elif k == "free":
+                    free = v == "yes"
+                elif k == "trigger" and isinstance(v, list):
+                    trigger = v
+                elif k and k not in ("ai_will_do", "important") and isinstance(v, list):
+                    nm = pretty_key(k[len(prefix):] if k.lower().startswith(prefix) else k)
+                    st["ideas"].append({"id": k, "name": nm, "modifiers": idea_mods(v)})
+            if free:
+                free_sets.append((st, trigger))
+            elif "category" in st:
+                if trigger is not None:
+                    st["restricted"] = True     # exige governo/condicao especial
+                groups.append(st)
+    used = {}
+    for c in countries:
+        ctx = dict(c)
+        ctx["culture_group"] = culture_group_of.get(c.get("primary_culture", ""), "")
+        ctx["religion_group"] = religion_group_of.get(c.get("religion", ""), "")
+        for st, trig in free_sets:
+            if trig is None or all(eval_cond(a, b, ctx) for a, b in trig if a):
+                c["ideas"] = st["id"]
+                used[st["id"]] = st
+                break
+    national = [st for st, _ in free_sets if st["id"] in used]
+    return groups, national
 
 
 def parse_building(bid, items, names):
@@ -766,7 +858,7 @@ def main():
     def nice(key):
         return pt.get(key) or pretty(key)
 
-    religions, seen = [], set()
+    religions, seen, rel_group = [], set(), {}
     for rf in sorted(glob.glob(os.path.join(root, "common", "religions", "*.txt"))):
         for gname, gval in parse_script(read_text(rf)):
             if not isinstance(gval, list):
@@ -781,6 +873,7 @@ def main():
                 if max(vals[:3]) <= 1.0:
                     vals = [v * 255 for v in vals]
                 seen.add(rname)
+                rel_group[rname] = gname
                 religions.append({"id": rname, "name": nice(rname), "group": nice(gname),
                                   "color": [int(v) for v in vals[:3]]})
     for rid in sorted(set(religion.values()) - seen - {""}):
@@ -862,6 +955,9 @@ def main():
                 adjacencies.append({"from": int(q[0]), "to": int(q[1]), "type": q[2],
                                     "through": int(q[3]) if q[3].lstrip("-").isdigit() else -1})
 
+    # ---------------------------------------------------------- ideias (common/ideas)
+    idea_groups, national_ideas = eu4_ideas(root, countries, groups, rel_group)
+
     # ---------------------------------------------------------- map.json
     provinces = []
     for pid in range(n_prov):
@@ -909,7 +1005,7 @@ def main():
                    "superregions": geo["superregions"], "continents": geo["continents"],
                    "adjacencies": adjacencies, "governments": governments,
                    "technologies": technologies, "tech_groups": tech_groups, "units": units,
-                   "provinces": provinces},
+                   "idea_groups": idea_groups, "national_ideas": national_ideas, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])

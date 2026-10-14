@@ -102,7 +102,7 @@ func _rel(p: String) -> String:
 		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
-			"common/buildings/", "common/governments/", "common/technologies/", "common/units/"]:
+			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -699,7 +699,8 @@ func _import() -> String:
 				"group": (loc.get(g, g.capitalize()) if g != "" else ""), "color": col})
 
 	# ---- religiões (grupos e cores de common/religions; nomes em português de data/religioes_pt.json)
-	var religions := _religions(religion.values(), loc)
+	var rel_group := {}
+	var religions := _religions(religion.values(), loc, rel_group)
 	var trade_goods := _trade_goods(goods.values(), loc)
 	var node_of := {}
 	var trade_nodes := _trade_nodes(loc, node_of)
@@ -709,6 +710,8 @@ func _import() -> String:
 	var tech_groups := []
 	var technologies := _technologies(buildings, tech_groups)
 	var units := _units(technologies)
+	var national_ideas := []
+	var idea_groups := _ideas(countries, groups, rel_group, national_ideas)
 	var adjacencies := []
 	if _index.has("map/adjacencies.csv"):
 		for line in _text("map/adjacencies.csv").split("\n"):
@@ -778,7 +781,7 @@ func _import() -> String:
 			"terrains": terrains, "areas": geo["areas"], "regions": geo["regions"], "superregions": geo["superregions"],
 			"continents": geo["continents"], "adjacencies": adjacencies, "governments": governments,
 			"technologies": technologies, "tech_groups": tech_groups, "units": units,
-			"provinces": provinces}))
+			"idea_groups": idea_groups, "national_ideas": national_ideas, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
@@ -950,7 +953,7 @@ func _trade_goods(used: Array, loc: Dictionary) -> Array:
 
 ## Lista de religiões {id, name, group, color}: todas as de common/religions (na ordem do arquivo)
 ## mais as usadas nas províncias que não estiverem lá.
-func _religions(used: Array, loc: Dictionary) -> Array:
+func _religions(used: Array, loc: Dictionary, rel_group: Dictionary) -> Array:
 	var pt: Dictionary = {}
 	if FileAccess.file_exists("res://data/religioes_pt.json"):
 		pt = JSON.parse_string(FileAccess.get_file_as_string("res://data/religioes_pt.json"))
@@ -975,6 +978,7 @@ func _religions(used: Array, loc: Dictionary) -> Array:
 				if col[0] <= 1.0 and col[1] <= 1.0 and col[2] <= 1.0:
 					col = [col[0] * 255, col[1] * 255, col[2] * 255]
 				seen[r[0]] = true
+				rel_group[r[0]] = g[0]
 				out.append({"id": r[0], "name": nice.call(r[0]), "group": nice.call(g[0]),
 						"color": [int(col[0]), int(col[1]), int(col[2])]})
 	var rest := {}
@@ -1256,6 +1260,117 @@ func _technologies(buildings: Array, groups: Array) -> Dictionary:
 								d["cost_modifier"] = _int_if_whole(float(x[1]))
 						groups.append(d)
 	return techs
+
+
+const TRIGGER_KEYS := {"tag": "tag", "primary_culture": "primary_culture", "culture_group": "culture_group",
+		"religion": "religion", "religion_group": "religion_group", "technology_group": "tech_group",
+		"government": "government"}
+const FALSE_AT_START := ["is_revolutionary", "is_revolution_target", "is_federation_nation", "is_colonial_nation",
+		"is_client_nation", "has_country_flag", "primitives"]
+
+
+## Condição de trigger do EU4 (só as que dá para saber em 1444; o resto conta como falsa).
+func _eval_cond(k: String, v: Variant, ctx: Dictionary) -> bool:
+	if k == "":
+		return true
+	var kl := k.to_lower()
+	if kl in ["or", "and", "not"]:
+		if not (v is Array):
+			return false
+		var any := false
+		var all := true
+		for x in v:
+			if x[0] == "":
+				continue
+			if _eval_cond(x[0], x[1], ctx):
+				any = true
+			else:
+				all = false
+		return any if kl == "or" else (all if kl == "and" else not any)
+	if not (v is String):
+		return false
+	if kl == "always":
+		return v == "yes"
+	if TRIGGER_KEYS.has(kl):
+		return str(ctx.get(TRIGGER_KEYS[kl], "")) == v
+	if kl in FALSE_AT_START:
+		return v == "no"        # nada disso é verdade em 1444
+	return false
+
+
+func _idea_mods(items: Array) -> Dictionary:
+	var out := {}
+	for kv in items:
+		if kv[0] != "" and kv[1] is String:
+			if (kv[1] as String).is_valid_float():
+				out[kv[0]] = _int_if_whole(float(kv[1]))
+			elif kv[1] == "yes":
+				out[kv[0]] = true
+	return out
+
+
+## Grupos de ideias (com category) e ideias nacionais (free = yes). Cada país recebe em "ideas" o
+## primeiro conjunto livre (na ordem dos arquivos) cujo trigger ele cumpre: nacional > de grupo > genérico.
+func _ideas(countries: Array, culture_group_of: Dictionary, religion_group_of: Dictionary, national: Array) -> Array:
+	var pt: Dictionary = _json("res://data/ideias_pt.json").get("grupos", {})
+	var groups := []
+	var free_sets := []
+	for f in _list("common/ideas/"):
+		for e in _parse(_text(f)):
+			if e[0] == "" or not (e[1] is Array):
+				continue
+			var name: String = e[0]
+			var st := {"id": name, "name": pt.get(name, pretty_key(name, "_ideas")), "start": {}, "bonus": {}, "ideas": []}
+			var trigger = null
+			var free := false
+			# prefixo das ideias: "norse_ideas_x" e "fra_x" (FRA_ideas) viram "X"
+			var prefix := name.to_lower() + "_"
+			var full := false
+			for kv in e[1]:
+				if (kv[0] as String).to_lower().begins_with(prefix):
+					full = true
+					break
+			if not full:
+				prefix = name.to_lower().trim_suffix("_ideas") + "_"
+			for kv in e[1]:
+				var k: String = kv[0]
+				if k == "category" and kv[1] is String:
+					st["category"] = (kv[1] as String).to_lower()
+				elif k in ["start", "bonus"] and kv[1] is Array:
+					st[k] = _idea_mods(kv[1])
+				elif k == "free":
+					free = kv[1] is String and kv[1] == "yes"
+				elif k == "trigger" and kv[1] is Array:
+					trigger = kv[1]
+				elif k != "" and not (k in ["ai_will_do", "important"]) and kv[1] is Array:
+					st["ideas"].append({"id": k, "name": pretty_key(k.substr(prefix.length()) if k.to_lower().begins_with(prefix) else k),
+							"modifiers": _idea_mods(kv[1])})
+			if free:
+				free_sets.append([st, trigger])
+			elif st.has("category"):
+				if trigger != null:
+					st["restricted"] = true     # exige governo/condição especial
+				groups.append(st)
+	var used := {}
+	for c in countries:
+		var ctx: Dictionary = c.duplicate()
+		ctx["culture_group"] = culture_group_of.get(c.get("primary_culture", ""), "")
+		ctx["religion_group"] = religion_group_of.get(c.get("religion", ""), "")
+		for fs in free_sets:
+			var ok := true
+			if fs[1] != null:
+				for x in fs[1]:
+					if x[0] != "" and not _eval_cond(x[0], x[1], ctx):
+						ok = false
+						break
+			if ok:
+				c["ideas"] = fs[0]["id"]
+				used[fs[0]["id"]] = true
+				break
+	for fs in free_sets:
+		if used.has(fs[0]["id"]):
+			national.append(fs[0])
+	return groups
 
 
 const UNIT_NUM_KEYS := ["maneuver", "offensive_morale", "defensive_morale", "offensive_fire", "defensive_fire",

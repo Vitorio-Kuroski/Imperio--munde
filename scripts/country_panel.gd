@@ -8,12 +8,14 @@ const START := [1444, 11, 11]
 const FOCUS := {"ADM": "Administrativo", "DIP": "Diplomático", "MIL": "Militar"}
 
 signal techs_requested(tag: String)
+signal ideas_requested(tag: String)
 
 var tag := ""
 var power: MonarchPower           # main.gd define
 var _map: MapView
 var _label: Label
 var _tech_button: Button
+var _ideas_button: Button
 var _pt := {}
 
 
@@ -32,6 +34,10 @@ func _init() -> void:
 	_tech_button.text = "Ver tecnologias e unidades"
 	_tech_button.pressed.connect(func(): techs_requested.emit(tag))
 	vb.add_child(_tech_button)
+	_ideas_button = Button.new()
+	_ideas_button.text = "Ver ideias"
+	_ideas_button.pressed.connect(func(): ideas_requested.emit(tag))
+	vb.add_child(_ideas_button)
 	if FileAccess.file_exists("res://data/governos_pt.json"):
 		var d = JSON.parse_string(FileAccess.get_file_as_string("res://data/governos_pt.json"))
 		if d is Dictionary:
@@ -80,6 +86,18 @@ func show_country(map: MapView, t: String) -> void:
 			army.append("%s: %s" % [ty[1], cur[ty[0]]["name"]])
 	if not army.is_empty():
 		lines.append("Exército: " + "; ".join(army))
+	if power and not map.national_ideas.is_empty():
+		var nat: Dictionary = power.national_ideas.get(c.get("ideas", ""), {})
+		var txt := "Ideias: "
+		if not nat.is_empty():
+			txt += ("nacionais" if (nat["id"] as String).begins_with(t) else nat["name"]) + \
+					" %d/7 · " % power.national_unlocked(t)
+		var gr := []
+		for g in power.adopted(t):
+			gr.append("%s %d/7" % [power.idea_groups[g["id"]]["name"], int(g["n"])])
+		txt += "grupos %d/%d" % [power.adopted(t).size(), power.idea_slots(t)] + (" (%s)" % ", ".join(gr) if not gr.is_empty() else "")
+		lines.append(txt)
+	_ideas_button.visible = power != null and not map.national_ideas.is_empty()
 	_tech_button.visible = not map.technologies.is_empty() and map.tech_groups.has(c.get("tech_group", ""))
 	if c.has("primary_culture"):
 		lines.append("Cultura principal: " + _culture(map, c["primary_culture"]))

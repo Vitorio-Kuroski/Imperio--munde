@@ -25,6 +25,7 @@ var info_label: Label
 var tooltip: MapTooltip
 var country_panel: CountryPanel
 var tech_window: TechWindow
+var ideas_window: IdeasWindow
 var start_panel: CenterContainer
 var eu4_status: Label
 var eu4_buttons: Array[Button] = []
@@ -163,11 +164,21 @@ func _build_ui() -> void:
 	tech_window.power = power
 	ui.add_child(tech_window)
 	country_panel.power = power
+	ideas_window = IdeasWindow.new()
+	ideas_window.power = power
+	ui.add_child(ideas_window)
+	country_panel.ideas_requested.connect(func(t: String):
+		tech_window.hide()
+		ideas_window.show_for(map, t))
 	power.changed.connect(func(_t):
 		country_panel.refresh()
 		tech_window.refresh()
+		ideas_window.refresh()
 		_refresh_top_bar())
-	country_panel.techs_requested.connect(func(t: String): tech_window.show_for(map, t))
+	country_panel.techs_requested.connect(func(t: String):
+		if ideas_window:
+			ideas_window.hide()
+		tech_window.show_for(map, t))
 
 	# Dica do mapa (criada por último para ficar por cima)
 	tooltip = MapTooltip.new()
@@ -290,6 +301,7 @@ func _start_game(tag: String) -> void:
 	player_tag = tag
 	power.player = tag
 	tech_window.player = tag
+	ideas_window.player = tag
 	start_panel.hide()
 	var cap: int = int(map.countries[tag]["capital"])
 	camera.position = map.province_center(cap)
@@ -452,7 +464,8 @@ func _update_tooltip() -> void:
 	var over_ui := start_panel.visible or top_bar.get_global_rect().has_point(m) \
 			or (side_panel.visible and side_panel.get_global_rect().has_point(m)) \
 			or (country_panel.visible and country_panel.get_global_rect().has_point(m)) \
-			or (tech_window.visible and tech_window.get_global_rect().has_point(m))
+			or (tech_window.visible and tech_window.get_global_rect().has_point(m)) \
+			or (ideas_window.visible and ideas_window.get_global_rect().has_point(m))
 	tooltip.update_for(map, -1 if over_ui else map.province_at_mouse(), m)
 
 
