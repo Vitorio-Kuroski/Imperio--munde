@@ -149,6 +149,8 @@ def country_history(items, cutoff):
                     h.pop("elector", None)
             elif k == "mercantilism" and to_num(v) is not None:
                 h["mercantilism"] = to_num(v)
+            elif k == "add_prestige" and to_num(v) is not None:
+                h["prestige"] = to_num(h.get("prestige", 0) + to_num(v))
         elif k in ("monarch", "heir") and isinstance(v, list):
             person = {}
             for kk, vv in v:
@@ -381,6 +383,8 @@ TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power")
                 ("mercantilism", "global_prov_trade_power_modifier", "mercantilism_trade_power"),
                 ("base_values", "merchants", "base_merchants"),
                 ("core", "local_manpower_modifier", "core_manpower")]
+# blocos inteiros de modificadores estaticos guardados em trade_rules["statics"] (efeitos numericos)
+STATIC_BLOCKS = ["prestige", "emperor"]
 
 
 def eu4_trade(root, loc):
@@ -414,6 +418,12 @@ def eu4_trade(root, loc):
                     if kk and kk not in bv and to_num(vv) is not None:
                         bv[kk] = to_num(vv)
                 rules["base_values"] = bv
+            if k in STATIC_BLOCKS and isinstance(v, list) and k not in rules.setdefault("statics", {}):
+                st = {}
+                for kk, vv in v:
+                    if kk and kk not in st and to_num(vv) is not None:
+                        st[kk] = to_num(vv)
+                rules["statics"][k] = st
     dl = os.path.join(root, "common", "defines.lua")
     if os.path.isfile(dl):
         text = read_text(dl)

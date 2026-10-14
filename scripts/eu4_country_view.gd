@@ -63,6 +63,7 @@ var diplomacy_tab: Eu4DiplomacyTab
 var diplomacy: Diplomacy            # main.gd define (relações)
 var diplo: DiploActions             # main.gd define (opiniões e ações diplomáticas)
 var manpower: Manpower              # main.gd define (efetivo)
+var prestige: Prestige              # main.gd define (prestígio)
 var _tabs: Control
 var _court: Control
 var _gov: Control
@@ -215,6 +216,7 @@ func _txt(root: Control, n: String, text: String, tip := "") -> void:
 	var l := root.find_child(n, true, false) as Label
 	if l:
 		l.text = text
+		Eu4Gui.fit_label(l)
 		l.tooltip_text = tip
 		if tip != "":
 			l.mouse_filter = Control.MOUSE_FILTER_PASS

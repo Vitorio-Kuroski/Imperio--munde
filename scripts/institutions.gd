@@ -119,7 +119,7 @@ func present(tag: String, iid: String) -> float:
 ## Custo para adotar: ducados por desenvolvimento que ainda não tem a instituição.
 func embrace_cost(tag: String, iid: String) -> float:
 	var s := _stat(tag, iid)
-	return (s[0] - s[1]) * EMBRACE_COST_PER_DEV
+	return (s[0] - s[1]) * EMBRACE_COST_PER_DEV * maxf(0.0, 1.0 + power.modifier(tag, "embracement_cost"))
 
 
 func can_embrace(tag: String, iid: String) -> bool:

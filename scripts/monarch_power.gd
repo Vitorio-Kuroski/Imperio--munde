@@ -32,6 +32,7 @@ var _slots_at := PackedInt32Array() # vagas de grupos de ideias por nível adm (
 var advisors: Advisors           # conselheiros somam nível aos pontos e efeitos aos modificadores
 var institutions: Institutions   # instituições não adotadas encarecem tecnologias; adotadas dão bônus
 var economy: Economy             # falência encarece tecnologias, ideias e conselheiros
+var prestige: Prestige           # efeitos do prestígio (fora do cache: mudam todo mês) e do imperador
 
 
 func setup(m: MapView, c: GameClock) -> void:
@@ -182,13 +183,22 @@ func buy_idea(tag: String, gid: String) -> bool:
 func modifier(tag: String, key: String) -> float:
 	if not _mods_cache.has(tag):
 		_mods_cache[tag] = _sum_mods(tag)
-	return float(_mods_cache[tag].get(key, 0.0))
+	var v := float(_mods_cache[tag].get(key, 0.0))
+	if prestige:
+		v += prestige.effect(tag, key)
+	return v
 
 
 func all_modifiers(tag: String) -> Dictionary:
 	if not _mods_cache.has(tag):
 		_mods_cache[tag] = _sum_mods(tag)
-	return _mods_cache[tag]
+	if prestige == null:
+		return _mods_cache[tag]
+	var out: Dictionary = _mods_cache[tag].duplicate()
+	var pe := prestige.effects(tag)
+	for k in pe:
+		out[k] = float(out.get(k, 0.0)) + float(pe[k])
+	return out
 
 
 func _sum_mods(tag: String) -> Dictionary:
@@ -220,6 +230,8 @@ func _sum_mods(tag: String) -> Dictionary:
 	var rid: String = map.countries.get(tag, {}).get("religion", "")      # efeitos da religião do país
 	if map.religions.has(rid):
 		add.call(map.religions[rid].get("modifiers", {}))
+	if prestige:
+		add.call(prestige.static_modifiers(tag))
 	return out
 
 

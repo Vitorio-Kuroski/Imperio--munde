@@ -488,6 +488,10 @@ func _element(kind: String, items: Array) -> Control:
 			l.offset_right -= bs.x
 			l.offset_top += bs.y
 			l.clip_text = false
+			l.set_meta("box_w", box.x - 2.0 * bs.x)
+			# texto maior que a caixa cresce para o lado certo (à direita: para a esquerda, como no EU4)
+			l.grow_horizontal = Control.GROW_DIRECTION_BOTH if fmt in ["centre", "center"] \
+					else (Control.GROW_DIRECTION_BEGIN if fmt == "right" else Control.GROW_DIRECTION_END)
 			# texto fixo da tela (chave da localização do EU4: "TAX", "CV_INCOMES"...); os valores
 			# são preenchidos pelas telas
 			var tk := str(_val(items, "text", ""))
@@ -755,3 +759,19 @@ class Button2 extends TextureButton:
 	func _hover(on: bool) -> void:
 		if texture_hover == null:
 			self_modulate = Color(1.25, 1.2, 1.1) if on and not disabled else Color.WHITE
+
+
+## Texto de uma linha mais largo que a caixa do .gui ("116k" numa caixa de 36 px): diminui o rótulo
+## (escala a partir do lado alinhado) para caber, como o EU4 faz.
+static func fit_label(l: Label) -> void:
+	if not l.has_meta("box_w") or l.autowrap_mode != TextServer.AUTOWRAP_OFF:
+		return
+	var w: float = l.get_meta("box_w")
+	var f := l.get_theme_font("font")
+	var tw := f.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, l.get_theme_font_size("font_size")).x if f else 0.0
+	var r := clampf(w / tw, 0.6, 1.0) if tw > w and w > 0.0 else 1.0
+	l.scale = Vector2(r, r)
+	var sw := maxf(w, tw)       # a caixa cresce até o texto (para a esquerda se alinhado à direita)
+	var ax := sw if l.horizontal_alignment == HORIZONTAL_ALIGNMENT_RIGHT \
+			else (sw * 0.5 if l.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER else 0.0)
+	l.pivot_offset = Vector2(ax, l.size.y * 0.5)

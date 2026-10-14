@@ -9,7 +9,7 @@ extends RefCounted
 ##  - à direita, num país que não é o do jogador, as ações diplomáticas (DiploActions) com o ícone
 ##    e a seta de "aceitaria/recusaria" (dica com os motivos); no país do jogador, a opinião dos
 ##    outros países sobre ele.
-## O que o jogo ainda não tem (rivais, prestígio, estabilidade, espiões, confiança, favores,
+## O que o jogo ainda não tem (rivais, estabilidade, espiões, confiança, favores,
 ## exércitos) fica escondido.
 
 const HIDE := ["secondary_religion_icon", "religious_school_icon", "countryshield_glow", "num_relations_bg",
@@ -17,7 +17,7 @@ const HIDE := ["secondary_religion_icon", "religious_school_icon", "countryshiel
 		"personality_icons_strip", "policies_icon", "policies_value", "revanchism_icon", "revanchism_value",
 		"spy_icon", "spy_value", "land_forcelimit_value", "land_forcelimit_icon", "naval_forcelimit_value",
 		"naval_forcelimit_icon", "stability_icon", "stability_value",
-		"prestige_icon", "prestige_value", "techgroup_icon", "election_info", "label_enemies", "enemies_box",
+		"techgroup_icon", "election_info", "label_enemies", "enemies_box",
 		"label_rivals", "rivals_box", "label_rivals_not_possible", "sort_search", "sort_search_edit", "sort_name",
 		"sort_opinion", "sort_opinion_1", "sort_opinion_2", "sort_opinion_3", "sort_opinion_4", "sort_opinion_5",
 		"show_diplofeedback", "button_createvassals", "feedback_bg", "trust_label", "diplomacy_trust_progress_bar",
@@ -128,6 +128,11 @@ func fill(tag: String) -> void:
 	if view.manpower:
 		view._txt(root, "manpower_value", Manpower.fmt(view.manpower.of(tag)), Loc.s("Efetivo: %s de %s",
 				"Manpower: %s of %s") % [Manpower.fmt(view.manpower.of(tag)), Manpower.fmt(view.manpower.max_of(tag))])
+		var ml := root.find_child("manpower_value", true, false) as Control
+		if ml:
+			ml.z_index = 1        # "116k" passa por cima da borda do ícone (que vem depois no .gui)
+	if view.prestige:
+		view._txt(root, "prestige_value", str(roundi(view.prestige.of(tag))), view.prestige.tooltip(tag))
 	if view.economy:
 		view._txt(root, "score_value", str(int(view.economy.development(tag))), Loc.t("DEVELOPMENT_TEXT", "Desenvolvimento"))
 		view._txt(root, "corruption_value", (("%.1f" % view.economy.corruption_of(tag)).replace(".", Loc.dec)),

@@ -379,6 +379,8 @@ func _country_history(items: Array) -> Dictionary:
 					h.erase("elector")
 			elif k == "mercantilism" and (v as String).is_valid_float():
 				h["mercantilism"] = _int_if_whole(float(v))
+			elif k == "add_prestige" and (v as String).is_valid_float():
+				h["prestige"] = _int_if_whole(float(h.get("prestige", 0)) + float(v))
 		elif k in ["monarch", "heir"] and v is Array:
 			var person := {}
 			for x in v:
@@ -1007,6 +1009,8 @@ const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_
 		["coastal", "province_trade_power_modifier", "coastal_trade_power"],
 		["mercantilism", "global_prov_trade_power_modifier", "mercantilism_trade_power"],
 		["base_values", "merchants", "base_merchants"], ["core", "local_manpower_modifier", "core_manpower"]]
+## Blocos inteiros de modificadores estáticos guardados em trade_rules["statics"] (efeitos numéricos).
+const STATIC_BLOCKS := ["prestige", "emperor"]
 
 
 ## [centros de comércio, regras de comércio] (mesma saída do import_eu4.py).
@@ -1051,6 +1055,15 @@ func _trade() -> Array:
 					if x[0] != "" and not bv.has(x[0]) and x[1] is String and (x[1] as String).is_valid_float():
 						bv[x[0]] = _int_if_whole(float(x[1]))
 				rules["base_values"] = bv
+			if kv[0] in STATIC_BLOCKS and kv[1] is Array:
+				var sts: Dictionary = rules.get("statics", {})
+				rules["statics"] = sts
+				if not sts.has(kv[0]):
+					var st := {}
+					for x in kv[1]:
+						if x[0] != "" and not st.has(x[0]) and x[1] is String and (x[1] as String).is_valid_float():
+							st[x[0]] = _int_if_whole(float(x[1]))
+					sts[kv[0]] = st
 	if _index.has("common/defines.lua"):
 		var text := _text("common/defines.lua")
 		for n in TRADE_DEFINES:
