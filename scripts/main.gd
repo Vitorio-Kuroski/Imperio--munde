@@ -65,12 +65,28 @@ func _ready() -> void:
 	camera.make_current()
 
 	_build_ui()
+	_apply_eu4_theme()
 	clock.changed.connect(_refresh_top_bar)
 	clock.month_passed.connect(_on_month_passed)
 	_refresh_top_bar()
 
 
 # ------------------------------------------------------------------ interface
+## Visual do EU4 (molduras, botões, rolagem) quando as texturas foram importadas; senão o padrão.
+func _apply_eu4_theme() -> void:
+	var th := Eu4Theme.build(map.ui_dir) if map.ui_dir != "" else null
+	if th == null:
+		return
+	for c in ui.get_children():          # o tema não atravessa o CanvasLayer: vai em cada painel
+		if c is Control:
+			(c as Control).theme = th
+	for w in [tech_window, ideas_window, advisors_window, tooltip]:
+		if w:
+			(w as Control).remove_theme_stylebox_override("panel")
+	tooltip.theme_type_variation = "Eu4Small"
+	top_bar.theme_type_variation = "Eu4Small"
+
+
 func _build_ui() -> void:
 	ui = CanvasLayer.new()
 	add_child(ui)

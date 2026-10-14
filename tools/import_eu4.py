@@ -24,7 +24,8 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   history/wars/*.txt                           (guerras ativas e dos ultimos 10 anos, com batalhas)
   gfx/flags/TAG.tga                            (bandeiras -> assets/eu4/flags.png, 64 px cada)
   gfx/interface/... + interface/*.gfx          (icones de produtos, religioes, instituicoes, conselheiros,
-                                               construcoes e ideias -> assets/eu4/icons.png, 48 px cada)
+                                               construcoes e ideias -> assets/eu4/icons.png, 48 px cada;
+                                               molduras de janela, botoes e rolagem -> assets/eu4/ui/)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -700,6 +701,38 @@ def icon_sources(root, trade_goods, religions, institutions, advisor_types, buil
     return src
 
 
+# texturas da interface usadas no tema do jogo: arquivo de saida -> (origem, lado para reduzir ou 0)
+UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "gfx/interface/tiles_dialog.dds", 48),
+               ("button", "gfx/interface/button_straight_255_32.dds", 0),
+               ("scroll_track", "gfx/interface/scroll_track.dds", 0),
+               ("scroll_grabber", "gfx/interface/scroll_drager.dds", 0)]
+
+
+def make_ui(root):
+    """Molduras/botoes do EU4 em assets/eu4/ui/ (o jogo monta um tema com elas)."""
+    out = "assets/eu4/ui"
+    for name, _, _ in UI_TEXTURES:
+        if os.path.isfile(os.path.join(out, name + ".png")):
+            os.remove(os.path.join(out, name + ".png"))
+    for name, rel, side in UI_TEXTURES:
+        path = None
+        for cand in (rel, rel[:-4] + ".tga"):
+            p = os.path.join(root, *cand.split("/"))
+            if os.path.isfile(p):
+                path = p
+                break
+        if path is None:
+            continue
+        try:
+            im = Image.open(path).convert("RGBA")
+        except OSError:
+            continue
+        if side:
+            im = im.resize((side, side), Image.LANCZOS)
+        os.makedirs(out, exist_ok=True)
+        im.save(os.path.join(out, name + ".png"), optimize=True)
+
+
 def make_icons(root, trade_goods, religions, institutions, advisor_types, buildings, idea_groups, national):
     """Atlas assets/eu4/icons.png (ICON_SIZE px) e o dicionario chave -> posicao."""
     out = "assets/eu4/icons.png"
@@ -1333,6 +1366,7 @@ def main():
 
     # ---------------------------------------------------------- bandeiras (gfx/flags/TAG.tga)
     make_flags(root, countries)
+    make_ui(root)
     icons = make_icons(root, trade_goods, religions, institutions, advisor_types, buildings, idea_groups,
                        national_ideas)
 

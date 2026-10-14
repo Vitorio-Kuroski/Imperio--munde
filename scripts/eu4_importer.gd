@@ -41,6 +41,9 @@ static func remove_import() -> void:
 	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png", "icons.png"]:
 		if FileAccess.file_exists(OUT_DIR + "/" + f):
 			DirAccess.remove_absolute(OUT_DIR + "/" + f)
+	for u in UI_TEXTURES:
+		if FileAccess.file_exists(OUT_DIR + "/ui/%s.png" % u[0]):
+			DirAccess.remove_absolute(OUT_DIR + "/ui/%s.png" % u[0])
 
 
 # ------------------------------------------------------------------ fontes (pasta ou .zip)
@@ -774,6 +777,7 @@ func _import() -> String:
 	# ---- map.json
 	_set_status("Gravando os dados...")
 	_make_flags(countries)
+	_make_ui()
 	var icons := _make_icons(trade_goods, religions, institutions, advisor_types, buildings, idea_groups,
 			national_ideas)
 	var provinces := []
@@ -1218,6 +1222,32 @@ func _make_icons(trade_goods: Array, religions: Array, institutions: Array, advi
 				Vector2i((i % ICONS_PER_ROW) * ICON_SIZE, (i / ICONS_PER_ROW) * ICON_SIZE))
 	atlas.save_png(OUT_DIR + "/icons.png")
 	return index
+
+
+## Texturas da interface usadas no tema do jogo (Eu4Theme): [arquivo de saída, origem, lado para reduzir ou 0].
+const UI_TEXTURES := [["panel", "gfx/interface/tiles_dialog.dds", 0], ["panel_small", "gfx/interface/tiles_dialog.dds", 48],
+		["button", "gfx/interface/button_straight_255_32.dds", 0], ["scroll_track", "gfx/interface/scroll_track.dds", 0],
+		["scroll_grabber", "gfx/interface/scroll_drager.dds", 0]]
+
+
+## Molduras de janela, botões e barra de rolagem do EU4 em user://eu4/ui/.
+func _make_ui() -> void:
+	DirAccess.make_dir_recursive_absolute(OUT_DIR + "/ui")
+	for u in UI_TEXTURES:
+		var out: String = OUT_DIR + "/ui/%s.png" % u[0]
+		if FileAccess.file_exists(out):
+			DirAccess.remove_absolute(out)
+		var rel: String = u[1]
+		if not _index.has(rel):
+			rel = rel.get_basename() + ".tga"
+			if not _index.has(rel):
+				continue
+		var img := _load_icon(rel)
+		if img == null:
+			continue
+		if int(u[2]) > 0:
+			img.resize(u[2], u[2], Image.INTERPOLATE_LANCZOS)
+		img.save_png(out)
 
 
 ## .dds ou .tga -> Image RGBA8 (null se não der). Alfa todo zerado vira opaco.
