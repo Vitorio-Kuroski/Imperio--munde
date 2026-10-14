@@ -161,7 +161,36 @@ func _open(name: String) -> Control:
 	c.offset_right = sp.x + sz.x
 	c.offset_bottom = sp.y + sz.y
 	add_child(c)
+	_stretch_background(c)
 	return c
+
+
+## Fundos das abas com altura fixa no EU4 (590 px): esticados para baixo até a altura do fundo
+## grande da aba Religião (o EU4 usa o _large em telas de 900–1079 px), para todas as abas
+## terem o mesmo tamanho.
+const STRETCH_BG := ["GFX_court_view_bg", "GFX_economy_view_bg", "GFX_technology_view_bg",
+		"GFX_country_ideas_view_bg", "GFX_local_government_view_bg"]
+const TALL_BG := "GFX_country_religion_view_bg_large"
+var _tall_cache := {}
+
+
+func _stretch_background(root: Control) -> void:
+	var tall := gui.frame_image(TALL_BG, 0) if gui.sprites.has(TALL_BG) else null
+	if tall == null:
+		return
+	for ch in root.get_children():
+		var ic := ch as Eu4Gui.Icon
+		if ic == null or not (ic.sprite in STRETCH_BG):
+			continue
+		if not _tall_cache.has(ic.sprite):
+			var img := gui.frame_image(ic.sprite, 0)
+			_tall_cache[ic.sprite] = ImageTexture.create_from_image(Eu4Gui.stretch_down(img, tall.get_height())) \
+					if img and img.get_height() < tall.get_height() else null
+		var tex: Texture2D = _tall_cache[ic.sprite]
+		if tex:
+			ic.set_tex(tex)
+			ic.custom_minimum_size = tex.get_size()
+			ic.size = tex.get_size()
 
 
 static func _hide(root: Control, n: String) -> void:
