@@ -47,8 +47,11 @@ var economy: Economy
 var advisors: Advisors
 var institutions: Institutions
 var fmt_mods: Callable              # efeitos -> texto (IdeasWindow.fmt_mods)
+var player := ""                    # país do jogador (só ele pesquisa e compra ideias)
 var tag := ""
 var tab := "court"
+var tech_tab: Eu4TechTab
+var ideas_tab: Eu4IdeasTab
 var _tabs: Control
 var _court: Control
 var _gov: Control
@@ -64,6 +67,14 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_court = _open("countrycourtview")
 	_gov = _open("countrygovernmentview")
+	tech_tab = Eu4TechTab.new()
+	if not tech_tab.setup(self):
+		tech_tab = null
+	ideas_tab = Eu4IdeasTab.new()
+	if ideas_tab.setup(self):
+		ideas_tab.choose_group_requested.connect(func(t: String): ideas_requested.emit(t))
+	else:
+		ideas_tab = null
 	_tabs = _open("countryview")         # por cima das telas (as abas ficam sobre a moldura)
 	if _court == null or _gov == null or _tabs == null:
 		return false
@@ -71,7 +82,12 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 		_hide(_court, n)
 	for n in GOV_HIDE:
 		_hide(_gov, n)
-	for v in [_court, _gov]:
+	var pages := [_court, _gov]
+	if tech_tab:
+		pages.append(tech_tab.root)
+	if ideas_tab:
+		pages.append(ideas_tab.root)
+	for v in pages:
 		var close := v.find_child("close_button", true, false) as BaseButton
 		if close:
 			close.tooltip_text = "Fechar"
@@ -151,9 +167,17 @@ func _on_tab(t: String) -> void:
 			tab = t
 			refresh()
 		"tech":
-			techs_requested.emit(tag)
+			if tech_tab:
+				tab = t
+				refresh()
+			else:
+				techs_requested.emit(tag)
 		"ideas":
-			ideas_requested.emit(tag)
+			if ideas_tab:
+				tab = t
+				refresh()
+			else:
+				ideas_requested.emit(tag)
 		"summary":
 			summary_requested.emit(tag)
 
@@ -174,15 +198,24 @@ func refresh() -> void:
 		return
 	_court.visible = tab == "court"
 	_gov.visible = tab == "gov"
+	if tech_tab:
+		tech_tab.root.visible = tab == "tech"
+	if ideas_tab:
+		ideas_tab.root.visible = tab == "ideas"
 	var tw := _tabs.find_child("countryview_tabs", true, false)
 	for n in TABS:
 		var b := tw.find_child(n, false, false) as Eu4Gui.Button2 if tw else null
 		if b and b.visible:
 			b.set_frame(1 if TABS[n] == tab else 0)
-	if tab == "court":
-		_fill_court()
-	else:
-		_fill_gov()
+	match tab:
+		"court":
+			_fill_court()
+		"gov":
+			_fill_gov()
+		"tech":
+			tech_tab.fill(tag)
+		"ideas":
+			ideas_tab.fill(tag)
 
 
 func _gov_name(c: Dictionary) -> String:

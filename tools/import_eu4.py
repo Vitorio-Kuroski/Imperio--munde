@@ -710,7 +710,7 @@ UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "
 
 # telas do EU4 que o jogo monta (scripts/eu4_gui.gd) e sprites extras (botoes dos modos de mapa)
 GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
-             "countrygovernmentview"]
+             "countrygovernmentview", "countrytechnologyview", "countryideasview"]
 GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic"]

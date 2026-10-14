@@ -445,6 +445,8 @@ func _start_game(tag: String) -> void:
 	tech_window.player = tag
 	ideas_window.player = tag
 	advisors_window.player = tag
+	if country_view:
+		country_view.player = tag
 	start_panel.hide()
 	var cap: int = int(map.countries[tag]["capital"])
 	camera.position = map.province_center(cap)

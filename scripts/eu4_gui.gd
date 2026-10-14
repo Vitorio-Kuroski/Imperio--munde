@@ -270,11 +270,22 @@ func fill_list(list: Control, item: String, count: int) -> Array:
 	for ch in vb.get_children():
 		vb.remove_child(ch)
 		ch.queue_free()
-	var w := find_window(item)
-	if w.is_empty():
-		return out
-	var sz := _vec(w, "size")
 	for i in count:
+		var c := add_item(list, item)
+		if c == null:
+			break
+		out.append(c)
+	return out
+
+
+## Acrescenta uma linha (cópia da janela `item`) ao fim da lista; devolve a janela (null se não der).
+func add_item(list: Control, item: String) -> Control:
+	var vb := list.get_node_or_null("Items") if list else null
+	var w := find_window(item)
+	if vb == null or w.is_empty():
+		return null
+	var sz := _vec(w, "size")
+	if true:
 		var holder := Control.new()
 		holder.custom_minimum_size = sz
 		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -289,8 +300,8 @@ func fill_list(list: Control, item: String, count: int) -> Array:
 		c.offset_bottom = sz.y
 		holder.add_child(c)
 		vb.add_child(holder)
-		out.append(c)
-	return out
+		return c
+	return null
 
 
 func _place(c: Control, items: Array, size: Vector2) -> void:
@@ -416,6 +427,12 @@ func _element(kind: String, items: Array) -> Control:
 
 func _icon(spr: String, frame: int, size: Vector2) -> Control:
 	var s: Dictionary = sprites[spr]
+	if s.get("kind", "") == "progressbartype":
+		var pb := Progress.new()
+		var sz: Array = s.get("size", [0, 0])
+		pb.setup(texture(s["texture"]), texture(s.get("texture2", "")) if s.has("texture2") else null,
+				Vector2(sz[0], sz[1]))
+		return pb
 	if s.get("kind", "") == "corneredtilespritetype":
 		var np := NinePatchRect.new()
 		np.texture = texture(s["texture"])
@@ -455,12 +472,60 @@ class Icon extends TextureRect:
 		if gui and f != frame:
 			set_sprite(gui, sprite, f)
 
+	## Troca a imagem mantendo o tamanho do elemento (ex.: ícone de ideia, retrato).
+	func set_tex(tex: Texture2D) -> void:
+		texture = tex
+		_img = null
+
 	func _has_point(p: Vector2) -> bool:
-		if _img == null or not Rect2(Vector2.ZERO, size).has_point(p):
+		if not Rect2(Vector2.ZERO, size).has_point(p):
 			return false
+		if _img == null:
+			return texture != null
 		var q := Vector2i(int(p.x * _img.get_width() / maxf(size.x, 1.0)), int(p.y * _img.get_height() / maxf(size.y, 1.0)))
 		q = q.clamp(Vector2i.ZERO, Vector2i(_img.get_width() - 1, _img.get_height() - 1))
 		return _img.get_pixelv(q).a > 0.1
+
+
+## Barra de progresso do EU4 (progressbarType): fundo (textureFile2) e o preenchido (textureFile1)
+## cortado na fração `set_value`.
+class Progress extends Control:
+	var _fill: TextureRect
+	var _tex: Texture2D
+
+	func setup(fill: Texture2D, bg: Texture2D, sz: Vector2) -> void:
+		mouse_filter = Control.MOUSE_FILTER_PASS
+		_tex = fill
+		if sz == Vector2.ZERO and fill:
+			sz = fill.get_size()
+		custom_minimum_size = sz
+		size = sz
+		if bg:
+			var b := TextureRect.new()
+			b.texture = bg
+			b.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			b.stretch_mode = TextureRect.STRETCH_SCALE
+			b.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(b)
+		_fill = TextureRect.new()
+		_fill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_fill.stretch_mode = TextureRect.STRETCH_SCALE
+		_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_fill)
+		set_value(0.0)
+
+	func set_value(r: float) -> void:
+		r = clampf(r, 0.0, 1.0)
+		if _tex == null:
+			return
+		var at := AtlasTexture.new()
+		at.atlas = _tex
+		at.region = Rect2(0, 0, maxf(1.0, _tex.get_width() * r), _tex.get_height())
+		_fill.texture = at
+		_fill.visible = r > 0.0
+		_fill.position = Vector2.ZERO
+		_fill.size = Vector2(custom_minimum_size.x * r, custom_minimum_size.y)
 
 
 ## Botão do EU4: quadros do sprite = normal, mouse em cima, apertado, desativado (com menos
