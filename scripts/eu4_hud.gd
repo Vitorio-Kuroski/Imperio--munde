@@ -6,6 +6,7 @@ extends Control
 ## superior simples do main.gd quando as telas foram importadas.
 
 signal shield_pressed
+signal build_pressed                 # botão "construir" (martelo e espada) sob o escudo
 signal zoom_requested(factor: float)
 
 ## Botões custom_mapmode_N do minimappanel.gui -> modo de mapa e sprite do EU4.
@@ -16,7 +17,7 @@ const MAPMODES := [[MapView.MapMode.POLITICO, "GFX_mapmode_political"], [MapView
 		[MapView.MapMode.DIPLOMACIA, "GFX_mapmode_diplomatic"]]
 ## Elementos dos .gui sem equivalente no jogo (ainda): ficam escondidos.
 const HIDDEN := ["player_shield_glow", "great_power_button_base", "great_power_button", "government_reforms_button_base",
-		"government_reforms_progress", "government_reforms_button", "open_build_interface_button", "powerprojection_topbar",
+		"government_reforms_progress", "government_reforms_button", "powerprojection_topbar",
 		"liberty_desire_topbar", "alerts_parent", "hotkey_assign_parent", "timeline_controls", "mapmode_list_window",
 		"mapmode_item", "add_mapmode_item", "icon_dev", "text_dev", "icon_meritocracy", "text_meritocracy", "icon_leg",
 		"text_leg", "icon_rep", "text_rep", "icon_unity", "text_unity", "current_age_button", "age_icon", "age_title",
@@ -60,6 +61,10 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock, pw: MonarchPower, eco: Economy) 
 	if shield:
 		shield.pressed.connect(func(): shield_pressed.emit())
 		shield.tooltip_text = Loc.s("Abrir o painel do seu país", "Open your country view")
+	var bb := _node("open_build_interface_button") as BaseButton
+	if bb:
+		bb.pressed.connect(func(): build_pressed.emit())
+		bb.tooltip_text = Loc.t("MACRO_OPEN_INTERFACE_TOOLTIP", "Construir: construções, desenvolvimento e missionários")
 	_button("button_pause", clock.toggle_pause, Loc.s("Pausar / continuar (espaço)", "Pause / resume (space)"))
 	_button("speed_indicator", clock.toggle_pause, Loc.t("PW_SPEED", "Velocidade"))
 	_button("button_speedup", func(): clock.set_speed(clock.speed + 1), Loc.s("Mais rápido (+)", "Faster (+)"))

@@ -91,18 +91,20 @@ func _recount() -> void:
 		var tag: String = p["owner"]
 		if tag == "" or p["sea"]:
 			continue
-		var tax := float(p.get("base_tax", float(p["development"]) / 3.0))
-		var prod := float(p.get("base_production", float(p["development"]) / 3.0))
+		# construções: local_tax_modifier, local_production_efficiency e trade_goods_size (manufaturas)
+		var tax := float(p.get("base_tax", float(p["development"]) / 3.0)) * (1.0 + map.building_mod(p, "local_tax_modifier"))
+		var goods := map.goods_produced(p)
+		var prod_eff := 1.0 + map.building_mod(p, "local_production_efficiency")
 		var gid: String = p.get("trade_goods", "")
 		if not _base.has(tag):
 			_base[tag] = {"tax": 0.0, "prod": 0.0, "gold": 0.0, "dev": 0.0}
 		_base[tag]["tax"] += tax
 		_base[tag]["dev"] += float(p["development"])
 		if gid == "gold":
-			_base[tag]["gold"] += prod * GOODS_PER_PRODUCTION
+			_base[tag]["gold"] += goods
 		else:
 			var price := float(map.trade_goods[gid]["price"]) if map.trade_goods.has(gid) else DEFAULT_PRICE
-			_base[tag]["prod"] += prod * GOODS_PER_PRODUCTION * price
+			_base[tag]["prod"] += goods * price * prod_eff
 	_overlord.clear()
 	_vassals.clear()
 	if diplomacy:

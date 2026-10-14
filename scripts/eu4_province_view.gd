@@ -194,8 +194,8 @@ func show_province(id: int) -> void:
 	_txt("development_value", str(int(p["development"])))
 	var gid: String = p.get("trade_goods", "")
 	var price := float(map.trade_goods[gid]["price"]) if map.trade_goods.has(gid) else 0.0
-	var tax := bt / 12.0
-	var prod := bp * 0.2 * price / 12.0
+	var tax := bt * (1.0 + map.building_mod(p, "local_tax_modifier")) / 12.0
+	var prod := map.goods_produced(p) * price * (1.0 + map.building_mod(p, "local_production_efficiency")) / 12.0
 	_txt("tax_value", _num(tax))
 	_txt("production_value", _num(prod))
 	_txt("total_value", _num(tax + prod))
@@ -221,7 +221,7 @@ func show_province(id: int) -> void:
 			sup = float(t.get("supply_limit", 0.0))
 	_txt("supply_value", str(int(sup)) if sup > 0 else "—")
 	# comércio
-	_txt("goodsproduced_value", _num(bp * 0.2))
+	_txt("goodsproduced_value", _num(map.goods_produced(p)))
 	var gi := -1
 	var k := 0
 	for g in map.trade_goods:

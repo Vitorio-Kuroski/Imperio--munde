@@ -278,7 +278,7 @@ func _static() -> void:
 		var pid := int(p["id"])
 		var gid: String = p.get("trade_goods", "")
 		if gid != "gold" and map.trade_goods.has(gid):
-			prov_value[pid] = float(p.get("base_production", 0)) * 0.2 * float(map.trade_goods[gid]["price"])
+			prov_value[pid] = map.goods_produced(p) * float(map.trade_goods[gid]["price"])
 		var base := float(p["development"]) * dev_tp
 		var cot := int(p.get("center_of_trade", 0))
 		if cot > 0:

@@ -71,6 +71,7 @@ func strength(tag: String, pid: int) -> float:
 			and map.religions[rid]["group"] == map.religions[pr]["group"]
 	s += power.modifier(tag, "global_heretic_missionary_strength" if same_group else "global_heathen_missionary_strength")
 	s += float(p["development"]) * float(map.trade_rules.get("dev_missionary_strength", -0.001))
+	s += map.building_mod(p, "local_missionary_strength")      # catedral
 	return s * budget_of(tag)
 
 

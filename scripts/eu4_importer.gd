@@ -1369,7 +1369,8 @@ func _make_ui() -> void:
 ## Telas do EU4 que o jogo monta (Eu4Gui): interface/<nome>.gui.
 const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
 		"countrygovernmentview", "countrytechnologyview", "countryideasview",
-		"countryeconomyview", "countryreligionview"]
+		"countryeconomyview", "countryreligionview",
+		"macrobuildinterface_override", "macrobuildinterface"]   # o _override vem antes: as janelas dele valem
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",

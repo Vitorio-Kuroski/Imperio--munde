@@ -14,6 +14,7 @@ var advisors := Advisors.new()
 var institutions := Institutions.new()
 var trade := Trade.new()
 var religion := Religion.new()
+var construction := Construction.new()
 var diplomacy := Diplomacy.new()
 var camera: Camera2D
 var player_tag := ""
@@ -34,6 +35,7 @@ var tooltip: MapTooltip
 var eu4_hud: Eu4Hud               # interface montada com os .gui do EU4 (null sem as telas importadas)
 var province_view: Eu4ProvinceView  # tela da província do EU4 (no lugar do painel de texto)
 var country_view: Eu4CountryView    # tela do país do EU4 (no lugar do painel do país; este vira o "resumo")
+var macro_builder: Eu4MacroBuilder  # tela "construir" do EU4 (construções, desenvolvimento, missionários)
 var country_panel: CountryPanel
 var tech_window: TechWindow
 var ideas_window: IdeasWindow
@@ -61,6 +63,7 @@ func _ready() -> void:
 	trade.setup(map, power)
 	economy.trade = trade
 	religion.setup(map, clock, power, economy)
+	construction.setup(map, clock, power, economy)
 	economy.religion = religion
 	trade.recompute()
 	economy._recount()
@@ -114,7 +117,7 @@ var gui_design_height := EU4_GUI_HEIGHT
 func _apply_gui_scale() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	gui_scale = clampf(vp.y / gui_design_height, 0.5, 3.0)
-	for c in [eu4_hud, province_view, country_view]:
+	for c in [eu4_hud, province_view, country_view, macro_builder]:
 		if c:
 			c.set_anchors_preset(Control.PRESET_TOP_LEFT)
 			c.position = Vector2.ZERO
@@ -188,6 +191,25 @@ func _setup_eu4_hud() -> void:
 	else:
 		country_view.queue_free()
 		country_view = null
+	macro_builder = Eu4MacroBuilder.new()
+	ui.add_child(macro_builder)
+	ui.move_child(macro_builder, 3)
+	if macro_builder.setup(g, map, power, economy, religion, construction):
+		eu4_hud.build_pressed.connect(func():
+			if player_tag == "":
+				return
+			if macro_builder.visible:
+				macro_builder.hide()
+				return
+			if country_view:
+				country_view.hide()
+			if province_view:
+				province_view.hide()
+			macro_builder.player = player_tag
+			macro_builder.open())
+	else:
+		macro_builder.queue_free()
+		macro_builder = null
 	eu4_hud.zoom_requested.connect(func(f: float):
 		camera.zoom = (camera.zoom * f).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 		_clamp_camera())
@@ -538,6 +560,8 @@ func _show_country(tag: String) -> void:
 	if country_view:
 		if province_view:
 			province_view.hide()
+		if macro_builder:
+			macro_builder.hide()        # as telas do EU4 ficam no mesmo lugar
 		country_panel.hide()
 		country_view.show_country(tag)
 	else:
@@ -549,6 +573,8 @@ func _show_province(pid: int) -> void:
 		side_panel.hide()
 		if pid >= 0 and country_view:
 			country_view.hide()         # as duas telas ficam no mesmo lugar
+		if pid >= 0 and macro_builder:
+			macro_builder.hide()
 		province_view.show_province(pid)
 		return
 	if province_view:

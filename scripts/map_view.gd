@@ -281,6 +281,19 @@ func _apply_loc(data: Dictionary) -> void:
 				t["name"] = Loc.t(key)
 
 
+## Soma de um efeito das construções da província (local_tax_modifier, trade_goods_size...).
+func building_mod(p: Dictionary, key: String) -> float:
+	var s := 0.0
+	for b in p.get("buildings", []):
+		s += float(buildings.get(b, {}).get("modifiers", {}).get(key, 0.0))
+	return s
+
+
+## Bens produzidos por ano: produção base × 0,2 + trade_goods_size das construções (manufaturas).
+func goods_produced(p: Dictionary) -> float:
+	return float(p.get("base_production", float(p["development"]) / 3.0)) * 0.2 + building_mod(p, "trade_goods_size")
+
+
 ## Nome do modo de mapa (localização do EU4, senão em português).
 static func map_mode_name(mode: int) -> String:
 	return Loc.t(MAP_MODE_KEYS[mode], MAP_MODE_NAMES[mode])
