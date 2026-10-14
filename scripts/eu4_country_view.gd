@@ -166,16 +166,17 @@ func _open(name: String) -> Control:
 
 
 ## Fundos das abas com altura fixa no EU4 (590 px): esticados para baixo até a altura do fundo
-## grande da aba Religião (o EU4 usa o _large em telas de 900–1079 px), para todas as abas
-## terem o mesmo tamanho.
+## da aba Religião (o EU4 usa o _large em telas de 900–1079 px e o _huge a partir de 1080), para
+## todas as abas terem o mesmo tamanho.
 const STRETCH_BG := ["GFX_court_view_bg", "GFX_economy_view_bg", "GFX_technology_view_bg",
 		"GFX_country_ideas_view_bg", "GFX_local_government_view_bg"]
-const TALL_BG := "GFX_country_religion_view_bg_large"
 var _tall_cache := {}
 
 
 func _stretch_background(root: Control) -> void:
-	var tall := gui.frame_image(TALL_BG, 0) if gui.sprites.has(TALL_BG) else null
+	# o mesmo fundo que a aba Religião usa nessa altura de tela (if_resolution do .gui)
+	var tall_bg := "GFX_country_religion_view_bg_huge" if gui.res_height >= 1080 else "GFX_country_religion_view_bg_large"
+	var tall := gui.frame_image(tall_bg, 0) if gui.sprites.has(tall_bg) and gui.res_height >= 900 else null
 	if tall == null:
 		return
 	for ch in root.get_children():
