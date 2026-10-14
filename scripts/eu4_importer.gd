@@ -1219,7 +1219,8 @@ const ICONS_PER_ROW := 32
 
 
 ## Sprites das interface/*.gfx: nome -> caminho da textura (minúsculo, com /).
-func _gfx_sprites() -> Dictionary:
+## Sprites das interface/*.gfx: nome -> textura (minúscula, com /); `frames` recebe nome -> noOfFrames.
+func _gfx_sprites(frames := {}) -> Dictionary:
 	var out := {}
 	var stack := []
 	for f in _list("interface/"):
@@ -1235,6 +1236,7 @@ func _gfx_sprites() -> Dictionary:
 				stack.append(found[k])
 			var nm := ""
 			var tex := ""
+			var nf := ""
 			for kv in items:
 				var kk := (kv[0] as String).to_lower()
 				if kv[1] is String:
@@ -1242,35 +1244,44 @@ func _gfx_sprites() -> Dictionary:
 						nm = kv[1]
 					elif kk == "texturefile":
 						tex = kv[1]
+					elif kk == "noofframes":
+						nf = kv[1]
 			if nm != "" and tex != "" and not out.has(nm):
 				var t := tex.to_lower().replace("\\", "/")
 				while t.contains("//"):
 					t = t.replace("//", "/")
 				out[nm] = t
+				if nf != "":
+					frames[nm] = maxi(1, int(nf.to_float()))
 	return out
 
 
-## (chave, caminho, quadro) de cada ícone; quadro = índice numa tira (-1 = imagem inteira).
+## (chave, caminho, quadro, quadros) de cada ícone; quadro = índice numa tira (-1 = imagem inteira),
+## quadros = total da tira pelo noOfFrames do .gfx (0 = quadros quadrados).
 func _icon_sources(trade_goods: Array, religions: Array, institutions: Array, advisor_types: Array,
 		buildings: Array, idea_groups: Array, national: Array) -> Array:
-	var sp := _gfx_sprites()
+	var frames := {}
+	var sp := _gfx_sprites(frames)
 	var src := []
 	for i in trade_goods.size():
-		src.append(["good:" + trade_goods[i]["id"], "gfx/interface/resources.dds", i])
+		src.append(["good:" + trade_goods[i]["id"], "gfx/interface/resources.dds", i, 0])
+	# religiões: a tira do GFX_icon_religion (mods com mais religiões mudam a textura e o noOfFrames)
+	var rtex: String = sp.get("GFX_icon_religion", "gfx/interface/icon_religion.dds")
+	var rn: int = frames.get("GFX_icon_religion", 0)
 	for r in religions:
-		if r.has("icon"):
-			src.append(["religion:" + r["id"], "gfx/interface/icon_religion.dds", int(r["icon"]) - 1])
+		if r.has("icon") and (rn == 0 or int(r["icon"]) <= rn):
+			src.append(["religion:" + r["id"], rtex, int(r["icon"]) - 1, rn])
 	for inst in institutions:
 		src.append(["inst:" + inst["id"], sp.get("GFX_icon_institution_" + inst["id"],
-				"gfx/interface/institutions/%s.dds" % inst["id"]), -1])
+				"gfx/interface/institutions/%s.dds" % inst["id"]), -1, 0])
 	for t in advisor_types:
 		src.append(["advisor:" + t["id"], sp.get("GFX_advisor_" + t["id"], "gfx/interface/advisors/%s.tga" % t["id"]),
-				-1])
+				-1, 0])
 	for b in buildings:
 		if sp.has("GFX_" + b["id"]):
-			src.append(["building:" + b["id"], sp["GFX_" + b["id"]], -1])
+			src.append(["building:" + b["id"], sp["GFX_" + b["id"]], -1, 0])
 	for g in idea_groups:
-		src.append(["group:" + g["id"], sp.get("GFX_idea_" + g["id"], "gfx/interface/ideas/idea_%s.dds" % g["id"]), -1])
+		src.append(["group:" + g["id"], sp.get("GFX_idea_" + g["id"], "gfx/interface/ideas/idea_%s.dds" % g["id"]), -1, 0])
 	var mods := []
 	for st in idea_groups + national:
 		for idea in st["ideas"]:
@@ -1278,7 +1289,7 @@ func _icon_sources(trade_goods: Array, religions: Array, institutions: Array, ad
 			if not m.is_empty() and not (m.keys()[0] in mods):
 				mods.append(m.keys()[0])
 	for m in mods:
-		src.append(["mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % (m as String).to_lower(), -1])
+		src.append(["mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % (m as String).to_lower(), -1, 0])
 	return src
 
 
@@ -1308,10 +1319,11 @@ func _make_icons(trade_goods: Array, religions: Array, institutions: Array, advi
 			continue
 		var frame: int = s[2]
 		if frame >= 0:
-			var fw := img.get_height()
-			if (frame + 1) * fw > img.get_width():
+			var nf: int = s[3]
+			var fw := img.get_width() / nf if nf > 0 else img.get_height()
+			if fw <= 0 or (frame + 1) * fw > img.get_width():
 				continue
-			img = img.get_region(Rect2i(frame * fw, 0, fw, fw))
+			img = img.get_region(Rect2i(frame * fw, 0, fw, img.get_height()))
 		else:
 			img = img.duplicate()
 		img.resize(ICON_SIZE, ICON_SIZE, Image.INTERPOLATE_LANCZOS)
@@ -1371,7 +1383,7 @@ const COMBAT_TERRAINS := [
 const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
 		"GFX_mapmode_religion", "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas",
 		"GFX_mapmode_institutions", "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
-		"GFX_scroll_track"]
+		"GFX_scroll_track", "GFX_country_icon_religion"]
 const SPRITE_KINDS := ["spritetype", "frameanimatedspritetype", "textspritetype", "corneredtilespritetype",
 		"maskedshieldtype", "progressbartype"]
 

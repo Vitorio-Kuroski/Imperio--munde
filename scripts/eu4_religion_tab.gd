@@ -71,11 +71,7 @@ func _base(k: String) -> float:
 func _religion_icon(ic: Eu4Gui.Icon, rid: String) -> void:
 	if ic == null:
 		return
-	var icon := int(view.map.religions.get(rid, {}).get("icon", 0))
-	ic.visible = icon > 0
-	if icon > 0:
-		ic.set_frame(icon - 1)
-	ic.tooltip_text = str(view.map.religions.get(rid, {}).get("name", ""))
+	ic.set_religion(view.map.religions.get(rid, {}))
 
 
 ## Botão, barra e tempo do missionário numa linha da lista de províncias.

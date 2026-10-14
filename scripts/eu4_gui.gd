@@ -518,6 +518,18 @@ class Icon extends TextureRect:
 		if gui and f != frame:
 			set_sprite(gui, sprite, f)
 
+	## Quadro da religião (`icon` do map.json, 1 = primeiro) numa tira de religiões
+	## (GFX_icon_religion, _small, province_view_religion, country_icon_religion); some se a tira
+	## não tem esse quadro (o noOfFrames vem do .gfx, então religiões de mods aparecem se o mod
+	## aumentou a tira).
+	func set_religion(rel: Dictionary) -> void:
+		var icon := int(rel.get("icon", 0))
+		var n := int(gui.sprites.get(sprite, {}).get("frames", 1)) if gui else 0
+		visible = icon > 0 and icon <= n
+		if visible:
+			set_frame(icon - 1)
+		tooltip_text = str(rel.get("name", ""))
+
 	## Troca a imagem mantendo o tamanho do elemento (ex.: ícone de ideia, retrato).
 	func set_tex(tex: Texture2D) -> void:
 		texture = tex

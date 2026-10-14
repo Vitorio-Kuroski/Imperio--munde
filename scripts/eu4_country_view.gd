@@ -430,9 +430,22 @@ func _fill_gov() -> void:
 	if boxes.is_empty():
 		return
 	var rid: String = c.get("religion", "")
-	var rt := map.icon_texture("religion:" + rid)
-	if rt:
-		boxes[0].add_child(MapView.icon_rect(rt, 30, Loc.t("RELIGION", "Religião") + ": " + str(map.religions.get(rid, {}).get("name", rid))))
+	var rtip := Loc.t("RELIGION", "Religião") + ": " + str(map.religions.get(rid, {}).get("name", rid))
+	if gui.sprites.has("GFX_country_icon_religion"):      # ícone de religião do país do EU4
+		var ri := Eu4Gui.Icon.new()
+		ri.set_sprite(gui, "GFX_country_icon_religion", 0)
+		ri.set_religion(map.religions.get(rid, {}))
+		ri.tooltip_text = rtip
+		ri.custom_minimum_size = Vector2(34, 34)
+		ri.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if ri.visible:
+			boxes[0].add_child(ri)
+		else:
+			ri.free()
+	if boxes[0].get_child_count() == 0:
+		var rt := map.icon_texture("religion:" + rid)
+		if rt:
+			boxes[0].add_child(MapView.icon_rect(rt, 30, rtip))
 	if institutions and institutions.enabled() and boxes.size() > 1:
 		for inst in institutions.list:
 			if institutions.has_embraced(tag, inst["id"]):

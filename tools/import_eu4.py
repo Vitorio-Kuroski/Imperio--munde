@@ -708,43 +708,51 @@ def make_flags(root, countries):
 ICON_SIZE, ICONS_PER_ROW = 48, 32
 
 
-def gfx_sprites(root):
-    """Sprites das interface/*.gfx: nome -> caminho da textura (minusculo, com /)."""
+def gfx_sprites(root, frames=None):
+    """Sprites das interface/*.gfx: nome -> caminho da textura (minusculo, com /); se `frames` for um
+    dict, recebe nome -> noOfFrames (quadros da tira)."""
     out = {}
     for fn in sorted(glob.glob(os.path.join(root, "interface", "**", "*.gfx"), recursive=True)):
         def walk(items):
             for k, v in items:
                 if isinstance(v, list):
-                    d = {kk.lower(): vv for kk, vv in v if kk and kk.lower() in ("name", "texturefile") and isinstance(vv, str)}
-                    if "name" in d and "texturefile" in d:
-                        out.setdefault(d["name"], re.sub(r"[\\/]+", "/", d["texturefile"]).lower())
+                    d = {kk.lower(): vv for kk, vv in v
+                         if kk and kk.lower() in ("name", "texturefile", "noofframes") and isinstance(vv, str)}
+                    if "name" in d and "texturefile" in d and d["name"] not in out:
+                        out[d["name"]] = re.sub(r"[\\/]+", "/", d["texturefile"]).lower()
+                        if frames is not None and "noofframes" in d:
+                            frames[d["name"]] = max(1, int(to_num(d["noofframes"])))
                     walk(v)
         walk(parse_script(read_text(fn)))
     return out
 
 
 def icon_sources(root, trade_goods, religions, institutions, advisor_types, buildings, idea_groups, national):
-    """Lista de (chave, caminho relativo, quadro) dos icones; quadro = indice numa tira (ou -1).
-    Mesma regra do importador do jogo."""
-    sprites = gfx_sprites(root)
+    """Lista de (chave, caminho relativo, quadro, quadros) dos icones; quadro = indice numa tira (ou -1),
+    quadros = total da tira pelo noOfFrames do .gfx (0 = quadros quadrados). Mesma regra do importador do jogo."""
+    frames = {}
+    sprites = gfx_sprites(root, frames)
     src = []
     for i, g in enumerate(trade_goods):
-        src.append(("good:" + g["id"], "gfx/interface/resources.dds", i))
+        src.append(("good:" + g["id"], "gfx/interface/resources.dds", i, 0))
+    # religioes: a tira do GFX_icon_religion (mods com mais religioes mudam a textura e o noOfFrames)
+    rtex = sprites.get("GFX_icon_religion", "gfx/interface/icon_religion.dds")
+    rn = frames.get("GFX_icon_religion", 0)
     for r in religions:
-        if "icon" in r:
-            src.append(("religion:" + r["id"], "gfx/interface/icon_religion.dds", r["icon"] - 1))
+        if "icon" in r and (rn == 0 or r["icon"] <= rn):
+            src.append(("religion:" + r["id"], rtex, r["icon"] - 1, rn))
     for inst in institutions:
         src.append(("inst:" + inst["id"], sprites.get("GFX_icon_institution_" + inst["id"],
-                                                     "gfx/interface/institutions/%s.dds" % inst["id"]), -1))
+                                                     "gfx/interface/institutions/%s.dds" % inst["id"]), -1, 0))
     for t in advisor_types:
         src.append(("advisor:" + t["id"], sprites.get("GFX_advisor_" + t["id"],
-                                                     "gfx/interface/advisors/%s.tga" % t["id"]), -1))
+                                                     "gfx/interface/advisors/%s.tga" % t["id"]), -1, 0))
     for b in buildings:
         if "GFX_" + b["id"] in sprites:
-            src.append(("building:" + b["id"], sprites["GFX_" + b["id"]], -1))
+            src.append(("building:" + b["id"], sprites["GFX_" + b["id"]], -1, 0))
     for g in idea_groups:
         src.append(("group:" + g["id"], sprites.get("GFX_idea_" + g["id"], "gfx/interface/ideas/idea_%s.dds" % g["id"]),
-                    -1))
+                    -1, 0))
     mods = []
     for st in list(idea_groups) + list(national):
         for idea in st["ideas"]:
@@ -752,7 +760,7 @@ def icon_sources(root, trade_goods, religions, institutions, advisor_types, buil
             if first and first not in mods:
                 mods.append(first)
     for m in mods:
-        src.append(("mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % m.lower(), -1))
+        src.append(("mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % m.lower(), -1, 0))
     return src
 
 
@@ -770,7 +778,7 @@ GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countr
 GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
-                     "GFX_scroll_track"]
+                     "GFX_scroll_track", "GFX_country_icon_religion"]
 # icones de terreno da tela da provincia (GFX_combat_terrain_<terreno do EU4>)
 COMBAT_TERRAINS = ["GFX_combat_terrain_" + t for t in (
     "coastal_desert", "coastline", "desert", "desert_mountain", "drylands", "farmlands", "forest", "glacier",
@@ -968,7 +976,7 @@ def make_icons(root, trade_goods, religions, institutions, advisor_types, buildi
             full = os.path.join(d, f)
             files[os.path.relpath(full, root).replace(os.sep, "/").lower()] = full
     cells, index, cache = [], {}, {}
-    for key, rel, frame in icon_sources(root, trade_goods, religions, institutions, advisor_types, buildings,
+    for key, rel, frame, nframes in icon_sources(root, trade_goods, religions, institutions, advisor_types, buildings,
                                         idea_groups, national):
         rel = rel.lower()
         if rel not in files:     # .dds <-> .tga
@@ -989,10 +997,10 @@ def make_icons(root, trade_goods, religions, institutions, advisor_types, buildi
         if im is None:
             continue
         if frame >= 0:
-            fw = im.height
-            if (frame + 1) * fw > im.width:
+            fw = im.width // nframes if nframes > 0 else im.height
+            if fw <= 0 or (frame + 1) * fw > im.width:
                 continue
-            im = im.crop((frame * fw, 0, (frame + 1) * fw, fw))
+            im = im.crop((frame * fw, 0, (frame + 1) * fw, im.height))
         index[key] = len(cells)
         cells.append(im.resize((ICON_SIZE, ICON_SIZE), Image.LANCZOS))
     if not cells:

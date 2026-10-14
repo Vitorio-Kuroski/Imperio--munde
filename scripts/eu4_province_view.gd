@@ -207,11 +207,7 @@ func show_province(id: int) -> void:
 	_txt("religion", map.religions[rel]["name"] if map.religions.has(rel) else "—")
 	var ri := _n("religion_icon") as Eu4Gui.Icon
 	if ri:
-		var icon := int(map.religions.get(rel, {}).get("icon", 0))
-		ri.visible = icon > 0
-		if icon > 0:
-			ri.set_frame(icon - 1)
-		ri.tooltip_text = map.religions[rel]["name"] if map.religions.has(rel) else ""
+		ri.set_religion(map.religions.get(rel, {}))
 	var cul: String = p.get("culture", "")
 	_txt("culture", map.cultures[cul]["name"] if map.cultures.has(cul) else "—")
 	_tip("culture", ("%s: %s" % [Loc.t("GROUP", "Grupo"), Loc.t(map.cultures[cul]["group"], map.cultures[cul]["group"])]) if map.cultures.has(cul) and map.cultures[cul]["group"] != "" else "")
