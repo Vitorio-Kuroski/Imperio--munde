@@ -769,7 +769,8 @@ GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countr
              "countryeconomyview", "countryreligionview"]
 GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
-                     "GFX_mapmode_diplomatic"]
+                     "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
+                     "GFX_scroll_track"]
 # icones de terreno da tela da provincia (GFX_combat_terrain_<terreno do EU4>)
 COMBAT_TERRAINS = ["GFX_combat_terrain_" + t for t in (
     "coastal_desert", "coastline", "desert", "desert_mountain", "drylands", "farmlands", "forest", "glacier",

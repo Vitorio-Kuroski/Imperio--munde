@@ -101,6 +101,25 @@ func _apply_eu4_theme() -> void:
 	top_bar.theme_type_variation = "Eu4Small"
 
 
+## As telas do EU4 foram desenhadas para pelo menos 900 px de altura: elas são reduzidas (ou
+## aumentadas) pela altura da tela ÷ 900, mantendo-se presas aos cantos.
+const EU4_GUI_HEIGHT := 900.0
+var gui_scale := 1.0
+
+
+func _apply_gui_scale() -> void:
+	var vp := get_viewport().get_visible_rect().size
+	gui_scale = clampf(vp.y / EU4_GUI_HEIGHT, 0.5, 3.0)
+	for c in [eu4_hud, province_view, country_view]:
+		if c:
+			c.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			c.position = Vector2.ZERO
+			c.scale = Vector2(gui_scale, gui_scale)
+			c.size = vp / gui_scale
+	country_panel.top_margin = 112.0 * gui_scale
+	country_panel.bottom_margin = 240.0 * gui_scale
+
+
 ## Barra superior, data/velocidade e modos de mapa do próprio EU4, se as telas foram importadas.
 func _setup_eu4_hud() -> void:
 	var g := Eu4Gui.open(map.gui_dir) if map.gui_dir != "" else null
@@ -114,8 +133,7 @@ func _setup_eu4_hud() -> void:
 		eu4_hud = null
 		return
 	top_bar.hide()
-	country_panel.top_margin = 112.0
-	country_panel.bottom_margin = 240.0
+	get_viewport().size_changed.connect(_apply_gui_scale)
 	eu4_hud.shield_pressed.connect(func():
 		if player_tag != "":
 			_show_country(player_tag))
@@ -164,6 +182,7 @@ func _setup_eu4_hud() -> void:
 	eu4_hud.zoom_requested.connect(func(f: float):
 		camera.zoom = (camera.zoom * f).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 		_clamp_camera())
+	_apply_gui_scale()
 
 
 func _build_ui() -> void:

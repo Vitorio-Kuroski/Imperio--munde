@@ -261,6 +261,36 @@ func build(name: String) -> Control:
 	return _element("windowtype", w)
 
 
+## Barra de rolagem vertical com os sprites do EU4 (setas, trilho e arrastador).
+func style_scrollbar(vs: VScrollBar) -> void:
+	var track := sprite_frame("GFX_scroll_track", 0)
+	var drag := sprite_frame("GFX_scroll_drager", 0)
+	if track:
+		var b: Array = sprites["GFX_scroll_track"].get("border", [4, 4])
+		var sb := StyleBoxTexture.new()
+		sb.texture = track
+		sb.set_texture_margin_all(float(b[1]))
+		vs.add_theme_stylebox_override("scroll", sb)
+		vs.add_theme_stylebox_override("scroll_focus", sb)
+	if drag:
+		for st in [["grabber", Color.WHITE], ["grabber_highlight", Color(1.25, 1.2, 1.1)], ["grabber_pressed", Color(0.8, 0.8, 0.8)]]:
+			var g := StyleBoxTexture.new()
+			g.texture = drag
+			g.set_texture_margin_all(5.0)
+			g.modulate_color = st[1]
+			vs.add_theme_stylebox_override(st[0], g)
+	var up := sprite_frame("GFX_scroll_up", 0)
+	var down := sprite_frame("GFX_scroll_down", 0)
+	if up and down:
+		vs.add_theme_icon_override("decrement", up)
+		vs.add_theme_icon_override("decrement_highlight", up)
+		vs.add_theme_icon_override("decrement_pressed", up)
+		vs.add_theme_icon_override("increment", down)
+		vs.add_theme_icon_override("increment_highlight", down)
+		vs.add_theme_icon_override("increment_pressed", down)
+	vs.custom_minimum_size.x = maxf(16.0, drag.get_width() if drag else 16.0)
+
+
 ## Enche uma lista (listboxType) com `count` cópias da janela `item` (windowType); devolve as cópias.
 func fill_list(list: Control, item: String, count: int) -> Array:
 	var out := []
@@ -393,6 +423,7 @@ func _element(kind: String, items: Array) -> Control:
 			sc.mouse_filter = Control.MOUSE_FILTER_PASS
 			var sz := _vec(items, "size")
 			_place(sc, items, sz if sz.x > 0 and sz.y > 0 else Vector2(300, 200))
+			style_scrollbar(sc.get_v_scroll_bar())
 			var vb := VBoxContainer.new()
 			vb.name = "Items"
 			vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL

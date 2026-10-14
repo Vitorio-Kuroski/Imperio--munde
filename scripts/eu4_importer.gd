@@ -1360,7 +1360,8 @@ const COMBAT_TERRAINS := [
 ## Sprites usados pelo jogo além dos citados nos .gui (botões dos modos de mapa).
 const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
 		"GFX_mapmode_religion", "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas",
-		"GFX_mapmode_institutions", "GFX_mapmode_diplomatic"]
+		"GFX_mapmode_institutions", "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
+		"GFX_scroll_track"]
 const SPRITE_KINDS := ["spritetype", "frameanimatedspritetype", "textspritetype", "corneredtilespritetype",
 		"maskedshieldtype", "progressbartype"]
 

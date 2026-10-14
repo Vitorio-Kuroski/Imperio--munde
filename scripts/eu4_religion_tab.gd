@@ -57,10 +57,10 @@ func setup(v: Eu4CountryView) -> bool:
 		if btn:
 			view._set_button_text(btn, b[1])
 	var list := root.find_child("province_listbox", true, false) as Control
-	if list:            # o .gui não dá tamanho à lista
-		list.offset_left = 8
+	if list:            # o .gui não dá tamanho à lista: vai até o fim da moldura, com a barra de rolagem
+		list.offset_left = 18
 		list.offset_right = 540
-		list.offset_bottom = list.offset_top + 160
+		list.offset_bottom = 540
 	return true
 
 
