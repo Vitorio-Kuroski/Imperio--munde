@@ -27,6 +27,7 @@ var _index := {}                    # caminho relativo -> [zip (-1 = pasta), cam
 var _zips: Array[FileAccess] = []
 var _zip_entries: Array[Dictionary] = []
 var _loc := {}                      # localização em inglês (nomes oficiais quando não há tradução)    # por zip: nome -> [método, tam. comprimido, tam. real, crc, offset]
+var _flag_re := RegEx.create_from_string("^[A-Za-z0-9]{3}\\.tga$")
 var _high_re := RegEx.create_from_string("[\\x{80}-\\x{FF}]")
 var _tok := RegEx.create_from_string("#[^\\n]*|\"[^\"]*\"|[{}=]|[^\\s{}=#\"]+")
 
@@ -37,7 +38,7 @@ static func has_import() -> bool:
 
 ## Apaga o mapa importado (o jogo volta ao mapa padrão).
 static func remove_import() -> void:
-	for f in ["map.json", "province_ids.png", "rivers.png"]:
+	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png"]:
 		if FileAccess.file_exists(OUT_DIR + "/" + f):
 			DirAccess.remove_absolute(OUT_DIR + "/" + f)
 
@@ -75,8 +76,12 @@ func _walk(dir: String, depth: int) -> void:
 	for sub in d.get_directories():
 		var low: String = sub.to_lower()
 		# não desce em pastas grandes que não interessam
-		if low in ["gfx", "sound", "music", "interface", "tutorial", "dlc", "launcher", "events", "decisions",
-				"missions", "gui", "fonts", "shaders", "assets", "ideas", "units", "wars", "advisors", "diplomacy"]:
+		if low in ["sound", "music", "interface", "tutorial", "dlc", "launcher", "events", "decisions",
+				"missions", "gui", "fonts", "shaders", "assets"]:
+			continue
+		if low == "gfx":             # do gfx/ só interessam as bandeiras
+			if DirAccess.dir_exists_absolute(dir + "/" + sub + "/flags"):
+				_walk(dir + "/" + sub + "/flags", depth + 1)
 			continue
 		_walk(dir + "/" + sub, depth + 1)
 
@@ -84,6 +89,10 @@ func _walk(dir: String, depth: int) -> void:
 ## Caminho relativo à pasta do jogo ("map/definition.csv"), ou "" se o arquivo não interessa.
 func _rel(p: String) -> String:
 	p = p.replace("\\", "/")
+	# bandeiras: gfx/flags/TAG.tga (ou flags/TAG.tga num .zip da pasta gfx)
+	if p.get_extension().to_lower() == "tga" and (p.begins_with("flags/") or p.contains("/flags/")) \
+			and _flag_re.search(p.get_file()) != null:
+		return "gfx/flags/" + p.get_file().get_basename().to_upper() + ".tga"
 	var best := -1
 	for t in TOPS:
 		var i := 0
@@ -753,6 +762,7 @@ func _import() -> String:
 
 	# ---- map.json
 	_set_status("Gravando os dados...")
+	_make_flags(countries)
 	var provinces := []
 	for pid in n_prov:
 		var c := cnt[pid]
@@ -1043,6 +1053,38 @@ func _religions(used: Array, loc: Dictionary, rel_group: Dictionary) -> Array:
 	for r in keys:
 		out.append({"id": r, "name": nice.call(r), "group": "", "color": hashed_color(r)})
 	return out
+
+
+const FLAG_SIZE := 64
+const FLAGS_PER_ROW := 32
+
+
+## Bandeiras (gfx/flags/TAG.tga) num único atlas user://eu4/flags.png (FLAG_SIZE px cada, na ordem dos
+## países); cada país com bandeira ganha "flag" = posição no atlas.
+func _make_flags(countries: Array) -> void:
+	if FileAccess.file_exists(OUT_DIR + "/flags.png"):
+		DirAccess.remove_absolute(OUT_DIR + "/flags.png")
+	var with_flag := []
+	for c in countries:
+		if _index.has("gfx/flags/%s.tga" % c["tag"]):
+			with_flag.append(c)
+	if with_flag.is_empty():
+		return
+	_set_status("Lendo as bandeiras...")
+	var rows := (with_flag.size() + FLAGS_PER_ROW - 1) / FLAGS_PER_ROW
+	var atlas := Image.create(FLAGS_PER_ROW * FLAG_SIZE, rows * FLAG_SIZE, false, Image.FORMAT_RGBA8)
+	var n := 0
+	for c in with_flag:
+		var img := Image.new()
+		if img.load_tga_from_buffer(_bytes("gfx/flags/%s.tga" % c["tag"])) != OK:
+			continue
+		img.convert(Image.FORMAT_RGBA8)
+		img.resize(FLAG_SIZE, FLAG_SIZE, Image.INTERPOLATE_LANCZOS)
+		atlas.blit_rect(img, Rect2i(0, 0, FLAG_SIZE, FLAG_SIZE),
+				Vector2i((n % FLAGS_PER_ROW) * FLAG_SIZE, (n / FLAGS_PER_ROW) * FLAG_SIZE))
+		c["flag"] = n
+		n += 1
+	atlas.save_png(OUT_DIR + "/flags.png")
 
 
 ## BMP de 8 bits (paleta) -> [largura, altura, índices de cima para baixo]; [] se não der.

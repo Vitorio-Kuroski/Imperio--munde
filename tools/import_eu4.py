@@ -22,6 +22,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   common/institutions/*.txt                    (instituicoes: origem, bonus e onde ja existem em 1444)
   history/diplomacy/*.txt                      (aliancas, suditos, casamentos, unioes, imperadores em 1444)
   history/wars/*.txt                           (guerras ativas e dos ultimos 10 anos, com batalhas)
+  gfx/flags/TAG.tga                            (bandeiras -> assets/eu4/flags.png, 64 px cada)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -614,6 +615,37 @@ def ids_in_block(text, name):
     return out
 
 
+FLAG_SIZE, FLAGS_PER_ROW = 64, 32
+
+
+def make_flags(root, countries):
+    """Atlas assets/eu4/flags.png com as bandeiras (na ordem dos paises); o pais ganha "flag" = posicao."""
+    out = "assets/eu4/flags.png"
+    if os.path.isfile(out):
+        os.remove(out)
+    found = {}
+    for d in (os.path.join(root, "gfx", "flags"), os.path.join(root, "flags")):
+        if os.path.isdir(d):
+            for f in os.listdir(d):
+                if re.fullmatch(r"[A-Za-z0-9]{3}\.tga", f):
+                    found.setdefault(f[:3].upper(), os.path.join(d, f))
+    with_flag = [c for c in countries if c["tag"] in found]
+    if not with_flag:
+        return
+    rows = (len(with_flag) + FLAGS_PER_ROW - 1) // FLAGS_PER_ROW
+    atlas = Image.new("RGBA", (FLAGS_PER_ROW * FLAG_SIZE, rows * FLAG_SIZE))
+    n = 0
+    for c in with_flag:
+        try:
+            img = Image.open(found[c["tag"]]).convert("RGBA").resize((FLAG_SIZE, FLAG_SIZE), Image.LANCZOS)
+        except OSError:
+            continue
+        atlas.paste(img, ((n % FLAGS_PER_ROW) * FLAG_SIZE, (n // FLAGS_PER_ROW) * FLAG_SIZE))
+        c["flag"] = n
+        n += 1
+    atlas.save(out, optimize=True)
+
+
 def find_loc(root, pattern):
     files = sorted(glob.glob(os.path.join(root, "localisation", pattern)))
     files += sorted(glob.glob(os.path.join(root, "localisation", "**", pattern), recursive=True))
@@ -1190,6 +1222,9 @@ def main():
     celestial = celestial if celestial in used_tags else ""
     institutions = [i for i, _ in inst_raw]
     country_of = {c["tag"]: c for c in countries}
+
+    # ---------------------------------------------------------- bandeiras (gfx/flags/TAG.tga)
+    make_flags(root, countries)
 
     # ---------------------------------------------------------- map.json
     provinces = []
