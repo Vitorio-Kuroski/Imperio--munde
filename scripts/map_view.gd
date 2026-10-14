@@ -35,9 +35,11 @@ const MAP_MODE_NAMES := ["político", "terreno", "cultura", "religião", "produt
 ## Cores do modo diplomacia (relação com o país em foco).
 const DIPLO_COLORS := {"self": Color(0.13, 0.55, 0.22), "subject": Color(0.45, 0.78, 0.40),
 		"overlord": Color(0.80, 0.55, 0.18), "ally": Color(0.22, 0.45, 0.85), "marriage": Color(0.82, 0.45, 0.72),
-		"guarantee": Color(0.45, 0.72, 0.85), "same_bloc": Color(0.70, 0.70, 0.35)}
+		"guarantee": Color(0.45, 0.72, 0.85), "same_bloc": Color(0.70, 0.70, 0.35), "war": Color(0.85, 0.15, 0.12),
+		"recent_enemy": Color(0.55, 0.22, 0.20)}
 const DIPLO_NAMES := {"self": "o país", "subject": "súdito", "overlord": "suserano", "ally": "aliado",
-		"marriage": "casamento real", "guarantee": "garantia", "same_bloc": "súdito do mesmo suserano"}
+		"marriage": "casamento real", "guarantee": "garantia", "same_bloc": "súdito do mesmo suserano",
+		"war": "em guerra", "recent_enemy": "inimigo recente"}
 
 var map_w: int
 var map_h: int
@@ -73,6 +75,7 @@ var diplo_focus := ""              # país em foco no modo diplomacia
 var diplomacy: Array = []          # relações de 1444 (type, first, second, subject_type)
 var emperor := ""                  # imperador do Sacro Império
 var celestial_emperor := ""
+var wars: Array = []               # guerras ativas/recentes (history/wars)
 var advisor_types: Array = []      # tipos de conselheiro (category, modifiers)
 var advisors: Array = []           # conselheiros históricos (name, location, skill, type, date, death_date)
 var units: Dictionary = {}         # id -> {name, type, unit_type, atributos, tech, level}
@@ -162,6 +165,7 @@ func load_map(map_scale: float) -> void:
 	diplomacy = data.get("diplomacy", [])
 	emperor = data.get("emperor", "")
 	celestial_emperor = data.get("celestial_emperor", "")
+	wars = data.get("wars", [])
 	advisors = data.get("advisors", [])
 	national_ideas = data.get("national_ideas", [])
 

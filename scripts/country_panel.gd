@@ -233,7 +233,28 @@ func _diplomacy_lines(map: MapView, t: String) -> Array:
 		out.append("Membro do Sacro Império (imperador: %s)" % _cname(map, diplomacy.emperor))
 	if t == diplomacy.celestial_emperor:
 		out.append("Imperador celestial (Mandato do Céu)")
+	for w in diplomacy.wars_of(t):
+		var side := Diplomacy.side_of(w, t)
+		var other: Array = w["defenders"] if side == "attackers" else w["attackers"]
+		var names := []
+		for o in other:
+			names.append(_cname(map, o))
+		var years := "%s–%s" % [str(w["start"]).get_slice(".", 0), str(w["end"]).get_slice(".", 0)] \
+				if w["end"] != "" else "desde %s" % str(w["start"]).get_slice(".", 0)
+		var cb := diplomacy.cb_name(w)
+		var txt := "%s %s (%s%s; contra %s)" % ["Em guerra:" if w.has("active") else "Guerra recente:", w["name"],
+				years, (", " + cb) if cb != "" else "", ", ".join(names)]
+		for b in w.get("battles", []):
+			var mine: bool = side != "" and str(b.get("attacker", {}).get("country", "")) in w[side]
+			var won: bool = b.get("attacker_won", false) == mine
+			txt += " — batalha de %s (%s, %s)" % [b.get("name", "?"), _fmt_date(b["date"]), "vitória" if won else "derrota"]
+		out.append(txt)
 	return out
+
+
+static func _fmt_date(d: String) -> String:
+	var p := d.split(".")
+	return "%s/%s/%s" % [p[2], p[1], p[0]] if p.size() == 3 else d
 
 
 func _culture(map: MapView, cid: String) -> String:

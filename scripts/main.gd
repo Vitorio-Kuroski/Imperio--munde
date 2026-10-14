@@ -425,6 +425,12 @@ func _show_province(pid: int) -> void:
 			txt += "\nCosteira"
 		if p.get("hre", false):
 			txt += "\nSacro Império Romano"
+		for b in diplomacy.battles_at(pid):
+			var att: Dictionary = b.get("attacker", {})
+			var de: Dictionary = b.get("defender", {})
+			var winner: Dictionary = att if b.get("attacker_won", false) else de
+			txt += "\nBatalha de %s (%s): %s × %s, vitória de %s" % [b.get("name", "?"), CountryPanel._fmt_date(b["date"]),
+					_cname(att.get("country", "")), _cname(de.get("country", "")), _cname(winner.get("country", ""))]
 	if institutions.enabled() and not p["sea"]:
 		var have := []
 		for inst in institutions.list:
@@ -445,6 +451,10 @@ func _show_province(pid: int) -> void:
 func _fit_side_panel() -> void:
 	side_panel.reset_size()
 	side_panel.position.y = get_viewport_rect().size.y - side_panel.size.y - 12
+
+
+func _cname(t: String) -> String:
+	return map.countries[t]["name"] if map.countries.has(t) else t
 
 
 ## " (movimento ×1,25, defesa +1)" a partir de map.terrains (só no mapa do EU4).

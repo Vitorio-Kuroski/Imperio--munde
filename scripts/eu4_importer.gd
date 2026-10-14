@@ -104,7 +104,7 @@ func _rel(p: String) -> String:
 	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
 			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
-			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/"]:
+			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/", "history/wars/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -727,6 +727,7 @@ func _import() -> String:
 	var advisor_types := _advisors(defs, advisors)
 	var inst_raw := _institutions()
 	var dip := _diplomacy()
+	var wars := _wars()
 	var tag_set := {}
 	for c in countries:
 		tag_set[c["tag"]] = true
@@ -833,7 +834,7 @@ func _import() -> String:
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
-			"celestial_emperor": celestial, "provinces": provinces}))
+			"celestial_emperor": celestial, "wars": wars, "provinces": provinces}))
 	f.close()
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
@@ -1542,6 +1543,99 @@ func _diplomacy() -> Array:
 					elif x[0] == "celestial_emperor" and x[1] is String:
 						celestial = "" if x[1] == "---" else x[1]
 	return [rel, emperor, celestial]
+
+
+const RECENT_WAR_YEARS := 10
+
+
+func _dstr(d: int) -> String:
+	return "%d.%d.%d" % [d / 10000, (d / 100) % 100, d % 100]
+
+
+## Guerras ativas na data e as que acabaram nos últimos RECENT_WAR_YEARS anos (mesma regra do script Python).
+func _wars() -> Array:
+	var out := []
+	var since := CUTOFF - RECENT_WAR_YEARS * 10000
+	for f in _list("history/wars/"):
+		var items := _parse(_text(f))
+		var dated := []
+		for kv in items:
+			if kv[0] != "" and kv[1] is Array:
+				var d := _date(kv[0])
+				if d >= 0 and d <= CUTOFF:
+					dated.append([d, kv[1]])
+		if dated.is_empty():
+			continue
+		dated.sort_custom(func(a, b): return a[0] < b[0])
+		var att := []
+		var de := []
+		var att_now := {}
+		var de_now := {}
+		var battles := []
+		for e in dated:
+			for x in e[1]:
+				var k: String = x[0]
+				var v = x[1]
+				if k == "add_attacker" and v is String:
+					att_now[v] = true
+					if not (v in att):
+						att.append(v)
+				elif k == "add_defender" and v is String:
+					de_now[v] = true
+					if not (v in de):
+						de.append(v)
+				elif k == "rem_attacker" and v is String:
+					att_now.erase(v)
+				elif k == "rem_defender" and v is String:
+					de_now.erase(v)
+				elif k == "battle" and v is Array:
+					var b := {"date": _dstr(e[0])}
+					for bv in v:
+						if bv[0] == "name" and bv[1] is String:
+							b["name"] = bv[1]
+						elif bv[0] == "location" and str(bv[1]).is_valid_int() and not str(bv[1]).begins_with("-"):
+							b["location"] = int(bv[1])
+						elif bv[0] == "result" and bv[1] is String:
+							b["attacker_won"] = bv[1] == "yes"
+						elif bv[0] in ["attacker", "defender"] and bv[1] is Array:
+							var side := {}
+							for y in bv[1]:
+								if y[0] in ["country", "commander"] and y[1] is String:
+									side[y[0]] = y[1]
+								elif y[0] in ["infantry", "cavalry", "artillery", "losses"] and y[1] is String \
+										and (y[1] as String).is_valid_int() and not (y[1] as String).begins_with("-"):
+									side[y[0]] = int(y[1])
+							b[bv[0]] = side
+					battles.append(b)
+		var active := not att_now.is_empty() and not de_now.is_empty()
+		if not active and dated[dated.size() - 1][0] < since:
+			continue
+		var name := f.get_file()
+		for kv in items:
+			if kv[0] == "name" and kv[1] is String:
+				name = kv[1]
+				break
+		var w := {"name": name, "start": _dstr(dated[0][0]), "end": "" if active else _dstr(dated[dated.size() - 1][0]),
+				"attackers": att, "defenders": de, "battles": battles}
+		if active:
+			var a1 := att_now.keys()
+			a1.sort()
+			var d1 := de_now.keys()
+			d1.sort()
+			w["active"] = a1 + d1
+		for kv in items:
+			if kv[0] == "war_goal" and kv[1] is Array:
+				var g := {}
+				for y in kv[1]:
+					if y[0] in ["type", "casus_belli"] and y[1] is String:
+						g[y[0]] = y[1]
+					elif y[0] == "province" and str(y[1]).is_valid_int() and not str(y[1]).begins_with("-"):
+						g["province"] = int(y[1])
+				if not g.is_empty():
+					w["war_goal"] = g
+				break
+		out.append(w)
+	return out
 
 
 ## Instituições [{id, name, color, bonus, start_date, start_province}, trigger history ou null].

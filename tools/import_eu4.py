@@ -21,6 +21,7 @@ Le (da pasta do jogo; so os dois primeiros grupos sao obrigatorios):
   common/advisortypes/*.txt, history/advisors/*.txt (tipos de conselheiro e conselheiros historicos)
   common/institutions/*.txt                    (instituicoes: origem, bonus e onde ja existem em 1444)
   history/diplomacy/*.txt                      (aliancas, suditos, casamentos, unioes, imperadores em 1444)
+  history/wars/*.txt                           (guerras ativas e dos ultimos 10 anos, com batalhas)
   localisation/*_l_english.yml                 (nomes; opcional)
 Sem common/countries, as cores vem de tools/data/nations_*.txt (mesma tag) ou sao geradas;
 sem localizacao, o nome do pais vem do arquivo history/countries/"TAG - Nome.txt".
@@ -503,6 +504,73 @@ def eu4_diplomacy(root, cutoff):
                     elif kk == "celestial_emperor" and isinstance(vv, str):
                         celestial = "" if vv == "---" else vv
     return rel, emperor, celestial
+
+
+RECENT_WAR_YEARS = 10
+
+
+def eu4_wars(root, cutoff):
+    """Guerras ativas na data e as que acabaram nos ultimos RECENT_WAR_YEARS anos: nome, inicio e fim,
+    objetivo, atacantes e defensores (todos os que participaram ate a data; "active" lista os que ainda
+    lutam) e batalhas ate a data."""
+    out = []
+    since = (cutoff[0] - RECENT_WAR_YEARS, cutoff[1], cutoff[2])
+    for fn in sorted(glob.glob(os.path.join(root, "history", "wars", "*.txt"))):
+        items = parse_script(read_text(fn))
+        dated = sorted(((date_tuple(k), v) for k, v in items if k and DATE_RE.match(k) and isinstance(v, list)),
+                       key=lambda t: t[0])
+        dated = [(d, v) for d, v in dated if d <= cutoff]
+        if not dated:
+            continue
+        att, de, att_now, de_now, battles = [], [], set(), set(), []
+        for d, v in dated:
+            for k, x in v:
+                if k == "add_attacker" and isinstance(x, str):
+                    att_now.add(x)
+                    if x not in att:
+                        att.append(x)
+                elif k == "add_defender" and isinstance(x, str):
+                    de_now.add(x)
+                    if x not in de:
+                        de.append(x)
+                elif k == "rem_attacker":
+                    att_now.discard(x)
+                elif k == "rem_defender":
+                    de_now.discard(x)
+                elif k == "battle" and isinstance(x, list):
+                    b = {"date": "%d.%d.%d" % d}
+                    for bk, bv in x:
+                        if bk == "name" and isinstance(bv, str):
+                            b["name"] = bv
+                        elif bk == "location" and isinstance(bv, str) and bv.isdigit():
+                            b["location"] = int(bv)
+                        elif bk == "result" and isinstance(bv, str):
+                            b["attacker_won"] = bv == "yes"
+                        elif bk in ("attacker", "defender") and isinstance(bv, list):
+                            side = {kk: vv for kk, vv in bv if kk in ("country", "commander") and isinstance(vv, str)}
+                            for kk, vv in bv:
+                                if kk in ("infantry", "cavalry", "artillery", "losses") and isinstance(vv, str) \
+                                        and vv.isdigit():
+                                    side[kk] = int(vv)
+                            b[bk] = side
+                    battles.append(b)
+        active = bool(att_now and de_now)
+        if not active and dated[-1][0] < since:
+            continue
+        w = {"name": next((v for k, v in items if k == "name" and isinstance(v, str)), os.path.basename(fn)),
+             "start": "%d.%d.%d" % dated[0][0], "end": "" if active else "%d.%d.%d" % dated[-1][0],
+             "attackers": att, "defenders": de, "battles": battles}
+        if active:
+            w["active"] = sorted(att_now) + sorted(de_now)
+        goal = next((v for k, v in items if k == "war_goal" and isinstance(v, list)), [])
+        g = {k: v for k, v in goal if k in ("type", "casus_belli") and isinstance(v, str)}
+        prov = next((v for k, v in goal if k == "province" and isinstance(v, str) and v.isdigit()), None)
+        if prov:
+            g["province"] = int(prov)
+        if g:
+            w["war_goal"] = g
+        out.append(w)
+    return out
 
 
 def parse_building(bid, items, names):
@@ -1115,6 +1183,7 @@ def main():
     advisor_types, advisors = eu4_advisors(root, defs)
     inst_raw = eu4_institutions(root, cutoff)
     diplomacy, emperor, celestial = eu4_diplomacy(root, cutoff)
+    wars = eu4_wars(root, cutoff)
     used_tags = {c["tag"] for c in countries}
     diplomacy = [r for r in diplomacy if r["first"] in used_tags and r["second"] in used_tags]
     emperor = emperor if emperor in used_tags else ""
@@ -1181,7 +1250,7 @@ def main():
                    "idea_groups": idea_groups, "national_ideas": national_ideas,
                    "advisor_types": advisor_types, "advisors": advisors,
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
-                   "celestial_emperor": celestial, "provinces": provinces},
+                   "celestial_emperor": celestial, "wars": wars, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
 
     n_own = sum(1 for p in provinces if p["owner"])
