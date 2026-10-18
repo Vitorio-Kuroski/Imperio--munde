@@ -16,7 +16,7 @@ const CP1252 := {0x80: 0x20AC, 0x82: 0x201A, 0x83: 0x0192, 0x84: 0x201E, 0x85: 0
 		0x88: 0x02C6, 0x89: 0x2030, 0x8A: 0x0160, 0x8B: 0x2039, 0x8C: 0x0152, 0x8E: 0x017D, 0x91: 0x2018,
 		0x92: 0x2019, 0x93: 0x201C, 0x94: 0x201D, 0x95: 0x2022, 0x96: 0x2013, 0x97: 0x2014, 0x98: 0x02DC,
 		0x99: 0x2122, 0x9A: 0x0161, 0x9B: 0x203A, 0x9C: 0x0153, 0x9E: 0x017E, 0x9F: 0x0178}
-const MAP_FILES := ["provinces.bmp", "definition.csv", "default.map", "climate.txt", "heightmap.bmp", "terrain.txt",
+const MAP_FILES := ["world_normal.bmp", "provinces.bmp", "definition.csv", "default.map", "climate.txt", "heightmap.bmp", "terrain.txt",
 		"terrain.bmp", "trees.bmp", "rivers.bmp", "area.txt", "region.txt", "superregion.txt", "continent.txt",
 		"adjacencies.csv"]
 
@@ -40,7 +40,7 @@ static func has_import() -> bool:
 
 ## Apaga o mapa importado (o jogo volta ao mapa padrão).
 static func remove_import() -> void:
-	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png", "icons.png", "loc.txt"]:
+	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png", "icons.png", "loc.txt"] + MAP_TEXTURES:
 		if FileAccess.file_exists(OUT_DIR + "/" + f):
 			DirAccess.remove_absolute(OUT_DIR + "/" + f)
 	for u in UI_TEXTURES:
@@ -140,6 +140,9 @@ func _rel(p: String) -> String:
 	var rel := p.substr(best) if best >= 0 else ""
 	if rel == "" and p.get_file() in MAP_FILES:
 		rel = "map/" + p.get_file()        # arquivo solto (ex.: um .zip só com provinces.bmp)
+	if rel.begins_with("map/terrain/") and rel.get_file().to_lower().begins_with("colormap_") \
+			and rel.get_extension().to_lower() == "dds":
+		return "map/terrain/" + rel.get_file().to_lower()
 	if rel.begins_with("map/"):
 		# os arquivos do mapa usados e todos os .txt/.map da pasta (posições, ventos, estações...)
 		var ok := rel.get_file() in MAP_FILES or rel.get_extension().to_lower() in ["txt", "map"]
@@ -593,6 +596,8 @@ func _import() -> String:
 		if not rv.is_empty() and rv[0] == w and rv[1] == h:
 			# índice da paleta (< 254 = rio; 254 = terra; 255 = mar), o shader lê direto
 			Image.create_from_data(w, h, false, Image.FORMAT_L8, rv[2]).save_png(OUT_DIR + "/rivers.png")
+	_set_status("Texturas do mapa (relevo, altitude, terreno)...")
+	var map_tex := _map_textures(w, h)
 
 	_set_status("Gravando o mapa...")
 	var idimg := Image.create_from_data(w, h, false, Image.FORMAT_RGB8, out)
@@ -912,7 +917,7 @@ func _import() -> String:
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
 			"centers_of_trade": trade[0], "trade_rules": trade[1], "opinion_modifiers": _opinions(),
-			"casus_belli": cbw[0], "war_goals": cbw[1], "diplomacy_data": _diplomacy_data(),
+			"casus_belli": cbw[0], "war_goals": cbw[1], "diplomacy_data": _diplomacy_data(), "map_textures": map_tex,
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
 			"celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces}))
 	f.close()
@@ -1318,6 +1323,74 @@ func _resolve_subject(name: String, raw: Dictionary, done: Dictionary, depth: in
 		res[k] = own[k]
 	done[name] = res
 	return res
+
+
+# ------------------------------------------------------------------ texturas do mapa
+## Texturas do mapa gravadas ao lado do province_ids.png (mesma saída do tools/import_eu4.py).
+const MAP_TEXTURES := ["normal.png", "height.png", "terrain_idx.png", "colormap.png", "colormap_water.png"]
+const COLORMAPS := ["colormap_summer", "colormap_spring", "colormap_autumn", "colormap_winter"]
+
+
+## normal.png (map/world_normal.bmp, relevo para a luz), height.png (map/heightmap.bmp a cada 2 px,
+## profundidade do mar), terrain_idx.png (índice do map/terrain.bmp a cada 2 px; cores da paleta
+## em terrain_palette) e, se houver, colormap.png (map/terrain/colormap_summer.dds ou outra
+## estação) e colormap_water.png. Devolve {"terrain_palette": [[r, g, b] × 256]}.
+func _map_textures(w: int, h: int) -> Dictionary:
+	var info := {}
+	for f in MAP_TEXTURES:
+		if FileAccess.file_exists(OUT_DIR + "/" + f):
+			DirAccess.remove_absolute(OUT_DIR + "/" + f)
+	if _index.has("map/world_normal.bmp"):
+		var im := Image.new()
+		if im.load_bmp_from_buffer(_bytes("map/world_normal.bmp")) == OK:
+			im.convert(Image.FORMAT_RGB8)
+			im.save_png(OUT_DIR + "/normal.png")
+	if _index.has("map/heightmap.bmp"):
+		var hm := Image.new()
+		if hm.load_bmp_from_buffer(_bytes("map/heightmap.bmp")) == OK and hm.get_width() == w and hm.get_height() == h:
+			hm.convert(Image.FORMAT_L8)
+			_half(hm.get_data(), w, h).save_png(OUT_DIR + "/height.png")
+	if _index.has("map/terrain.bmp"):
+		var tb := _bmp8("map/terrain.bmp")
+		if not tb.is_empty() and tb[0] == w and tb[1] == h:
+			_half(tb[2], w, h).save_png(OUT_DIR + "/terrain_idx.png")
+			var b := _bytes("map/terrain.bmp")
+			var n := b.decode_u32(46)
+			n = 256 if n == 0 else mini(n, 256)
+			var pal_at := 14 + b.decode_u32(14)
+			var pal := []
+			for i in 256:
+				if i < n and pal_at + i * 4 + 2 < b.size():
+					pal.append([b[pal_at + i * 4 + 2], b[pal_at + i * 4 + 1], b[pal_at + i * 4]])
+				else:
+					pal.append([0, 0, 0])
+			info["terrain_palette"] = pal
+	var pairs := []
+	for c in COLORMAPS:
+		pairs.append([c, "colormap.png"])
+	pairs.append(["colormap_water", "colormap_water.png"])
+	for pr in pairs:
+		var rel: String = "map/terrain/" + pr[0] + ".dds"
+		if _index.has(rel) and not FileAccess.file_exists(OUT_DIR + "/" + pr[1]):
+			var im := _dds(_bytes(rel))
+			if im:
+				im.convert(Image.FORMAT_RGB8)
+				im.save_png(OUT_DIR + "/" + pr[1])
+	return info
+
+
+## Imagem de 1 byte por pixel com 1 a cada 2 pixels (linhas e colunas pares).
+static func _half(data: PackedByteArray, w: int, h: int) -> Image:
+	var hw := w / 2
+	var hh := h / 2
+	var out := PackedByteArray()
+	out.resize(hw * hh)
+	for y in hh:
+		var src := y * 2 * w
+		var dst := y * hw
+		for x in hw:
+			out[dst + x] = data[src + x * 2]
+	return Image.create_from_data(hw, hh, false, Image.FORMAT_L8, out)
 
 
 # ------------------------------------------------------------------ todos os scripts do EU4

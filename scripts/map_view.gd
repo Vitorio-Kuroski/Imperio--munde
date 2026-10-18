@@ -108,6 +108,7 @@ var icons := {}                    # chave ("good:grain", "religion:catholic", "
 var _icons_tex: Texture2D          # atlas dos ícones da interface (vazio sem gfx/interface)
 var _icon_cache := {}
 var ui_dir := ""                   # pasta das texturas de interface do EU4 (Eu4Theme), ao lado do mapa
+var has_terrain_textures := false   # modo terreno com as texturas do EU4 (terrain.bmp ou colormap)
 var gui_dir := ""                  # pasta das telas do EU4 (Eu4Gui)
 var source := ""                   # de onde veio o mapa (caminho do map.json)
 
@@ -249,6 +250,7 @@ func load_map(map_scale: float) -> void:
 	elif ResourceLoader.exists(icons_path):
 		_icons_tex = load(icons_path) as Texture2D
 	mat.set_shader_parameter("palette", palette_tex)
+	_load_map_textures(ids_path.get_base_dir(), data.get("map_textures", {}))
 	mat.set_shader_parameter("map_size", Vector2(map_w, map_h))
 	mat.set_shader_parameter("selected_id", -1)
 	material = mat
@@ -577,9 +579,44 @@ func set_map_mode(mode: MapMode) -> void:
 	if trade_flows:
 		trade_flows.visible = mode == MapMode.COMERCIO
 	mat.set_shader_parameter("border_mode", bm)
+	mat.set_shader_parameter("terrain_view", mode == MapMode.TERRENO and has_terrain_textures)
 	for p in provinces:
 		_write_palette(int(p["id"]))
 	palette_tex.update(palette_image)
+
+
+## Texturas do mapa do EU4 (ver Eu4Importer._map_textures): relevo (normal.png) para a luz,
+## altitude (height.png) para a profundidade do mar, terreno (terrain_idx.png + paleta do
+## terrain.bmp) e colormaps (colormap.png, colormap_water.png) se a instalação tinha.
+func _load_map_textures(dir: String, info: Dictionary) -> void:
+	var ld := func(name: String) -> Texture2D:
+		var path := dir + "/" + name
+		if path.begins_with("user://"):
+			return ImageTexture.create_from_image(Image.load_from_file(path)) if FileAccess.file_exists(path) else null
+		return load(path) as Texture2D if ResourceLoader.exists(path) else null
+	for pr in [["normal.png", "normal_map", "has_normal"], ["height.png", "height_map", "has_height"],
+			["colormap.png", "colormap", "has_colormap"], ["colormap_water.png", "water_colormap", "has_water_colormap"]]:
+		var t: Texture2D = ld.call(pr[0])
+		if t:
+			mat.set_shader_parameter(pr[1], t)
+			mat.set_shader_parameter(pr[2], true)
+			if pr[0] == "colormap.png":
+				has_terrain_textures = true
+	var ti: Texture2D = ld.call("terrain_idx.png")
+	var pal: Array = info.get("terrain_palette", [])
+	if ti and pal.size() == 256:
+		var img := Image.create(256, 1, false, Image.FORMAT_RGB8)
+		for i in 256:
+			img.set_pixel(i, 0, Color8(int(pal[i][0]), int(pal[i][1]), int(pal[i][2])))
+		mat.set_shader_parameter("terrain_idx", ti)
+		mat.set_shader_parameter("terrain_pal", ImageTexture.create_from_image(img))
+		has_terrain_textures = true
+	# luz do EU4 (NGraphics LIGHT_DIRECTION: para onde a luz vai, x leste, y cima, z norte) em
+	# coordenadas da imagem (x direita, y baixo, z para fora): vetor que aponta para a luz
+	var lx := float(Eu4Data.define("NGraphics", "LIGHT_DIRECTION_X", -1.0))
+	var ly := float(Eu4Data.define("NGraphics", "LIGHT_DIRECTION_Y", -1.0))
+	var lz := float(Eu4Data.define("NGraphics", "LIGHT_DIRECTION_Z", 0.5))
+	mat.set_shader_parameter("light_dir", Vector3(-lx, lz, -ly).normalized())
 
 
 func select(pid: int) -> void:

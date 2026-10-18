@@ -437,6 +437,49 @@ def eu4_all_data(root, out):
     return index
 
 
+# texturas do mapa do EU4 gravadas ao lado do province_ids.png (o shader do mapa usa)
+MAP_TEXTURES = ["normal.png", "height.png", "terrain_idx.png", "colormap.png", "colormap_water.png"]
+COLORMAPS = ["colormap_summer", "colormap_spring", "colormap_autumn", "colormap_winter"]
+
+
+def map_textures(root, W, H, out_dir):
+    """Texturas do mapa do EU4: normal.png (map/world_normal.bmp, relevo para a luz), height.png
+    (map/heightmap.bmp a cada 2 px, profundidade do mar), terrain_idx.png (indice do
+    map/terrain.bmp a cada 2 px; as cores da paleta vao em terrain_palette) e, se a instalacao tem,
+    colormap.png (map/terrain/colormap_summer.dds ou outra estacao) e colormap_water.png.
+    Devolve {"terrain_palette": [[r, g, b] x 256]} (vazio sem o terrain.bmp)."""
+    info = {}
+    for f in MAP_TEXTURES:
+        if os.path.isfile(os.path.join(out_dir, f)):
+            os.remove(os.path.join(out_dir, f))
+    mdir = os.path.join(root, "map")
+    p = os.path.join(mdir, "world_normal.bmp")
+    if os.path.isfile(p):
+        Image.open(p).convert("RGB").save(os.path.join(out_dir, "normal.png"), optimize=True)
+    p = os.path.join(mdir, "heightmap.bmp")
+    if os.path.isfile(p):
+        hm = Image.open(p).convert("L")
+        if hm.size == (W, H):
+            Image.fromarray(np.ascontiguousarray(np.asarray(hm, dtype=np.uint8)[::2, ::2]), "L").save(
+                os.path.join(out_dir, "height.png"), optimize=True)
+    p = os.path.join(mdir, "terrain.bmp")
+    if os.path.isfile(p):
+        tb = Image.open(p)
+        if tb.mode == "P" and tb.size == (W, H):
+            Image.fromarray(np.ascontiguousarray(np.asarray(tb, dtype=np.uint8)[::2, ::2]), "L").save(
+                os.path.join(out_dir, "terrain_idx.png"), optimize=True)
+            pal = (tb.getpalette() or []) + [0] * 768
+            info["terrain_palette"] = [pal[i * 3:i * 3 + 3] for i in range(256)]
+    tdir = os.path.join(mdir, "terrain")
+    for name, dst in [(c, "colormap.png") for c in COLORMAPS] + [("colormap_water", "colormap_water.png")]:
+        p = os.path.join(tdir, name + ".dds")
+        if os.path.isfile(p) and not os.path.isfile(os.path.join(out_dir, dst)):
+            im = load_rgba(p, False)
+            if im is not None:
+                im.convert("RGB").save(os.path.join(out_dir, dst), optimize=True)
+    return info
+
+
 def to_num(v):
     """"2" -> 2, "0.25" -> 0.25, outra coisa -> None."""
     try:
@@ -1620,6 +1663,8 @@ def main():
             # indice da paleta do rivers.bmp (< 254 = rio; 254 = terra, 255 = mar), o shader le direto
             Image.fromarray(np.asarray(riv, dtype=np.uint8), "L").save("assets/eu4/rivers.png", optimize=True)
     del ids
+    print("Texturas do mapa (relevo, altitude, terreno)...", flush=True)
+    map_tex = map_textures(root, W, H, "assets/eu4")
 
     # ---------------------------------------------------------- construcoes (common/buildings)
     with open("data/construcoes_pt.json", encoding="utf-8") as f:
@@ -1985,7 +2030,7 @@ def main():
                    "advisor_types": advisor_types, "advisors": advisors,
                    "centers_of_trade": centers_of_trade, "trade_rules": trade_rules,
                    "opinion_modifiers": opinion_modifiers, "casus_belli": casus_belli, "war_goals": war_goals,
-                   "diplomacy_data": diplomacy_data,
+                   "diplomacy_data": diplomacy_data, "map_textures": map_tex,
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
                    "celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
