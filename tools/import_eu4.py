@@ -191,6 +191,75 @@ def state_at(items, cutoff):
     return st
 
 
+def core_claims(items, cutoff):
+    """Nucleos e reivindicacoes da provincia no dia de inicio (add_core/remove_core/add_claim/remove_claim
+    no topo e nos blocos datados ate a data, em ordem). -> (nucleos, reivindicacoes), ordenados."""
+    seq = [(k, v) for k, v in items if k and not (DATE_RE.match(k) and isinstance(v, list))]
+    dated = sorted(((tuple(int(x) for x in k.split(".")), v) for k, v in items
+                    if k and DATE_RE.match(k) and isinstance(v, list)), key=lambda t: t[0])
+    for d, v in dated:
+        if d <= cutoff:
+            seq += [(k, x) for k, x in v if k]
+    cores, claims = [], []
+    for k, v in seq:
+        if not isinstance(v, str):
+            continue
+        if k == "add_core" and v not in cores:
+            cores.append(v)
+        elif k == "remove_core" and v in cores:
+            cores.remove(v)
+        elif k == "add_claim" and v not in claims:
+            claims.append(v)
+        elif k == "remove_claim" and v in claims:
+            claims.remove(v)
+    return sorted(cores), sorted(claims)
+
+
+def script_tree(items):
+    """Arvore do script do EU4 em listas [chave, valor] (chave "" para itens soltos), para o JSON."""
+    return [[k or "", script_tree(v) if isinstance(v, list) else v] for k, v in items]
+
+
+def eu4_casus_belli(root):
+    """Casus belli (common/cb_types) e objetivos de guerra (common/wargoal_types), com as condicoes
+    (prerequisites) e os blocos de paz em arvore; o jogo avalia um subconjunto das condicoes."""
+    cbs, wgs = [], []
+    seen = set()
+    for f in sorted(glob.glob(os.path.join(root, "common", "cb_types", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list) or name in seen:
+                continue
+            seen.add(name)
+            cb = {"id": name, "triggered": False, "months": 0, "valid_for_subject": True, "exclusive": False,
+                  "independence": False, "prerequisites_self": [], "prerequisites": [], "war_goal": ""}
+            for k, v in val:
+                if k == "is_triggered_only" and isinstance(v, str):
+                    cb["triggered"] = v == "yes"
+                elif k in ("valid_for_subject", "exclusive", "independence") and isinstance(v, str):
+                    cb[k] = v == "yes"
+                elif k == "months" and to_num(v) is not None:
+                    cb["months"] = to_num(v)
+                elif k in ("prerequisites_self", "prerequisites") and isinstance(v, list):
+                    cb[k] = script_tree(v)
+                elif k == "war_goal" and isinstance(v, str):
+                    cb["war_goal"] = v
+            cbs.append(cb)
+    seen = set()
+    for f in sorted(glob.glob(os.path.join(root, "common", "wargoal_types", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list) or name in seen:
+                continue
+            seen.add(name)
+            wg = {"id": name, "type": "", "attacker": [], "defender": [], "war_name": ""}
+            for k, v in val:
+                if k in ("type", "war_name") and isinstance(v, str):
+                    wg[k] = v
+                elif k in ("attacker", "defender") and isinstance(v, list):
+                    wg[k] = script_tree(v)
+            wgs.append(wg)
+    return cbs, wgs
+
+
 def to_num(v):
     """"2" -> 2, "0.25" -> 0.25, outra coisa -> None."""
     try:
@@ -1401,6 +1470,8 @@ def main():
     cot = {}            # centro de comercio (nivel)
     culture = {}
     religion = {}
+    cores = {}              # pid -> nucleos (quando ha algum de outro pais que nao o dono)
+    claims = {}             # pid -> reivindicacoes
     for f in glob.glob(os.path.join(root, "history", "provinces", "*.txt")):
         m = re.match(r"\s*(\d+)", os.path.basename(f))
         if not m:
@@ -1408,7 +1479,13 @@ def main():
         pid = int(m.group(1))
         if pid not in defs:
             continue
-        st = state_at(parse_script(read_text(f)), cutoff)
+        items = parse_script(read_text(f))
+        st = state_at(items, cutoff)
+        co, cl = core_claims(items, cutoff)
+        if co:
+            cores[pid] = co
+        if cl:
+            claims[pid] = cl
         o = st.get("owner")
         if isinstance(o, str) and o:
             owner[pid] = o
@@ -1648,6 +1725,7 @@ def main():
     advisor_types, advisors = eu4_advisors(root, defs)
     centers_of_trade, trade_rules = eu4_trade(root, loc)
     opinion_modifiers = eu4_opinions(root)
+    casus_belli, war_goals = eu4_casus_belli(root)
     inst_raw = eu4_institutions(root, cutoff)
     diplomacy, emperor, celestial = eu4_diplomacy(root, cutoff)
     wars = eu4_wars(root, cutoff)
@@ -1696,6 +1774,10 @@ def main():
                 prov["center_of_trade"] = cot[pid]
             if pid in hre:
                 prov["hre"] = True
+            if any(t != owner.get(pid) for t in cores.get(pid, [])):
+                prov["cores"] = cores[pid]
+            if pid in claims:
+                prov["claims"] = claims[pid]
             prov["base_tax"], prov["base_production"], prov["base_manpower"] = dev_parts.get(pid, (0, 0, 0))
             prov["coastal"] = any(q in sea_ids for q in neigh[pid])
             prov["base_development"] = prov["development"]
@@ -1724,7 +1806,7 @@ def main():
                    "idea_groups": idea_groups, "national_ideas": national_ideas,
                    "advisor_types": advisor_types, "advisors": advisors,
                    "centers_of_trade": centers_of_trade, "trade_rules": trade_rules,
-                   "opinion_modifiers": opinion_modifiers,
+                   "opinion_modifiers": opinion_modifiers, "casus_belli": casus_belli, "war_goals": war_goals,
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
                    "celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))

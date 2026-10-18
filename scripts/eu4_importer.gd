@@ -144,7 +144,8 @@ func _rel(p: String) -> String:
 			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
 			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
 			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/", "history/wars/",
-			"common/centers_of_trade/", "common/static_modifiers/", "common/opinion_modifiers/"]:
+			"common/centers_of_trade/", "common/static_modifiers/", "common/opinion_modifiers/",
+			"common/cb_types/", "common/wargoal_types/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -613,6 +614,8 @@ func _import() -> String:
 	var goods := {}
 	var prov_buildings := {}
 	var hre := {}                   # províncias do Sacro Império em 1444
+	var cores := {}                 # pid -> núcleos (gravados quando há algum de outro país que não o dono)
+	var claims := {}                # pid -> reivindicações
 	var cot := {}                   # centro de comércio (nível)
 	var files := _list("history/provinces/")
 	for fi in files.size():
@@ -625,7 +628,13 @@ func _import() -> String:
 		var pid := int(m.get_string(1))
 		if not defs.has(pid):
 			continue
-		var st := _state_at(_parse(_text(f)))
+		var items := _parse(_text(f))
+		var st := _state_at(items)
+		var cc := _core_claims(items)
+		if not cc[0].is_empty():
+			cores[pid] = cc[0]
+		if not cc[1].is_empty():
+			claims[pid] = cc[1]
 		if st.get("owner") is String and st["owner"] != "":
 			owner[pid] = st["owner"]
 		if st.get("culture") is String:
@@ -854,6 +863,12 @@ func _import() -> String:
 				prov["center_of_trade"] = cot[pid]
 			if hre.has(pid):
 				prov["hre"] = true
+			for t in cores.get(pid, []):
+				if t != owner.get(pid, ""):
+					prov["cores"] = cores[pid]
+					break
+			if claims.has(pid):
+				prov["claims"] = claims[pid]
 			var coastal := false
 			for q in neigh[pid]:
 				if sea.has(q):
@@ -883,6 +898,7 @@ func _import() -> String:
 			if not have.is_empty():
 				prov["institutions"] = have
 		provinces.append(prov)
+	var cbw := _casus_belli()
 	var f := FileAccess.open(OUT_DIR + "/map.json", FileAccess.WRITE)
 	if f == null:
 		return "Não consegui gravar " + OUT_DIR + "/map.json"
@@ -894,6 +910,7 @@ func _import() -> String:
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
 			"centers_of_trade": trade[0], "trade_rules": trade[1], "opinion_modifiers": _opinions(),
+			"casus_belli": cbw[0], "war_goals": cbw[1],
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
 			"celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces}))
 	f.close()
@@ -1100,6 +1117,97 @@ func _opinions() -> Dictionary:
 					d[x[0]] = _int_if_whole(float(x[1]))
 			out[kv[0]] = d
 	return out
+
+
+## Núcleos e reivindicações da província no dia de início (add_core/remove_core/add_claim/
+## remove_claim no topo e nos blocos datados até a data, em ordem): [núcleos, reivindicações] ordenados.
+func _core_claims(items: Array) -> Array:
+	var seq := []
+	var dated := []
+	for kv in items:
+		if kv[0] == "":
+			continue
+		var d := _date(kv[0])
+		if d >= 0 and kv[1] is Array:
+			dated.append([d, dated.size(), kv[1]])
+		else:
+			seq.append(kv)
+	dated.sort_custom(func(a, b): return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1]))   # estável
+	for e in dated:
+		if e[0] <= CUTOFF:
+			for kv in e[2]:
+				if kv[0] != "":
+					seq.append(kv)
+	var cores := []
+	var claims := []
+	for kv in seq:
+		if not (kv[1] is String):
+			continue
+		match kv[0]:
+			"add_core":
+				if not (kv[1] in cores):
+					cores.append(kv[1])
+			"remove_core":
+				cores.erase(kv[1])
+			"add_claim":
+				if not (kv[1] in claims):
+					claims.append(kv[1])
+			"remove_claim":
+				claims.erase(kv[1])
+	cores.sort()
+	claims.sort()
+	return [cores, claims]
+
+
+## Árvore do script do EU4 em listas [chave, valor] (chave "" para itens soltos), para o JSON.
+static func _tree(items: Array) -> Array:
+	var out := []
+	for kv in items:
+		out.append([kv[0], _tree(kv[1]) if kv[1] is Array else kv[1]])
+	return out
+
+
+## Casus belli (common/cb_types) e objetivos de guerra (common/wargoal_types), com as condições
+## (prerequisites) e os blocos de paz em árvore; o jogo avalia um subconjunto das condições.
+func _casus_belli() -> Array:
+	var cbs := []
+	var wgs := []
+	var seen := {}
+	for f in _list("common/cb_types/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array) or seen.has(kv[0]):
+				continue
+			seen[kv[0]] = true
+			var cb := {"id": kv[0], "triggered": false, "months": 0, "valid_for_subject": true, "exclusive": false,
+					"independence": false, "prerequisites_self": [], "prerequisites": [], "war_goal": ""}
+			for x in kv[1]:
+				var k: String = x[0]
+				var v = x[1]
+				if k == "is_triggered_only" and v is String:
+					cb["triggered"] = v == "yes"
+				elif k in ["valid_for_subject", "exclusive", "independence"] and v is String:
+					cb[k] = v == "yes"
+				elif k == "months" and v is String and (v as String).is_valid_float():
+					cb["months"] = _int_if_whole(float(v))
+				elif k in ["prerequisites_self", "prerequisites"] and v is Array:
+					cb[k] = _tree(v)
+				elif k == "war_goal" and v is String:
+					cb["war_goal"] = v
+			cbs.append(cb)
+	seen = {}
+	for f in _list("common/wargoal_types/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array) or seen.has(kv[0]):
+				continue
+			seen[kv[0]] = true
+			var wg := {"id": kv[0], "type": "", "attacker": [], "defender": [], "war_name": ""}
+			for x in kv[1]:
+				if x[0] in ["type", "war_name"] and x[1] is String:
+					wg[x[0]] = x[1]
+				elif x[0] in ["attacker", "defender"] and x[1] is Array:
+					wg[x[0]] = _tree(x[1])
+			wgs.append(wg)
+	return [cbs, wgs]
 
 
 func _int_if_whole(x: float) -> Variant:

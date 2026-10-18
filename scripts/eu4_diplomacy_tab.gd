@@ -37,7 +37,7 @@ const ACTIONS := {"improve": ["IMPROVERELATIONTITLE", "Melhorar relações", "GF
 		"break_alliance": ["BREAKALLIANCETITLE", "Romper aliança", "GFX_diplomacy_action_alliance"],
 		"break_marriage": ["", "Romper casamento real", "GFX_diplomacy_action_dynasty"],
 		"insult": ["INSULTTITLE", "Enviar um insulto", "GFX_diplomacy_action_relation"],
-		"declare_war": ["DECLAREWAR", "Declarar guerra", "GFX_diplomacy_action_declarewar"],
+		"declare_war": ["", "Declarar guerra", "GFX_diplomacy_action_declarewar"],
 		"white_peace": ["", "Paz branca", "GFX_diplomacy_action_requestpeace"]}
 const GOOD := Color(0.55, 0.9, 0.45)
 const BAD := Color(1.0, 0.42, 0.35)
@@ -267,7 +267,8 @@ func _fill_actions(tag: String) -> void:
 		var row: Control = rows[i]
 		var info: Array = ACTIONS[a]
 		var name := Loc.t(info[0], info[1]) if info[0] != "" else Loc.s(info[1], {"guarantee": "Guarantee Independence",
-				"break_marriage": "Break Royal Marriage", "white_peace": "White Peace"}.get(a, info[1]))
+				"break_marriage": "Break Royal Marriage", "white_peace": "White Peace",
+				"declare_war": "Declare War"}.get(a, info[1]))
 		if a == "improve" and dip.is_improving(player, tag):
 			name = Loc.t("RECALL", "Chamar de volta") + " — " + Loc.t("MACRO_IMPROVE_RELATIONS", "Melhorar relações")
 		var btn := row.find_child("button_diploaction", true, false) as BaseButton
@@ -280,7 +281,10 @@ func _fill_actions(tag: String) -> void:
 		var ic := row.find_child("action_icon", true, false) as Eu4Gui.Icon
 		if ic and view.gui.sprites.has(info[2]):
 			ic.set_sprite(view.gui, info[2], 0)
-		Eu4CountryView._hide(row, "cb_list_icon")
+		var cbi := row.find_child("cb_list_icon", true, false) as Control
+		var cb_list: Array = dip.cbs.available(player, tag) if a == "declare_war" and dip.cbs else []
+		if cbi:
+			cbi.visible = not cb_list.is_empty()
 		var dico := row.find_child("diplomat", true, false) as Control
 		if dico:
 			dico.visible = a == "improve"
@@ -302,6 +306,13 @@ func _fill_actions(tag: String) -> void:
 		if a == "improve":
 			tip += "\n" + Loc.s("Diplomatas livres: %d/%d · +%s por mês", "Free diplomats: %d/%d · +%s per month") % [
 					dip.free_diplomats(player), dip.diplomats(player), ("%.1f" % dip.improve_rate(player)).replace(".", Loc.dec)]
+		if a == "declare_war" and dip.cbs:
+			if cb_list.is_empty():
+				tip += "\n" + Loc.s("Sem casus belli: declarar custa %d de estabilidade", "No casus belli: declaring costs %d stability") \
+						% -CasusBelli.NO_CB_STABILITY
+			else:
+				tip += "\n" + Loc.s("Casus belli: ", "Casus belli: ") + ", ".join(cb_list.map(func(c): return CasusBelli.name_of(c))) \
+						+ "\n" + Loc.s("Será usado: %s", "Will use: %s") % CasusBelli.name_of(cb_list[0])
 		if why != "":
 			tip += "\n" + why
 		if btn:

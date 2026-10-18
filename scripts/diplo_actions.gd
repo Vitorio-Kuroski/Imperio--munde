@@ -32,6 +32,7 @@ var economy: Economy
 var stability: Stability           # main.gd define (romper casamento custa estabilidade)
 var legitimacy: Legitimacy         # main.gd define (casar com quem tem menos prestígio/legitimidade custa)
 var war: War                       # main.gd define (declarar guerra, paz branca)
+var cbs: CasusBelli                # main.gd define (casus belli; sem motivo custa estabilidade)
 var mods := {}                     # opinion_modifiers do EU4
 var timed := {}                    # "A>B" -> {modificador: [valor, meses restantes ou -1]} (opinião de A sobre B)
 var improving := {}                # país -> [alvos com diplomata melhorando relações]
@@ -288,9 +289,15 @@ func act(action: String, actor: String, target: String) -> String:
 			_add_timed(target, actor, "insulted")
 			msg = Loc.s("%s foi insultado", "%s was insulted") % name
 		"declare_war":
-			var w := war.declare(actor, target)
+			var cb: String = cbs.best(actor, target) if cbs else ""
+			var w := war.declare(actor, target, cb, cbs.war_goal_of(cb) if cbs and cb != "" else "")
 			msg = Loc.s("Guerra declarada a %s (%d contra %d países)", "War declared on %s (%d against %d countries)") % [
 					name, w.get("attackers", []).size(), w.get("defenders", []).size()]
+			if cb != "":
+				msg += " — " + CasusBelli.name_of(cb)
+			elif stability:
+				stability.add(actor, CasusBelli.NO_CB_STABILITY)
+				msg += Loc.s(" — sem casus belli: %d de estabilidade", " — no casus belli: %d stability") % CasusBelli.NO_CB_STABILITY
 		"white_peace":
 			var w := war.war_between(actor, target)
 			if acceptance_score("white_peace", actor, target) > 0:

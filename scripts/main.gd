@@ -24,6 +24,7 @@ var war := War.new()
 var combat := Combat.new()
 var siege := Siege.new()
 var war_ai := WarAI.new()
+var cbs := CasusBelli.new()
 var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
 var unit_panel: Eu4UnitPanel       # painel do exército selecionado (telas do EU4)
 var selected_army := -1
@@ -96,6 +97,8 @@ func _ready() -> void:
 	war.army = army
 	diplomacy.war = war
 	diplo.war = war
+	cbs.setup(map, power, diplomacy, war)
+	diplo.cbs = cbs
 	army.setup(map, clock, power, economy, manpower, diplomacy)
 	economy.army = army
 	combat.setup(map, clock, power, army, war, prestige)

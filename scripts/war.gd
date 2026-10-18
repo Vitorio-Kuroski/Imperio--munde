@@ -110,7 +110,8 @@ func _bloc(tag: String) -> Array:
 	return out
 
 
-func declare(a: String, b: String) -> Dictionary:
+## Declara guerra de `a` a `b` com o casus belli `cb` ("" = sem motivo).
+func declare(a: String, b: String, cb := "", goal := "") -> Dictionary:
 	if why_not_declare(a, b) != "":
 		return {}
 	var defenders := _bloc(b)
@@ -137,7 +138,7 @@ func declare(a: String, b: String) -> Dictionary:
 					attackers.append(x)
 	var w := {"id": _next, "name": Loc.s("Guerra %s–%s", "%s–%s War") % [map.countries[a]["name"], map.countries[b]["name"]],
 			"attackers": attackers, "defenders": defenders, "start": [clock.year, clock.month, clock.day],
-			"battle_score": 0.0}
+			"battle_score": 0.0, "cb": cb, "war_goal": goal}
 	wars[_next] = w
 	_next += 1
 	changed.emit()
