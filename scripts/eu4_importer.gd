@@ -145,7 +145,8 @@ func _rel(p: String) -> String:
 			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
 			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/", "history/wars/",
 			"common/centers_of_trade/", "common/static_modifiers/", "common/opinion_modifiers/",
-			"common/cb_types/", "common/wargoal_types/"]:
+			"common/cb_types/", "common/wargoal_types/", "common/diplomatic_actions/",
+			"common/new_diplomatic_actions/", "common/subject_types/", "common/peace_treaties/", "common/insults/"]:
 		if rel.begins_with(keep) and rel.ends_with(".txt"):
 			return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
@@ -910,7 +911,7 @@ func _import() -> String:
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
 			"centers_of_trade": trade[0], "trade_rules": trade[1], "opinion_modifiers": _opinions(),
-			"casus_belli": cbw[0], "war_goals": cbw[1],
+			"casus_belli": cbw[0], "war_goals": cbw[1], "diplomacy_data": _diplomacy_data(),
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
 			"celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces}))
 	f.close()
@@ -1208,6 +1209,111 @@ func _casus_belli() -> Array:
 					wg[x[0]] = _tree(x[1])
 			wgs.append(wg)
 	return [cbs, wgs]
+
+
+## Valor simples do script do EU4: número, yes/no -> bool, ou o texto.
+func _script_value(v: String) -> Variant:
+	if v == "yes" or v == "no":
+		return v == "yes"
+	return _int_if_whole(float(v)) if v.is_valid_float() else v
+
+
+## Tudo de diplomacia do EU4 que o jogo ainda não tinha (o mesmo do import_eu4.py): condições e
+## efeitos das ações (common/diplomatic_actions), ações por script (common/new_diplomatic_actions;
+## static_actions), tipos de súditos resolvidos (common/subject_types, copy_from), tratados de paz
+## por script (common/peace_treaties), insultos (common/insults) e as constantes NDiplomacy.
+func _diplomacy_data() -> Dictionary:
+	var out := {"actions": {}, "scripted_actions": {}, "static_actions": {}, "subject_types": {},
+			"peace_treaties": {}, "insults": [], "defines": {}}
+	for f in _list("common/diplomatic_actions/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array) or out["actions"].has(kv[0]):
+				continue
+			var a := {"conditions": [], "effect": []}
+			for x in kv[1]:
+				if x[0] == "condition" and x[1] is Array:
+					var c := {"tooltip": "", "potential": [], "allow": []}
+					for y in x[1]:
+						if y[0] == "tooltip" and y[1] is String:
+							c["tooltip"] = y[1]
+						elif y[0] in ["potential", "allow"] and y[1] is Array:
+							c[y[0]] = _tree(y[1])
+					a["conditions"].append(c)
+				elif x[0] == "effect" and x[1] is Array:
+					a["effect"] = _tree(x[1])
+			out["actions"][kv[0]] = a
+	for f in _list("common/new_diplomatic_actions/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array):
+				continue
+			if kv[0] == "static_actions":
+				for x in kv[1]:
+					if x[0] != "" and x[1] is Array and not out["static_actions"].has(x[0]):
+						var d := {}
+						for y in x[1]:
+							if y[0] != "" and y[1] is String:
+								d[y[0]] = _script_value(y[1])
+						out["static_actions"][x[0]] = d
+			elif not out["scripted_actions"].has(kv[0]):
+				out["scripted_actions"][kv[0]] = _tree(kv[1])
+	var raw := {}
+	var order := []
+	for f in _list("common/subject_types/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array):
+				continue
+			if not raw.has(kv[0]):
+				raw[kv[0]] = []
+				order.append(kv[0])
+			raw[kv[0]].append_array(kv[1])
+	var done := {}
+	for name in order:
+		if name != "default":
+			out["subject_types"][name] = _resolve_subject(name, raw, done, 0)
+	for f in _list("common/peace_treaties/"):
+		for kv in _parse(_text(f)):
+			if kv[0] != "" and kv[1] is Array and not out["peace_treaties"].has(kv[0]):
+				out["peace_treaties"][kv[0]] = _tree(kv[1])
+	var seen := {}
+	for f in _list("common/insults/"):
+		for kv in _parse(_text(f)):
+			if kv[0] != "" and kv[1] is Array and not seen.has(kv[0]):
+				seen[kv[0]] = true
+				var trig := []
+				for x in kv[1]:
+					if x[0] == "trigger" and x[1] is Array:
+						trig = x[1]
+						break
+				out["insults"].append({"id": kv[0], "trigger": _tree(trig)})
+	if _index.has("common/defines.lua"):
+		var m := RegEx.create_from_string("(?s)NDiplomacy\\s*=\\s*\\{(.*?)\\n\\}").search(_text("common/defines.lua"))
+		if m:
+			var body := RegEx.create_from_string("--[^\\n]*").sub(m.get_string(1), "", true)
+			for mm in RegEx.create_from_string("\\b([A-Z][A-Z0-9_]*)\\s*=\\s*(-?[0-9.]+)").search_all(body):
+				if mm.get_string(2).is_valid_float() and not out["defines"].has(mm.get_string(1)):
+					out["defines"][mm.get_string(1)] = _int_if_whole(float(mm.get_string(2)))
+	return out
+
+
+func _resolve_subject(name: String, raw: Dictionary, done: Dictionary, depth: int) -> Dictionary:
+	if done.has(name):
+		return done[name]
+	var own := {}
+	var base := {}
+	for x in raw.get(name, []):
+		if x[0] == "copy_from" and x[1] is String and raw.has(x[1]) and depth < 10:
+			base = {}
+			var r := _resolve_subject(x[1], raw, done, depth + 1)
+			for k in r:
+				if k != "count":
+					base[k] = r[k]
+		elif x[0] != "" and x[1] is String:
+			own[x[0]] = _script_value(x[1])
+	var res := base.duplicate()
+	for k in own:
+		res[k] = own[k]
+	done[name] = res
+	return res
 
 
 func _int_if_whole(x: float) -> Variant:

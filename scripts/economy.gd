@@ -111,7 +111,10 @@ func _recount() -> void:
 	if diplomacy:
 		for r in diplomacy.relations:
 			var kind: String = r.get("subject_type", r["type"])
-			if kind in VASSAL_TYPES:
+			if not (r["type"] in Diplomacy.SUBJECT_TYPES):
+				continue
+			var st := diplomacy.subject_type(kind)
+			if (float(st.get("pays_overlord", 0.0)) > 0.0) if not st.is_empty() else (kind in VASSAL_TYPES):
 				_overlord[r["second"]] = r["first"]
 				if not _vassals.has(r["first"]):
 					_vassals[r["first"]] = []
@@ -134,7 +137,12 @@ func _tax(tag: String) -> float:
 func vassal_fee(tag: String) -> float:
 	if not _overlord.has(tag):
 		return 0.0
-	return _tax(tag) * maxf(0.0, VASSAL_FEE + power.modifier(_overlord[tag], "vassal_income"))
+	var pays := 1.0
+	if diplomacy:                        # pays_overlord do tipo de súdito (1 = vassalo)
+		var ov := diplomacy.overlord(tag)
+		var st := diplomacy.subject_type(ov[1]) if ov.size() > 1 else {}
+		pays = float(st.get("pays_overlord", 1.0)) if not st.is_empty() else 1.0
+	return _tax(tag) * maxf(0.0, VASSAL_FEE + power.modifier(_overlord[tag], "vassal_income")) * pays
 
 
 ## Renda mensal: {"tax", "production", "trade", "gold", "vassals", "total"} (as outras linhas do EU4 são 0).

@@ -95,14 +95,23 @@ func why_not_declare(a: String, b: String) -> String:
 	return ""
 
 
-## Bloco de um país: ele, o suserano no topo e todos os súditos desse suserano.
+## Bloco de um país: ele, o suserano no topo e todos os súditos desse suserano (só sobe/desce por
+## tipos de súdito que entram nas guerras do suserano — `joins_overlords_wars` do EU4).
 func _bloc(tag: String) -> Array:
-	var top := diplomacy.top_overlord(tag)
+	var top := tag
+	var guard := 0
+	while guard < 10:
+		var ov := diplomacy.overlord(top)
+		if ov.is_empty() or diplomacy.subject_type(ov[1]).get("joins_overlords_wars", true) == false:
+			break
+		top = ov[0]
+		guard += 1
 	var out := [top]
 	var i := 0
 	while i < out.size():
 		for s in diplomacy.subjects(out[i]):
-			if not (s[0] in out):
+			# tipos de súdito que não entram nas guerras do suserano (tributários...) ficam de fora
+			if not (s[0] in out) and diplomacy.subject_type(s[1]).get("joins_overlords_wars", true) != false:
 				out.append(s[0])
 		i += 1
 	if not (tag in out):

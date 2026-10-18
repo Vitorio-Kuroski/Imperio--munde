@@ -82,6 +82,12 @@ func available(a: String, b: String) -> Array:
 	return out
 
 
+## Avalia um bloco de condições do EU4 com ROOT = `root` e FROM = `from` (true, false ou null =
+## desconhecido). Usado também pelas condições das ações diplomáticas e dos insultos.
+func check(tree: Array, root: String, from: String) -> Variant:
+	return _test(tree, {"tag": root}, root, from)
+
+
 func best(a: String, b: String) -> String:
 	var l := available(a, b)
 	return l[0] if not l.is_empty() else ""
@@ -203,6 +209,8 @@ func _cond(k: String, v: Variant, scope: Dictionary, root: String, from: String)
 				if r == null:
 					res = null
 			return res
+		"always":
+			return _yes(v)
 		"is_revolutionary":
 			return not _yes(v)
 		"has_dlc":
@@ -281,6 +289,23 @@ func _country_cond(k: String, v: Variant, tag: String, root: String, from: Strin
 			return o != "" and not ov.is_empty() and ov[0] == o and ov[1] == "union"
 		"alliance_with":
 			return _country(s, root, from) in diplomacy.allies(tag)
+		"war_with":
+			var o := _country(s, root, from)
+			return war != null and o != "" and war.hostile(tag, o)
+		"has_heir":
+			return (not c.get("heir", {}).is_empty()) == _yes(v)
+		"has_regency":
+			return not _yes(v)
+		"has_ruler":
+			return str(c.get("monarch", {}).get("name", "")) == s
+		"dynasty":
+			var o := _country(s, root, from)
+			var dyn := str(c.get("monarch", {}).get("dynasty", ""))
+			return dyn != "" and dyn == (str(map.countries[o].get("monarch", {}).get("dynasty", "")) if o != "" else s)
+		"government_rank":
+			return s.is_valid_float() and int(c.get("rank", 1)) >= int(float(s))
+		"owns":
+			return s.is_valid_int() and int(s) < map.provinces.size() and map.provinces[int(s)]["owner"] == tag
 		"is_emperor":
 			return (tag == diplomacy.emperor) == _yes(v)
 		"is_emperor_of_china":
@@ -375,6 +400,15 @@ func _prov_cond(k: String, v: Variant, pid: int, root: String, from: String) -> 
 		"is_capital":
 			var c: Dictionary = map.countries.get(p["owner"], {})
 			return (int(c.get("capital", -1)) == pid) == _yes(v)
+		"province_id":
+			return s.is_valid_int() and int(s) == pid
+		"has_terrain":
+			return str(map.terrains.get(p.get("terrain", ""), {}).get("eu4", "")) == s
+		"fort_level":
+			var lvl := map.building_mod(p, "fort_level")
+			if int(map.countries.get(p["owner"], {}).get("capital", -1)) == pid:
+				lvl += 1.0
+			return s.is_valid_float() and lvl >= float(s)
 	return null
 
 

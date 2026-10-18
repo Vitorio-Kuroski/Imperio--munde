@@ -197,8 +197,49 @@ func acceptance_score(action: String, actor: String, target: String) -> int:
 	return s
 
 
+## Ação do jogo -> ação do EU4 (common/diplomatic_actions), cujas condições também valem.
+const EU4_ACTION := {"improve": "improve_relation", "alliance": "allianceaction", "royal_marriage": "royal_marriage",
+		"guarantee": "guaranteeaction", "break_alliance": "break_alliance", "break_marriage": "break_marriage",
+		"insult": "insultaction", "declare_war": "declarewar", "white_peace": "requestpeace"}
+
+
+## Condições da ação no EU4: cada `condition` cujo `potential` vale e cujo `allow` dá falso bloqueia,
+## com a dica do EU4. Condições desconhecidas não bloqueiam.
+func eu4_why_not(action: String, actor: String, target: String) -> String:
+	if cbs == null:
+		return ""
+	var a: Dictionary = map.diplomacy_data.get("actions", {}).get(EU4_ACTION.get(action, ""), {})
+	for c in a.get("conditions", []):
+		var pot: Variant = cbs.check(c["potential"], actor, target) if not c["potential"].is_empty() else true
+		if pot != true:
+			continue
+		if cbs.check(c["allow"], actor, target) == false:
+			return Loc.t(c["tooltip"], Loc.s("Não permitido (regra do EU4: %s)", "Not allowed (EU4 rule: %s)") % c["tooltip"]) \
+					if c["tooltip"] != "" else Loc.s("Não permitido pelas regras do EU4", "Not allowed by the EU4 rules")
+	return ""
+
+
+## Texto de um insulto do EU4 (common/insults) cuja condição vale, com os nomes no lugar.
+func insult_text(actor: String, target: String) -> String:
+	var ok := []
+	for i in map.diplomacy_data.get("insults", []):
+		if cbs == null or i["trigger"].is_empty() or cbs.check(i["trigger"], actor, target) == true:
+			ok.append(i["id"])
+	if ok.is_empty() or not Loc.active():
+		return ""
+	var t := Loc.t(ok[randi() % ok.size()], "")
+	t = RegEx.create_from_string("(?i)\\[From\\.[^\\]]*\\]").sub(t, map.countries[target]["name"], true)
+	t = RegEx.create_from_string("(?i)\\[Root\\.[^\\]]*\\]").sub(t, map.countries[actor]["name"], true)
+	return RegEx.create_from_string("\\[[^\\]]*\\]").sub(t, "", true)
+
+
 ## "" se `actor` pode fazer a ação com `target`, senão o motivo.
 func why_not(action: String, actor: String, target: String) -> String:
+	var own := _why_not(action, actor, target)
+	return own if own != "" else eu4_why_not(action, actor, target)
+
+
+func _why_not(action: String, actor: String, target: String) -> String:
 	if actor == target or not map.countries.has(target):
 		return "?"
 	var allied: bool = target in diplomacy.allies(actor)
@@ -288,6 +329,9 @@ func act(action: String, actor: String, target: String) -> String:
 		"insult":
 			_add_timed(target, actor, "insulted")
 			msg = Loc.s("%s foi insultado", "%s was insulted") % name
+			var it := insult_text(actor, target)
+			if it != "":
+				msg += ": \"" + it + "\""
 		"declare_war":
 			var cb: String = cbs.best(actor, target) if cbs else ""
 			var w := war.declare(actor, target, cb, cbs.war_goal_of(cb) if cbs and cb != "" else "")

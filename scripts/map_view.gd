@@ -78,6 +78,9 @@ var idea_groups: Array = []        # grupos de ideias (category adm/dip/mil, bon
 var opinion_modifiers: Dictionary = {}  # common/opinion_modifiers do EU4 (id -> opinion, max, yearly_decay, months...)
 var casus_belli: Array = []         # common/cb_types do EU4 ({id, triggered, prerequisites...}; CasusBelli)
 var war_goals: Array = []           # common/wargoal_types do EU4 ({id, type, attacker, defender})
+## O resto da diplomacia do EU4: actions (condições/efeito das ações), scripted_actions, static_actions,
+## subject_types (atributos resolvidos), peace_treaties, insults e defines (NDiplomacy).
+var diplomacy_data: Dictionary = {}
 var national_ideas: Array = []     # ideias nacionais/de grupo/genéricas (start, bonus, ideas); países têm "ideas"
 var institutions: Array = []       # instituições (id, name, color, bonus, start_date, start_province)
 var inst_view: Institutions        # presença atual (para o modo de mapa instituições)
@@ -197,6 +200,7 @@ func load_map(map_scale: float) -> void:
 	opinion_modifiers = data.get("opinion_modifiers", {})
 	casus_belli = data.get("casus_belli", [])
 	war_goals = data.get("war_goals", [])
+	diplomacy_data = data.get("diplomacy_data", {})
 
 	var ids_tex: Texture2D
 	if ids_path.begins_with("user://"):

@@ -260,6 +260,99 @@ def eu4_casus_belli(root):
     return cbs, wgs
 
 
+def script_value(v):
+    """Valor simples do script do EU4: numero, yes/no -> bool, ou o texto."""
+    if v in ("yes", "no"):
+        return v == "yes"
+    n = to_num(v)
+    return n if n is not None else v
+
+
+def eu4_diplomacy_data(root):
+    """Tudo de diplomacia do EU4 que o jogo ainda nao tinha: condicoes e efeitos das acoes
+    (common/diplomatic_actions), acoes por script (common/new_diplomatic_actions; static_actions =
+    icone/dica das acoes fixas), tipos de suditos resolvidos (common/subject_types, copy_from),
+    tratados de paz por script (common/peace_treaties), insultos (common/insults) e as constantes
+    NDiplomacy do common/defines.lua. Condicoes e efeitos ficam em arvore [chave, valor]."""
+    out = {"actions": {}, "scripted_actions": {}, "static_actions": {}, "subject_types": {},
+           "peace_treaties": {}, "insults": [], "defines": {}}
+    for f in sorted(glob.glob(os.path.join(root, "common", "diplomatic_actions", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list) or name in out["actions"]:
+                continue
+            a = {"conditions": [], "effect": []}
+            for k, v in val:
+                if k == "condition" and isinstance(v, list):
+                    c = {"tooltip": "", "potential": [], "allow": []}
+                    for kk, vv in v:
+                        if kk == "tooltip" and isinstance(vv, str):
+                            c["tooltip"] = vv
+                        elif kk in ("potential", "allow") and isinstance(vv, list):
+                            c[kk] = script_tree(vv)
+                    a["conditions"].append(c)
+                elif k == "effect" and isinstance(v, list):
+                    a["effect"] = script_tree(v)
+            out["actions"][name] = a
+    for f in sorted(glob.glob(os.path.join(root, "common", "new_diplomatic_actions", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list):
+                continue
+            if name == "static_actions":
+                for k, v in val:
+                    if k and isinstance(v, list) and k not in out["static_actions"]:
+                        out["static_actions"][k] = {kk: script_value(vv) for kk, vv in v if kk and isinstance(vv, str)}
+            elif name not in out["scripted_actions"]:
+                out["scripted_actions"][name] = script_tree(val)
+    raw = {}
+    order = []
+    for f in sorted(glob.glob(os.path.join(root, "common", "subject_types", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list):
+                continue
+            if name not in raw:
+                raw[name] = []
+                order.append(name)
+            raw[name] += val
+    done = {}
+
+    def resolve(name, depth=0):
+        if name in done:
+            return done[name]
+        own = {}
+        base = {}
+        for k, v in raw.get(name, []):
+            if k == "copy_from" and isinstance(v, str) and v in raw and depth < 10:
+                base = {kk: vv for kk, vv in resolve(v, depth + 1).items() if kk != "count"}
+            elif k and isinstance(v, str):
+                own[k] = script_value(v)
+        res = dict(base)
+        res.update(own)
+        done[name] = res
+        return res
+    for name in order:
+        if name != "default":
+            out["subject_types"][name] = resolve(name)
+    for f in sorted(glob.glob(os.path.join(root, "common", "peace_treaties", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if name and isinstance(val, list) and name not in out["peace_treaties"]:
+                out["peace_treaties"][name] = script_tree(val)
+    seen = set()
+    for f in sorted(glob.glob(os.path.join(root, "common", "insults", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if name and isinstance(val, list) and name not in seen:
+                seen.add(name)
+                trig = next((v for k, v in val if k == "trigger" and isinstance(v, list)), [])
+                out["insults"].append({"id": name, "trigger": script_tree(trig)})
+    dl = os.path.join(root, "common", "defines.lua")
+    if os.path.isfile(dl):
+        m = re.search(r"NDiplomacy\s*=\s*\{(.*?)\n\}", read_text(dl), re.S)
+        if m:
+            for mm in re.finditer(r"\b([A-Z][A-Z0-9_]*)\s*=\s*(-?[0-9.]+)", re.sub(r"--[^\n]*", "", m.group(1))):
+                if to_num(mm.group(2)) is not None and mm.group(1) not in out["defines"]:
+                    out["defines"][mm.group(1)] = to_num(mm.group(2))
+    return out
+
+
 def to_num(v):
     """"2" -> 2, "0.25" -> 0.25, outra coisa -> None."""
     try:
@@ -1726,6 +1819,7 @@ def main():
     centers_of_trade, trade_rules = eu4_trade(root, loc)
     opinion_modifiers = eu4_opinions(root)
     casus_belli, war_goals = eu4_casus_belli(root)
+    diplomacy_data = eu4_diplomacy_data(root)
     inst_raw = eu4_institutions(root, cutoff)
     diplomacy, emperor, celestial = eu4_diplomacy(root, cutoff)
     wars = eu4_wars(root, cutoff)
@@ -1807,6 +1901,7 @@ def main():
                    "advisor_types": advisor_types, "advisors": advisors,
                    "centers_of_trade": centers_of_trade, "trade_rules": trade_rules,
                    "opinion_modifiers": opinion_modifiers, "casus_belli": casus_belli, "war_goals": war_goals,
+                   "diplomacy_data": diplomacy_data,
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
                    "celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))

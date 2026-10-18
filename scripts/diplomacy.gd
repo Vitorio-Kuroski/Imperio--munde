@@ -178,8 +178,21 @@ func guarantors(tag: String) -> Array:
 	return _guarantors.get(tag, [])
 
 
+## Tipo de súdito do EU4 (common/subject_types) de uma relação: "union" é personal_union.
+static func subject_type_id(kind: String) -> String:
+	return "personal_union" if kind == "union" else kind
+
+
+## Atributos do tipo de súdito (joins_overlords_wars, pays_overlord, base_liberty_desire...); vazio
+## sem os dados importados.
+func subject_type(kind: String) -> Dictionary:
+	return map.diplomacy_data.get("subject_types", {}).get(subject_type_id(kind), {})
+
+
 func subject_name(kind: String) -> String:
-	return SUBJECT_NAMES.get(kind, Eu4Importer.pretty_key(kind).to_lower())
+	var id := subject_type_id(kind)
+	var pt: String = SUBJECT_NAMES.get(kind, Eu4Importer.pretty_key(kind).to_lower())
+	return Loc.t(id + "_title", Loc.t(id, pt)) if Loc.active() else pt
 
 
 func in_hre(tag: String) -> bool:
