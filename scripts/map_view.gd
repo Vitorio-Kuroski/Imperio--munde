@@ -131,6 +131,8 @@ func load_map(map_scale: float) -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(json_path))
 	# localização original do EU4 (loc.txt gravado pelos importadores): nomes como no jogo
 	Loc.load_file(json_path.get_base_dir() + "/loc.txt")
+	# todos os scripts do EU4 (eu4data/, lidos sob demanda)
+	Eu4Data.set_base(json_path.get_base_dir())
 	if Loc.active():
 		_apply_loc(data)
 	map_w = int(data["width"])

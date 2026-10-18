@@ -50,6 +50,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import sys
 
 import numpy as np
@@ -351,6 +352,89 @@ def eu4_diplomacy_data(root):
                 if to_num(mm.group(2)) is not None and mm.group(1) not in out["defines"]:
                     out["defines"][mm.group(1)] = to_num(mm.group(2))
     return out
+
+
+# pastas de script do EU4 gravadas inteiras (em arvore) em data/eu4/eu4data/ (Eu4Data no jogo)
+SCRIPT_TOPS = ["common", "history", "events", "decisions", "missions"]
+
+
+def lua_defines(text):
+    """Constantes de um .lua do EU4: blocos NX = { CHAVE = valor } -> {NX: {CHAVE: valor}} e
+    sobrescritas NDefines.NX.CHAVE = valor -> {"NX.CHAVE": valor}. Numeros viram numero, textos ficam."""
+    text = re.sub(r"--[^\n]*", "", text)
+    blocks = {}
+    for m in re.finditer(r"\b(?!NDefines\b)(N[A-Za-z]+)\s*=\s*\{(.*?)\n\}", text, re.S):
+        d = blocks.setdefault(m.group(1), {})
+        for mm in re.finditer(r'\b([A-Za-z_][A-Za-z0-9_]*)\s*=\s*("[^"]*"|-?[0-9.]+)', m.group(2)):
+            v = mm.group(2)
+            d.setdefault(mm.group(1), v.strip('"') if v.startswith('"') else to_num(v))
+    over = {}
+    for mm in re.finditer(r'\bNDefines\.(N[A-Za-z]+)\.([A-Za-z_][A-Za-z0-9_]*)\s*=\s*("[^"]*"|-?[0-9.]+)', text):
+        v = mm.group(3)
+        over.setdefault(mm.group(1) + "." + mm.group(2), v.strip('"') if v.startswith('"') else to_num(v))
+    return blocks, over
+
+
+def eu4_all_data(root, out):
+    """Todos os scripts do EU4 em arvore [chave, valor], um JSON por pasta, para o jogo usar as regras
+    originais: eu4data/<pasta>.json = {arquivo sem .txt: arvore} (common/<x>, history/<x>, events,
+    decisions, missions; os .txt soltos de common/ em common/_files.json), eu4data/map.json = os
+    .txt/.map da pasta map, eu4data/defines.json = todas as constantes dos .lua (blocos + overrides
+    por arquivo de common/defines/) e eu4data/index.json = pasta -> numero de arquivos."""
+    out = os.path.join(out, "eu4data")
+    if os.path.isdir(out):
+        shutil.rmtree(out)
+    os.makedirs(out)
+    groups = {}                                  # pasta relativa -> [arquivos]
+    for top in SCRIPT_TOPS:
+        base = os.path.join(root, top)
+        if not os.path.isdir(base):
+            continue
+        for dirpath, _dirs, files in os.walk(base):
+            rel = os.path.relpath(dirpath, root).replace(os.sep, "/")
+            for fn in files:
+                if not fn.lower().endswith(".txt"):
+                    continue
+                key = rel
+                if rel == "common":
+                    key = "common/_files"
+                elif rel.count("/") > 1:                 # subpastas ficam com a pasta de cima
+                    key = "/".join(rel.split("/")[:2])
+                groups.setdefault(key, []).append(os.path.join(dirpath, fn))
+    mdir = os.path.join(root, "map")
+    if os.path.isdir(mdir):
+        groups["map"] = [os.path.join(mdir, f) for f in os.listdir(mdir)
+                         if f.lower().endswith((".txt", ".map")) and os.path.isfile(os.path.join(mdir, f))]
+    index = {}
+    for key in sorted(groups):
+        files = sorted(groups[key], key=lambda f: os.path.relpath(f, root).replace(os.sep, "/"))
+        data = {}
+        for f in files:
+            name = os.path.relpath(f, root).replace(os.sep, "/")
+            name = name[len(key) + 1:] if name.startswith(key + "/") else os.path.basename(name)
+            data.setdefault(re.sub(r"\.(txt|map)$", "", name, flags=re.I), script_tree(parse_script(read_text(f))))
+        path = os.path.join(out, key + ".json")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fo:
+            json.dump(data, fo, ensure_ascii=False, separators=(",", ":"))
+        index[key] = len(data)
+    defines = {"overrides": {}}
+    luas = [os.path.join(root, "common", "defines.lua")] + \
+        sorted(glob.glob(os.path.join(root, "common", "defines", "*.lua")))
+    for f in luas:
+        if os.path.isfile(f):
+            blocks, over = lua_defines(read_text(f))
+            for b, d in blocks.items():
+                tgt = defines.setdefault(b, {})
+                for k, v in d.items():
+                    tgt.setdefault(k, v)
+            if over:
+                defines["overrides"][os.path.splitext(os.path.basename(f))[0]] = over
+    with open(os.path.join(out, "defines.json"), "w", encoding="utf-8") as fo:
+        json.dump(defines, fo, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(out, "index.json"), "w", encoding="utf-8") as fo:
+        json.dump(index, fo, ensure_ascii=False, separators=(",", ":"))
+    return index
 
 
 def to_num(v):
@@ -1905,6 +1989,10 @@ def main():
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
                    "celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
+
+    print("Gravando todos os scripts do EU4 (data/eu4/eu4data)...", flush=True)
+    index = eu4_all_data(root, "data/eu4")
+    print("  %d pastas, %d arquivos" % (len(index), sum(index.values())), flush=True)
 
     n_own = sum(1 for p in provinces if p["owner"])
     print(f"\nOK: mapa {W}x{H}, {len(defs)} provincias ({len(sea_ids)} de mar/lagos), "

@@ -8,7 +8,9 @@ extends RefCounted
 
 const OUT_DIR := "user://eu4"
 const CUTOFF := 14441111            # 1444.11.11 como AAAAMMDD
-const TOPS := ["map/", "history/", "common/", "localisation/"]
+const TOPS := ["map/", "history/", "common/", "localisation/", "events/", "decisions/", "missions/"]
+## Pastas de script gravadas inteiras (em árvore) em eu4data/ (Eu4Data no jogo).
+const SCRIPT_TOPS := ["common", "history", "events", "decisions", "missions"]
 ## Caracteres do cp1252 que o Latin-1 não tem (0x80-0x9F -> Unicode).
 const CP1252 := {0x80: 0x20AC, 0x82: 0x201A, 0x83: 0x0192, 0x84: 0x201E, 0x85: 0x2026, 0x86: 0x2020, 0x87: 0x2021,
 		0x88: 0x02C6, 0x89: 0x2030, 0x8A: 0x0160, 0x8B: 0x2039, 0x8C: 0x0152, 0x8E: 0x017D, 0x91: 0x2018,
@@ -45,6 +47,7 @@ static func remove_import() -> void:
 		if FileAccess.file_exists(OUT_DIR + "/ui/%s.png" % u[0]):
 			DirAccess.remove_absolute(OUT_DIR + "/ui/%s.png" % u[0])
 	_remove_tree(OUT_DIR + "/gui")
+	_remove_tree(OUT_DIR + "/eu4data")
 
 
 static func _remove_tree(dir: String) -> void:
@@ -90,8 +93,7 @@ func _walk(dir: String, depth: int) -> void:
 	for sub in d.get_directories():
 		var low: String = sub.to_lower()
 		# não desce em pastas grandes que não interessam
-		if low in ["sound", "music", "tutorial", "dlc", "launcher", "events", "decisions",
-				"missions", "gui", "fonts", "shaders", "assets"]:
+		if low in ["sound", "music", "tutorial", "dlc", "launcher", "gui", "fonts", "shaders", "assets"]:
 			continue
 		if low == "gfx":             # do gfx/ só interessam as bandeiras e os ícones da interface
 			for s2 in DirAccess.get_directories_at(dir + "/" + sub):
@@ -139,16 +141,15 @@ func _rel(p: String) -> String:
 	if rel == "" and p.get_file() in MAP_FILES:
 		rel = "map/" + p.get_file()        # arquivo solto (ex.: um .zip só com provinces.bmp)
 	if rel.begins_with("map/"):
-		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
-	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
-			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
-			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
-			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/", "history/wars/",
-			"common/centers_of_trade/", "common/static_modifiers/", "common/opinion_modifiers/",
-			"common/cb_types/", "common/wargoal_types/", "common/diplomatic_actions/",
-			"common/new_diplomatic_actions/", "common/subject_types/", "common/peace_treaties/", "common/insults/"]:
-		if rel.begins_with(keep) and rel.ends_with(".txt"):
+		# os arquivos do mapa usados e todos os .txt/.map da pasta (posições, ventos, estações...)
+		var ok := rel.get_file() in MAP_FILES or rel.get_extension().to_lower() in ["txt", "map"]
+		return rel if ok and rel.count("/") == 1 else ""
+	# todos os scripts (common, history, events, decisions, missions)
+	for top in SCRIPT_TOPS:
+		if rel.begins_with(top + "/") and rel.to_lower().ends_with(".txt"):
 			return rel
+	if rel.begins_with("common/defines/") and rel.to_lower().ends_with(".lua"):
+		return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
 		return rel
 	if rel == "common/technology.txt" or rel == "common/defines.lua":
@@ -915,6 +916,9 @@ func _import() -> String:
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
 			"celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces}))
 	f.close()
+	var err := _all_data()
+	if err != "":
+		return err
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
 
@@ -1314,6 +1318,111 @@ func _resolve_subject(name: String, raw: Dictionary, done: Dictionary, depth: in
 		res[k] = own[k]
 	done[name] = res
 	return res
+
+
+# ------------------------------------------------------------------ todos os scripts do EU4
+## Todos os scripts do EU4 em árvore [chave, valor], um JSON por pasta (mesma saída do
+## tools/import_eu4.py): eu4data/<pasta>.json = {arquivo sem .txt: árvore} (common/<x>, history/<x>,
+## events, decisions, missions; os .txt soltos de common/ em common/_files.json), eu4data/map.json =
+## os .txt/.map da pasta map, eu4data/defines.json = as constantes dos .lua (blocos + overrides de
+## common/defines/) e eu4data/index.json = pasta -> número de arquivos. Grava arquivo por arquivo
+## (pouca memória, mesmo com events/ inteiro).
+func _all_data() -> String:
+	var out := OUT_DIR + "/eu4data"
+	_remove_tree(out)
+	DirAccess.make_dir_recursive_absolute(out)
+	var groups := {}
+	var keys := []
+	for rel in _list(""):
+		var r: String = rel
+		var key := ""
+		if r.begins_with("map/"):
+			if not r.get_extension().to_lower() in ["txt", "map"]:
+				continue
+			key = "map"
+		else:
+			var top := r.get_slice("/", 0)
+			if not (top in SCRIPT_TOPS) or not r.to_lower().ends_with(".txt"):
+				continue
+			key = r.get_base_dir()
+			if key == "common":
+				key = "common/_files"
+			elif key.count("/") > 1:
+				key = key.get_slice("/", 0) + "/" + key.get_slice("/", 1)
+		if not groups.has(key):
+			groups[key] = []
+			keys.append(key)
+		groups[key].append(r)
+	keys.sort()
+	var index := {}
+	var ext_re := RegEx.create_from_string("(?i)\\.(txt|map)$")
+	var done := 0
+	var total := 0
+	for k in keys:
+		total += groups[k].size()
+	for key in keys:
+		_set_status("Gravando os scripts do EU4 (%s)... %d/%d" % [key, done, total])
+		var path: String = out + "/" + key + ".json"
+		DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+		var f := FileAccess.open(path, FileAccess.WRITE)
+		if f == null:
+			return "Não consegui gravar " + path
+		f.store_string("{")
+		var seen := {}
+		for rel in groups[key]:
+			var r: String = rel
+			var name := r.substr(key.length() + 1) if r.begins_with(key + "/") else r.get_file()
+			name = ext_re.sub(name, "")
+			done += 1
+			if seen.has(name):
+				continue
+			if not seen.is_empty():
+				f.store_string(",")
+			seen[name] = true
+			f.store_string(JSON.stringify(name) + ":" + JSON.stringify(_tree(_parse(_text(r)))))
+		f.store_string("}")
+		f.close()
+		index[key] = seen.size()
+	var defines := {"overrides": {}}
+	var luas := ["common/defines.lua"]
+	for r in _list("common/defines/"):
+		if (r as String).to_lower().ends_with(".lua"):
+			luas.append(r)
+	var com := RegEx.create_from_string("--[^\\n]*")
+	var blk := RegEx.create_from_string("(?s)\\b(?!NDefines\\b)(N[A-Za-z]+)\\s*=\\s*\\{(.*?)\\n\\}")
+	var kv := RegEx.create_from_string("\\b([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(\"[^\"]*\"|-?[0-9.]+)")
+	var ov := RegEx.create_from_string("\\bNDefines\\.(N[A-Za-z]+)\\.([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(\"[^\"]*\"|-?[0-9.]+)")
+	for r in luas:
+		if not _index.has(r):
+			continue
+		var text := com.sub(_text(r), "", true)
+		for m in blk.search_all(text):
+			if not defines.has(m.get_string(1)):
+				defines[m.get_string(1)] = {}
+			var d: Dictionary = defines[m.get_string(1)]
+			for mm in kv.search_all(m.get_string(2)):
+				if not d.has(mm.get_string(1)):
+					d[mm.get_string(1)] = _lua_value(mm.get_string(2))
+		var over := {}
+		for mm in ov.search_all(text):
+			var k2 := mm.get_string(1) + "." + mm.get_string(2)
+			if not over.has(k2):
+				over[k2] = _lua_value(mm.get_string(3))
+		if not over.is_empty():
+			defines["overrides"][(r as String).get_file().get_basename()] = over
+	for pair in [["defines.json", defines], ["index.json", index]]:
+		var f := FileAccess.open(out + "/" + pair[0], FileAccess.WRITE)
+		if f == null:
+			return "Não consegui gravar " + out + "/" + pair[0]
+		f.store_string(JSON.stringify(pair[1]))
+		f.close()
+	return ""
+
+
+func _lua_value(v: String) -> Variant:
+	if v.begins_with("\""):
+		return v.trim_prefix("\"").trim_suffix("\"")
+	return _int_if_whole(float(v)) if v.is_valid_float() else null
 
 
 func _int_if_whole(x: float) -> Variant:
