@@ -66,6 +66,7 @@ var diplo: DiploActions             # main.gd define (opiniões e ações diplom
 var manpower: Manpower              # main.gd define (efetivo)
 var prestige: Prestige              # main.gd define (prestígio)
 var stability: Stability            # main.gd define (estabilidade)
+var army: Army                      # main.gd define (exércitos)
 var _tabs: Control
 var _court: Control
 var _gov: Control

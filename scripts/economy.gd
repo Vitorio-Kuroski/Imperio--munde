@@ -52,6 +52,7 @@ var advisors: Advisors
 var diplomacy: Diplomacy               # main.gd define (vassalos)
 var trade: Trade                       # main.gd define (renda de comércio)
 var religion: Religion                 # main.gd define (manutenção dos missionários)
+var army: Army                         # main.gd define (manutenção do exército)
 var treasury := {}                     # tag -> ducados
 var loans := {}                        # tag -> [{amount, rate, expires (AAAAMMDD)}]
 var inflation := {}                    # tag -> %
@@ -161,7 +162,7 @@ func invalidate(tag: String) -> void:
 		_inc_cache.erase(_overlord[tag])
 
 
-## Gastos mensais: {"advisors", "interest", "diplomatic", "corruption", "missionaries", "total"}.
+## Gastos mensais: {"advisors", "interest", "diplomatic", "corruption", "missionaries", "army", "total"}.
 func expenses(tag: String) -> Dictionary:
 	var adv := advisors.total_salary(tag) if advisors else 0.0     # já com a inflação
 	var interest := 0.0
@@ -170,8 +171,9 @@ func expenses(tag: String) -> Dictionary:
 	var dip := vassal_fee(tag)
 	var cor := root_out_cost(tag)
 	var mis := religion.cost(tag) if religion else 0.0
+	var arm := army.maintenance(tag) if army else 0.0
 	return {"advisors": adv, "interest": interest, "diplomatic": dip, "corruption": cor, "missionaries": mis,
-			"total": adv + interest + dip + cor + mis}
+			"army": arm, "total": adv + interest + dip + cor + mis + arm}
 
 
 func balance(tag: String) -> float:

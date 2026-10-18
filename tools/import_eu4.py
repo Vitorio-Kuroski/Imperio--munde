@@ -377,7 +377,11 @@ TRADE_DEFINES = ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCH
                  "MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST",
                  "BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER",
                  "PS_BOOST_STABILITY", "BREAK_MARRIAGE_STABILITY_PENALTY",
-                 "FORM_MARRIAGE_HIGHER_PRESTIGE", "FORM_MARRIAGE_HIGHER_LEGITIMACY"]
+                 "FORM_MARRIAGE_HIGHER_PRESTIGE", "FORM_MARRIAGE_HIGHER_LEGITIMACY",
+                 "INFANTRY_COST", "CAVALRY_COST", "ARTILLERY_COST", "INFANTRY_TIME", "CAVALRY_TIME", "ARTILLERY_TIME",
+                 "INFANTRY_SPEED", "LAND_MAINTENANCE_FACTOR", "LAND_TECH_MAINTENANCE_IMPACT",
+                 "LAND_FORCELIMIT_EXTRA_COST_FACTOR", "MONTHLY_REINFORCE", "STARTING_ARMY_SIZE",
+                 "INF_REGIMENT_MANPOWER_COST", "MIN_ARMY_MAINTENANCE"]
 # modificadores estaticos usados no comercio: (bloco, efeito, chave no map.json)
 TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power"),
                 ("development", "local_missionary_strength", "dev_missionary_strength"),
@@ -388,7 +392,7 @@ TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power")
 # blocos inteiros de modificadores estaticos guardados em trade_rules["statics"] (efeitos numericos)
 STATIC_BLOCKS = ["prestige", "emperor", "stability", "positive_stability", "negative_stability",
                  "legitimacy", "num_of_marriages", "republican_tradition",
-                 "inverse_republican_tradition", "devotion"]
+                 "inverse_republican_tradition", "devotion", "development"]
 
 
 def eu4_trade(root, loc):
@@ -807,7 +811,8 @@ UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "
 GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
              "countrygovernmentview", "countrytechnologyview", "countryideasview",
              "countryeconomyview", "countryreligionview",
-             "macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview"]   # o _override vem antes: as janelas dele valem
+             "macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
+             "unitpanel_card", "unitpanel_main", "unitpanel_sub"]   # o _override vem antes: as janelas dele valem
 GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",

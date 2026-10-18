@@ -1004,7 +1004,11 @@ const TRADE_DEFINES := ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRAD
 		"TRADE_ADDED_VALUE_MODIFER", "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
 		"MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST",
 		"BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER", "PS_BOOST_STABILITY",
-		"BREAK_MARRIAGE_STABILITY_PENALTY", "FORM_MARRIAGE_HIGHER_PRESTIGE", "FORM_MARRIAGE_HIGHER_LEGITIMACY"]
+		"BREAK_MARRIAGE_STABILITY_PENALTY", "FORM_MARRIAGE_HIGHER_PRESTIGE", "FORM_MARRIAGE_HIGHER_LEGITIMACY",
+		"INFANTRY_COST", "CAVALRY_COST", "ARTILLERY_COST", "INFANTRY_TIME", "CAVALRY_TIME", "ARTILLERY_TIME",
+		"INFANTRY_SPEED", "LAND_MAINTENANCE_FACTOR", "LAND_TECH_MAINTENANCE_IMPACT",
+		"LAND_FORCELIMIT_EXTRA_COST_FACTOR", "MONTHLY_REINFORCE", "STARTING_ARMY_SIZE",
+		"INF_REGIMENT_MANPOWER_COST", "MIN_ARMY_MAINTENANCE"]
 const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_power"],
 		["development", "local_missionary_strength", "dev_missionary_strength"],
 		["coastal", "province_trade_power_modifier", "coastal_trade_power"],
@@ -1013,7 +1017,7 @@ const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_
 ## Blocos inteiros de modificadores estáticos guardados em trade_rules["statics"] (efeitos numéricos).
 const STATIC_BLOCKS := ["prestige", "emperor", "stability", "positive_stability", "negative_stability",
 		"legitimacy", "num_of_marriages", "republican_tradition",
-		"inverse_republican_tradition", "devotion"]
+		"inverse_republican_tradition", "devotion", "development"]
 
 
 ## [centros de comércio, regras de comércio] (mesma saída do import_eu4.py).
@@ -1403,7 +1407,8 @@ func _make_ui() -> void:
 const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
 		"countrygovernmentview", "countrytechnologyview", "countryideasview",
 		"countryeconomyview", "countryreligionview",
-		"macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview"]   # o _override vem antes: as janelas dele valem
+		"macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
+		"unitpanel_card", "unitpanel_main", "unitpanel_sub"]   # o _override vem antes: as janelas dele valem
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",

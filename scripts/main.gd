@@ -19,6 +19,12 @@ var manpower := Manpower.new()
 var prestige := Prestige.new()
 var stability := Stability.new()
 var legitimacy := Legitimacy.new()
+var army := Army.new()
+var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
+var unit_panel: Eu4UnitPanel       # painel do exército selecionado (telas do EU4)
+var selected_army := -1
+var _press_pos := Vector2.ZERO     # onde o botão/dedo desceu (ordem de marcha só num toque, não ao arrastar)
+var _press_army := false           # o toque começou num marcador de exército
 var diplomacy := Diplomacy.new()
 var diplo := DiploActions.new()
 var camera: Camera2D
@@ -81,6 +87,11 @@ func _ready() -> void:
 	diplo.setup(map, clock, power, diplomacy, economy)
 	diplo.stability = stability
 	diplo.legitimacy = legitimacy
+	army.setup(map, clock, power, economy, manpower, diplomacy)
+	economy.army = army
+	army_layer = ArmyLayer.new()
+	map.add_child(army_layer)
+	army_layer.setup(map, army)
 
 	camera = Camera2D.new()
 	add_child(camera)
@@ -127,7 +138,7 @@ var gui_design_height := EU4_GUI_HEIGHT
 func _apply_gui_scale() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	gui_scale = clampf(vp.y / gui_design_height, 0.5, 3.0)
-	for c in [eu4_hud, province_view, country_view, macro_builder]:
+	for c in [eu4_hud, province_view, country_view, macro_builder, unit_panel]:
 		if c:
 			c.set_anchors_preset(Control.PRESET_TOP_LEFT)
 			c.position = Vector2.ZERO
@@ -183,6 +194,7 @@ func _setup_eu4_hud() -> void:
 		country_view.manpower = manpower
 		country_view.prestige = prestige
 		country_view.stability = stability
+		country_view.army = army
 		diplo.changed.connect(func(_t): country_view.refresh())
 		country_view.fmt_mods = ideas_window.fmt_mods
 		country_view.techs_requested.connect(func(t: String):
@@ -228,6 +240,14 @@ func _setup_eu4_hud() -> void:
 	else:
 		macro_builder.queue_free()
 		macro_builder = null
+	unit_panel = Eu4UnitPanel.new()
+	ui.add_child(unit_panel)
+	ui.move_child(unit_panel, 4)
+	if unit_panel.setup(g, map, army):
+		unit_panel.closed.connect(func(): _select_army(-1))
+	else:
+		unit_panel.queue_free()
+		unit_panel = null
 	eu4_hud.zoom_requested.connect(func(f: float):
 		camera.zoom = (camera.zoom * f).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
 		_clamp_camera())
@@ -530,6 +550,8 @@ func _start_game(tag: String) -> void:
 	advisors_window.player = tag
 	if country_view:
 		country_view.player = tag
+	if unit_panel:
+		unit_panel.player = tag
 	start_panel.hide()
 	var cap: int = int(map.countries[tag]["capital"])
 	camera.position = map.province_center(cap)
@@ -786,7 +808,82 @@ func _clamp_camera() -> void:
 	camera.position = camera.position.clamp(Vector2.ZERO, size)
 
 
+## Seleciona o exército `id` (−1 tira a seleção): marcador em destaque e o painel do EU4 no lugar
+## das telas da província/país.
+func _select_army(id: int) -> void:
+	selected_army = id if army.armies.has(id) else -1
+	army_layer.selected = selected_army
+	army_layer.queue_redraw()
+	if selected_army >= 0:
+		for c in [province_view, country_view, macro_builder]:
+			if c:
+				c.hide()
+		if unit_panel:
+			unit_panel.show_army(selected_army)
+	elif unit_panel and unit_panel.visible:
+		unit_panel.hide()
+
+
+func _my_army_selected() -> bool:
+	return selected_army >= 0 and army.armies.has(selected_army) and army.armies[selected_army]["tag"] == player_tag
+
+
+## Ordem de marcha do exército selecionado para a província sob o mouse.
+func _order_move() -> void:
+	var pid := map.province_at_mouse()
+	if pid < 0 or map.provinces[pid]["sea"]:
+		return
+	if not army.move(selected_army, pid):
+		_toast(Loc.s("Não há caminho até %s (só por terras próprias, sem dono, de aliados e súditos)",
+				"No path to %s (only through your own, unowned, allied and subject lands)") % map.provinces[pid]["name"])
+	if unit_panel:
+		unit_panel.refresh()
+
+
+var _toast_label: Label
+
+
+## Aviso curto no meio da tela (some depois de 3 s).
+func _toast(text: String) -> void:
+	if _toast_label == null:
+		_toast_label = Label.new()
+		_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_toast_label.add_theme_font_size_override("font_size", 20)
+		_toast_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		_toast_label.add_theme_constant_override("outline_size", 6)
+		_toast_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+		_toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ui.add_child(_toast_label)
+	var vp := get_viewport().get_visible_rect().size
+	_toast_label.size = Vector2(vp.x * 0.6, 60)
+	_toast_label.position = Vector2(vp.x * 0.2, vp.y * 0.18)
+	_toast_label.text = text
+	_toast_label.show()
+	get_tree().create_timer(3.0).timeout.connect(func():
+		if _toast_label.text == text:
+			_toast_label.hide())
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	# exércitos: tocar no marcador seleciona; com um exército seu selecionado, um toque (sem
+	# arrastar) numa província manda marchar (botão direito também)
+	if event is InputEventMouseButton and player_tag != "" and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+		if event.pressed:
+			_press_pos = event.position
+			_press_army = false
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				var hit := army_layer.army_at(army_layer.get_local_mouse_position())
+				if hit >= 0:
+					_press_army = true
+					_select_army(-1 if hit == selected_army else hit)
+					return
+				if _my_army_selected():
+					return
+		else:
+			if _my_army_selected() and not _press_army and event.position.distance_to(_press_pos) < 12.0:
+				_order_move()
+			return
 	if event is InputEventMouseButton and event.pressed:
 		match event.button_index:
 			MOUSE_BUTTON_LEFT:
@@ -819,6 +916,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_T:
 				_toggle_map_mode()
+			KEY_ESCAPE:
+				_select_army(-1)
 			KEY_SPACE:
 				if player_tag != "":
 					clock.toggle_pause()
