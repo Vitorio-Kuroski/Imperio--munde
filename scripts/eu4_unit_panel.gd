@@ -19,7 +19,7 @@ const MAIN_KEEP := ["regiment_bg", "lu_unit_type_1", "lu_unit_type_1_count", "lu
 		"lu_build_unit_3_button", "subunitlist", "attach_unit_button"]
 const CARD_KEEP := ["unitpanel_bg_pc", "land_units", "unit1_type", "unit1_count", "unit2_type", "unit2_count",
 		"unit3_type", "unit3_count", "unitstrength_land", "unitlocation", "unit_destination", "disbandbutton",
-		"newunitbutton02"]
+		"newunitbutton02", "unitattrition", "unit_attrition_icon"]
 const SUB_KEEP := ["band_regiment", "icon_type", "subunit_amount", "subunit_type", "RegName"]
 const FRAMES := {"infantry": 0, "cavalry": 1, "artillery": 2}
 
@@ -78,10 +78,23 @@ func setup(g: Eu4Gui, m: MapView, a: Army) -> bool:
 	_button(_main, "attach_unit_button", func():
 		army.merge_here(id)
 		refresh(), Loc.s("Juntar os outros exércitos parados aqui", "Merge the other armies standing here"))
-	army.changed.connect(func(_t): refresh())
-	army.moved.connect(refresh)
+	army.changed.connect(func(_t): _queue())
+	army.moved.connect(_queue)
 	hide()
 	return true
+
+
+var _pending := false
+
+
+## Várias mudanças no mesmo quadro (vários dias na velocidade máxima) viram uma atualização só.
+func _queue() -> void:
+	if _pending or not visible:
+		return
+	_pending = true
+	(func():
+		_pending = false
+		refresh()).call_deferred()
 
 
 func _find(root: Control, n: String) -> Control:
@@ -144,18 +157,36 @@ func refresh() -> void:
 	var c: Dictionary = map.countries.get(tag, {})
 	_name.text = str(a["name"]) + ("" if mine else " (%s)" % c.get("name", tag))
 	_txt(_card, "unitstrength_land", Manpower.fmt(army.strength(a)),
-			Loc.s("Moral máxima %s · manutenção %s ducados/mês (todos os regimentos do país)",
-			"Max morale %s · maintenance %s ducats/month (all of the country's regiments)") % [
-			_n(army.max_morale(tag)), _n(army.maintenance(tag))])
-	var here: String = map.provinces[int(a["loc"])]["name"]
+			Loc.s("Moral %s de %s · manutenção %s ducados/mês (todos os regimentos do país)",
+			"Morale %s of %s · maintenance %s ducats/month (all of the country's regiments)") % [
+			_n(army.morale(a)), _n(army.max_morale(tag)), _n(army.maintenance(tag))])
+	var pid := int(a["loc"])
+	var att := army.attrition_at(pid, tag)
+	_txt(_card, "unitattrition", ("%.1f%%" % att).replace(".", Loc.dec), Loc.s("Atrito por mês: %s regimentos na província, limite de suprimento %s",
+			"Attrition per month: %s regiments in the province, supply limit %s") % [
+			str(army.armies_at(pid).reduce(func(s, b): return s + b["regs"].size(), 0)), _n(army.supply_limit(pid, tag))])
+	var here: String = map.provinces[pid]["name"]
+	var status := ""
+	if army.combat and army.combat.in_battle(id):
+		var b: Dictionary = army.combat.battles[pid]
+		status = Loc.s("Em batalha (dia %d, %s; dados %d × %d)", "In battle (day %d, %s; dice %d × %d)") % [int(b["day"]),
+				Loc.s("fogo", "fire") if b["phase"] == "fire" else Loc.s("choque", "shock"), int(b["rolls"][0]), int(b["rolls"][1])]
+	elif a.get("retreat", false):
+		status = Loc.s("Em retirada", "Retreating")
+	elif army.siege and army.siege.sieges.has(pid) and army.siege.sieges[pid]["tag"] == tag:
+		var s: Dictionary = army.siege.sieges[pid]
+		status = Loc.s("Cercando: forte %d, situação +%d, %d dias (último dado %d; precisa de 20)",
+				"Sieging: fort %d, status +%d, %d days (last roll %d; needs 20)") % [int(s["level"]), int(s["status"]),
+				int(s["days"]), int(s["last_roll"])]
+	here += (" — " + status) if status != "" else ""
 	var dest := _find(_card, "unit_destination")
 	if a["path"].is_empty():
-		_txt(_card, "unitlocation", here, here)
+		_txt(_card, "unitlocation", map.provinces[pid]["name"], here)
 		if dest:
 			dest.hide()
 	else:
 		var to: String = map.provinces[int(a["path"][a["path"].size() - 1])]["name"]
-		_txt(_card, "unitlocation", here, Loc.s("Indo para %s: %d dias", "Moving to %s: %d days") % [to, army.eta(a)])
+		_txt(_card, "unitlocation", map.provinces[pid]["name"], here + "\n" + Loc.s("Indo para %s: %d dias", "Moving to %s: %d days") % [to, army.eta(a)])
 		if dest:
 			dest.show()
 			dest.tooltip_text = Loc.s("Indo para %s: %d dias", "Moving to %s: %d days") % [to, army.eta(a)]

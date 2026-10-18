@@ -20,6 +20,10 @@ var prestige := Prestige.new()
 var stability := Stability.new()
 var legitimacy := Legitimacy.new()
 var army := Army.new()
+var war := War.new()
+var combat := Combat.new()
+var siege := Siege.new()
+var war_ai := WarAI.new()
 var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
 var unit_panel: Eu4UnitPanel       # painel do exército selecionado (telas do EU4)
 var selected_army := -1
@@ -87,11 +91,29 @@ func _ready() -> void:
 	diplo.setup(map, clock, power, diplomacy, economy)
 	diplo.stability = stability
 	diplo.legitimacy = legitimacy
+	war.setup(map, clock, power, diplomacy)
+	army.war = war
+	war.army = army
+	diplomacy.war = war
+	diplo.war = war
 	army.setup(map, clock, power, economy, manpower, diplomacy)
 	economy.army = army
+	combat.setup(map, clock, power, army, war, prestige)
+	siege.setup(map, clock, army, war)
+	war_ai.setup(map, clock, power, army, war)
+	combat.battle_ended.connect(_on_battle_ended)
+	siege.captured.connect(_on_captured)
+	war.changed.connect(func():
+		if country_view:
+			country_view.refresh()
+		if map.map_mode == MapView.MapMode.DIPLOMACIA:
+			map.refresh_colors())
 	army_layer = ArmyLayer.new()
 	map.add_child(army_layer)
 	army_layer.setup(map, army)
+	army_layer.war = war
+	army_layer.combat = combat
+	army_layer.siege = siege
 
 	camera = Camera2D.new()
 	add_child(camera)
@@ -843,6 +865,32 @@ func _order_move() -> void:
 var _toast_label: Label
 
 
+## Aviso das batalhas em que o jogador ou um aliado dele lutou.
+func _on_battle_ended(info: Dictionary) -> void:
+	if player_tag == "" or not (player_tag in info["tags"] or info["winner"] in diplomacy.allies(player_tag) \
+			or info["loser"] in diplomacy.allies(player_tag)):
+		return
+	var won: bool = info["winner"] == player_tag or (info["loser"] != player_tag and war.hostile(player_tag, info["loser"]))
+	var ours := 0 if (info["tags"][0] == player_tag or not war.hostile(player_tag, info["tags"][0])) else 1
+	_toast(Loc.s("%s em %s (%d dias): perdemos %d, o inimigo %d%s", "%s at %s (%d days): we lost %d, the enemy %d%s") % [
+			Loc.s("Vitória", "Victory") if won else Loc.s("Derrota", "Defeat"), info["name"], int(info["days"]),
+			roundi(info["losses"][ours]), roundi(info["losses"][1 - ours]),
+			Loc.s(" — exército aniquilado", " — army annihilated") if info["overrun"] else ""])
+	_refresh_unit_panel()
+
+
+func _on_captured(pid: int, by: String, from: String) -> void:
+	if player_tag == "" or not (by == player_tag or from == player_tag or map.provinces[pid]["owner"] == player_tag):
+		return
+	_toast(Loc.s("%s caiu para %s", "%s fell to %s") % [map.provinces[pid]["name"], map.countries.get(by, {}).get("name", by)])
+	_refresh_unit_panel()
+
+
+func _refresh_unit_panel() -> void:
+	if unit_panel and unit_panel.visible:
+		unit_panel.refresh()
+
+
 ## Aviso curto no meio da tela (some depois de 3 s).
 func _toast(text: String) -> void:
 	if _toast_label == null:
@@ -852,12 +900,13 @@ func _toast(text: String) -> void:
 		_toast_label.add_theme_font_size_override("font_size", 20)
 		_toast_label.add_theme_color_override("font_outline_color", Color.BLACK)
 		_toast_label.add_theme_constant_override("outline_size", 6)
-		_toast_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+		_toast_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		_toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		ui.add_child(_toast_label)
 	var vp := get_viewport().get_visible_rect().size
-	_toast_label.size = Vector2(vp.x * 0.6, 60)
-	_toast_label.position = Vector2(vp.x * 0.2, vp.y * 0.18)
+	_toast_label.position = Vector2(vp.x * 0.25, vp.y * 0.2)
+	_toast_label.size = Vector2(vp.x * 0.5, 60)
+	_toast_label.custom_minimum_size = Vector2(vp.x * 0.5, 0)
 	_toast_label.text = text
 	_toast_label.show()
 	get_tree().create_timer(3.0).timeout.connect(func():

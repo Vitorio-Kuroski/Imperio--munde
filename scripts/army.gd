@@ -21,7 +21,14 @@ extends RefCounted
 ##    estreitos) só por províncias que o país pode entrar (próprias, sem dono, de aliados, súditos e
 ##    suseranos); cada passo leva distância ÷ (INFANTRY_SPEED × 5 px/dia × (1 + movement_speed))
 ##    × custo de movimento do terreno de destino (≈ 8 dias numa província plana).
-##  - Ainda não há combate, cercos, atrito, generais nem IA que mova exércitos.
+##  - Guerra (`war`): pode entrar nas terras dos inimigos; batalhas em `Combat`, cercos em `Siege`.
+##    Quem perde recua (`retreat`) para a província amiga mais perto, sem poder lutar até chegar.
+##  - Moral de cada regimento (`morale`): recupera MORALE_RECOVERY_SPEED (15%) da máxima por mês
+##    (+5% em território controlado pelo país) fora de batalha.
+##  - Atrito por mês: com mais regimentos na província que o limite de suprimento (suprimento do
+##    terreno, ou SUPPLYLIMIT_BASE_MULTIPLIER = 6, × (1 + 0,02 por desenvolvimento) + supply_limit das
+##    tecnologias), perde-se (regimentos ÷ limite)% dos homens, até 5%; cercar soma SIEGE_ATTRITION (1%).
+##  - Ainda sem generais; a IA de guerra fica em `WarAI`.
 
 signal changed(tag: String)
 signal moved                      # algum exército mudou de lugar (o mapa redesenha os marcadores)
@@ -44,6 +51,10 @@ var _count := {}                  # tag -> exércitos já criados (para o nome)
 var _rules := {}
 var _terrain := {}                # id do terreno -> custo de movimento
 var _astar := AStar2D.new()
+var war: War                      # main.gd define (guerras: entrar em terra inimiga)
+var combat: Combat                # Combat.setup define
+var siege: Siege                  # Siege.setup define
+var _day := 0                     # dias desde o início (ordem de chegada nas províncias)
 var _fl_version := -1
 var _fl := {}                     # tag -> limite de força (cache até um dono mudar)
 var _stats := {}                  # tag -> [regimentos, Σ custo base] (refeito quando `_dirty`)
@@ -199,7 +210,7 @@ func count(a: Dictionary, type: String) -> int:
 func _new_army(tag: String, pid: int) -> Dictionary:
 	_count[tag] = int(_count.get(tag, 0)) + 1
 	var a := {"id": _next_id, "tag": tag, "name": army_name(int(_count[tag])), "loc": pid, "regs": [],
-			"path": [], "days": 0, "need": 0}
+			"path": [], "days": 0, "need": 0, "since": _day, "retreat": false}
 	armies[_next_id] = a
 	_next_id += 1
 	return a
@@ -216,7 +227,11 @@ static func army_name(n: int) -> String:
 
 func _reg(tag: String, type: String, st := 1.0) -> Dictionary:
 	var u: Dictionary = units(tag).get(type, {})
-	return {"type": type, "unit": str(u.get("id", "")), "str": st}
+	return {"type": type, "unit": str(u.get("id", "")), "str": st, "morale": max_morale(tag)}
+
+
+func mark_dirty() -> void:
+	_dirty = true
 
 
 func _starting_armies() -> void:
@@ -236,6 +251,10 @@ func _starting_armies() -> void:
 func why_not(tag: String, pid: int, type: String) -> String:
 	if pid < 0 or pid >= map.provinces.size() or map.provinces[pid]["owner"] != tag:
 		return Loc.s("Só nas suas províncias", "Only in your own provinces")
+	if war and war.controller_of(pid) != tag:
+		return Loc.s("A província está ocupada", "The province is occupied")
+	if war and _enemy_at(tag, pid):
+		return Loc.s("Há um exército inimigo na província", "There is an enemy army in the province")
 	if not units(tag).has(type):
 		return Loc.s("Nenhuma unidade desse tipo liberada", "No unit of this type unlocked")
 	if economy.money(tag) < reg_cost(tag, type):
@@ -243,6 +262,24 @@ func why_not(tag: String, pid: int, type: String) -> String:
 	if manpower and manpower.of(tag) < _rule("inf_regiment_manpower_cost", 1.0):
 		return Loc.s("Falta efetivo (1000 homens)", "Not enough manpower (1000 men)")
 	return ""
+
+
+func _enemy_at(tag: String, pid: int) -> bool:
+	for a in armies_at(pid):
+		if war.hostile(tag, a["tag"]):
+			return true
+	return false
+
+
+## Província própria, controlada e sem inimigos para a IA recrutar (a capital, se puder).
+func _safe_province(tag: String) -> int:
+	var cap := int(map.countries.get(tag, {}).get("capital", -1))
+	if cap >= 0 and why_not(tag, cap, "infantry") == "":
+		return cap
+	for p in map.provinces_of(tag):
+		if why_not(tag, int(p["id"]), "infantry") == "":
+			return int(p["id"])
+	return -1
 
 
 func recruit(tag: String, pid: int, type: String) -> bool:
@@ -350,6 +387,9 @@ func allowed_owners(tag: String) -> Dictionary:
 		return ok
 	for t in diplomacy.allies(tag):
 		ok[t] = true
+	if war:
+		for t in war.enemies_of(tag):
+			ok[t] = true
 	for s in diplomacy.subjects(tag):         # [súdito, tipo]
 		ok[s[0]] = true
 	var top := diplomacy.top_overlord(tag)
@@ -393,7 +433,7 @@ func hop_days(tag: String, from: int, to: int) -> int:
 
 func move(id: int, to: int) -> bool:
 	var a: Dictionary = armies.get(id, {})
-	if a.is_empty():
+	if a.is_empty() or a.get("retreat", false) or (combat and combat.in_battle(id)):
 		return false
 	if to == int(a["loc"]):
 		a["path"] = []
@@ -424,6 +464,7 @@ func eta(a: Dictionary) -> int:
 
 
 func _on_day() -> void:
+	_day += 1
 	var any := false
 	for a in armies.values():
 		if a["path"].is_empty():
@@ -433,6 +474,9 @@ func _on_day() -> void:
 		if int(a["days"]) >= int(a["need"]):
 			a["loc"] = int(a["path"].pop_front())
 			a["days"] = 0
+			a["since"] = _day
+			if a["path"].is_empty():
+				a["retreat"] = false
 			if not a["path"].is_empty():
 				if not can_enter(a["tag"], int(a["path"][0])):      # a fronteira fechou no caminho
 					a["path"] = []
@@ -452,8 +496,8 @@ func _on_day() -> void:
 		queue[pid].erase(q)
 		if queue[pid].is_empty():
 			queue.erase(pid)
-		if map.provinces[pid]["owner"] != q["tag"]:
-			continue
+		if map.provinces[pid]["owner"] != q["tag"] or (war and (war.controller_of(pid) != q["tag"] or _enemy_at(q["tag"], pid))):
+			continue                      # perdida, ocupada ou com inimigo: o regimento não sai
 		var target := {}
 		for a in armies_at(pid):
 			if a["tag"] == q["tag"] and a["path"].is_empty():
@@ -471,6 +515,9 @@ func _on_day() -> void:
 func _on_month() -> void:
 	_dirty = true                     # custos dependem de efeitos que mudam (ideias, tecnologia)
 	_ai_budget()
+	_attrition()
+	_recover_morale()
+	_ai_recruit()
 	if manpower == null:
 		return
 	for a in armies.values():
@@ -489,6 +536,143 @@ func _on_month() -> void:
 		_changed(power.player)
 
 
+# ------------------------------------------------------------------ retirada, paz, moral, atrito
+## Recuo depois de perder: vai para a província mais perto (busca em largura pelos vizinhos) que
+## o país pode entrar, controlada por ele ou por amigos e sem exército inimigo; sem saída, o
+## exército é destruído.
+func retreat(id: int) -> void:
+	var a: Dictionary = armies.get(id, {})
+	if a.is_empty():
+		return
+	var tag: String = a["tag"]
+	var start := int(a["loc"])
+	var ok := allowed_owners(tag)
+	var seen := {start: true}
+	var q := [start]
+	var target := -1
+	while not q.is_empty() and target < 0 and seen.size() < 400:
+		var cur: int = q.pop_front()
+		for n in _astar.get_point_connections(cur):
+			if seen.has(n):
+				continue
+			seen[n] = true
+			if not ok.has(map.provinces[n]["owner"]):
+				continue
+			q.append(n)
+			var ctrl: String = war.controller_of(n) if war else map.provinces[n]["owner"]
+			if war and war.hostile(tag, ctrl):
+				continue
+			var enemy := false
+			for b in armies_at(n):
+				if war and war.hostile(tag, b["tag"]):
+					enemy = true
+			if not enemy:
+				target = n
+				break
+	var path := find_path(tag, start, target) if target >= 0 else []
+	if path.is_empty():
+		disband(id)
+		return
+	a["path"] = path
+	a["days"] = 0
+	a["need"] = hop_days(tag, start, int(path[0]))
+	a["retreat"] = true
+	moved.emit()
+
+
+## Paz: exércitos que ficaram em terra onde não podem entrar voltam para a capital.
+func send_home_after_peace() -> void:
+	for a in armies.values():
+		var tag: String = a["tag"]
+		if can_enter(tag, int(a["loc"])):
+			if not a["path"].is_empty() and not can_enter(tag, int(a["path"][a["path"].size() - 1])):
+				a["path"] = []
+			continue
+		var cap := int(map.countries.get(tag, {}).get("capital", -1))
+		if cap >= 0 and map.provinces[cap]["owner"] == tag:
+			a["loc"] = cap
+			a["path"] = []
+			a["retreat"] = false
+	moved.emit()
+
+
+## Limite de suprimento (em regimentos) da província para o país.
+func supply_limit(pid: int, tag: String) -> float:
+	var p: Dictionary = map.provinces[pid]
+	var t: Dictionary = map.terrains.get(p.get("terrain", ""), {})
+	var base := float(t.get("supply_limit", _rule("supplylimit_base_multiplier", 6.0)))
+	var per_dev := float(_rules.get("statics", {}).get("development", {}).get("supply_limit_modifier", 0.02))
+	var tech := combat.tech_value(tag, "supply_limit") if combat else 0.0
+	return base * (1.0 + per_dev * float(p["development"])) + tech
+
+
+## Atrito (% por mês) dos exércitos na província `pid` (todos os regimentos ali contam).
+func attrition_at(pid: int, tag: String) -> float:
+	var n := 0
+	for a in armies_at(pid):
+		n += a["regs"].size()
+	var lim := supply_limit(pid, tag)
+	var att := 0.0
+	if n > lim and lim > 0.0:
+		att = minf(5.0, float(n) / lim)
+	if siege and siege.sieges.has(pid) and siege.sieges[pid]["tag"] == tag:
+		att += _rule("siege_attrition", 1.0)
+	return att
+
+
+func _attrition() -> void:
+	var done := {}
+	for a in armies.values():
+		var key := "%d|%s" % [int(a["loc"]), a["tag"]]
+		if not done.has(key):
+			done[key] = attrition_at(int(a["loc"]), a["tag"])
+		var att: float = done[key]
+		if att <= 0.0:
+			continue
+		for r in a["regs"]:
+			r["str"] = float(r["str"]) * (1.0 - att / 100.0)
+
+
+func _recover_morale() -> void:
+	for a in armies.values():
+		if combat and combat.in_battle(int(a["id"])):
+			continue
+		var tag: String = a["tag"]
+		var mx := max_morale(tag)
+		var ctrl: String = war.controller_of(int(a["loc"])) if war else map.provinces[int(a["loc"])]["owner"]
+		var rate := _rule("morale_recovery_speed", 0.15) + (_rule("morale_recovery_speed_own_territory", 0.05) if ctrl == tag else 0.0)
+		for r in a["regs"]:
+			r["morale"] = minf(mx, float(r.get("morale", 0.0)) + mx * rate)
+
+
+## Moral média dos regimentos do exército.
+func morale(a: Dictionary) -> float:
+	if a["regs"].is_empty():
+		return 0.0
+	var s := 0.0
+	for r in a["regs"]:
+		s += float(r.get("morale", 0.0))
+	return s / a["regs"].size()
+
+
+## IA em guerra: recruta infantaria na capital enquanto estiver abaixo do limite de força e o
+## tesouro aguentar (um regimento por mês).
+func _ai_recruit() -> void:
+	if war == null:
+		return
+	var done := {}
+	for w in war.wars.values():
+		for tag in w["attackers"] + w["defenders"]:
+			if tag == power.player or done.has(tag):
+				continue
+			done[tag] = true
+			if regiments(tag) >= force_limit(tag) or economy.money(tag) < reg_cost(tag, "infantry") * 3.0:
+				continue
+			var pid := _safe_province(tag)
+			if pid >= 0:
+				recruit(tag, pid, "infantry")
+
+
 ## IA: em paz a barra de manutenção fica no que a renda paga (como a IA do EU4, que baixa a
 ## manutenção fora da guerra), entre o mínimo e 100%.
 func _ai_budget() -> void:
@@ -500,6 +684,9 @@ func _ai_budget() -> void:
 		done[tag] = true
 		var full := maintenance(tag, true)
 		if full <= 0.0:
+			continue
+		if war and war.at_war(tag):
+			budget[tag] = 1.0             # em guerra, manutenção cheia
 			continue
 		var exp: Dictionary = economy.expenses(tag)
 		var other := float(exp["total"]) - float(exp.get("army", 0.0))

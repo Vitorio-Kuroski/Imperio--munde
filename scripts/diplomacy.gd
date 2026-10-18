@@ -25,6 +25,7 @@ var _guarantors := {}            # garantido -> [garantidores]
 var wars: Array = []             # guerras ativas e dos últimos 10 anos (name, start, end, attackers, defenders, battles)
 var _wars_of := {}               # tag -> [guerras]
 var _battles_at := {}            # província -> [batalhas]
+var war: War                     # main.gd define (guerras durante o jogo)
 
 const CB_NAMES := {"cb_conquest": "conquista", "cb_border_war": "guerra de fronteira", "cb_core": "reconquista",
 		"cb_claim_throne": "reivindicação do trono", "cb_independence_war": "independência", "cb_insult": "insulto",
@@ -210,6 +211,8 @@ func relation(focus: String, other: String) -> String:
 		return "guarantee"
 	if overlord(focus).size() > 0 and top_overlord(other) == top_overlord(focus):
 		return "same_bloc"          # outro súdito do mesmo suserano
+	if war and war.hostile(focus, other):
+		return "war"
 	var e = enemies(focus, other)
 	if e != null:
 		return "war" if e else "recent_enemy"

@@ -20,7 +20,8 @@ extends RefCounted
 
 signal changed(tag: String)
 
-const ACTIONS := ["improve", "alliance", "royal_marriage", "guarantee", "break_alliance", "break_marriage", "insult"]
+const ACTIONS := ["improve", "alliance", "royal_marriage", "guarantee", "break_alliance", "break_marriage", "insult",
+		"declare_war", "white_peace"]
 const IMPROVE_BASE := 3.0
 
 var map: MapView
@@ -30,6 +31,7 @@ var diplomacy: Diplomacy
 var economy: Economy
 var stability: Stability           # main.gd define (romper casamento custa estabilidade)
 var legitimacy: Legitimacy         # main.gd define (casar com quem tem menos prestígio/legitimidade custa)
+var war: War                       # main.gd define (declarar guerra, paz branca)
 var mods := {}                     # opinion_modifiers do EU4
 var timed := {}                    # "A>B" -> {modificador: [valor, meses restantes ou -1]} (opinião de A sobre B)
 var improving := {}                # país -> [alvos com diplomata melhorando relações]
@@ -178,6 +180,12 @@ func acceptance(action: String, actor: String, target: String) -> Array:
 			var n := diplomacy.marriages(target).size()
 			if n >= 2:
 				out.append([Loc.s("Já tem %d casamentos", "Already has %d marriages") % n, -10 * (n - 1)])
+		"white_peace":
+			out.clear()
+			var w: Dictionary = war.war_between(actor, target) if war else {}
+			if not w.is_empty():
+				out.append([Loc.s("Aceita se não estiver ganhando", "Accepts unless winning"), 10])
+				out.append([Loc.s("Placar da guerra para eles", "Their war score"), -roundi(war.score_for(w, target))])
 	return out
 
 
@@ -230,6 +238,11 @@ func why_not(action: String, actor: String, target: String) -> String:
 		"insult":
 			if timed.get(target + ">" + actor, {}).has("insulted"):
 				return Loc.s("Já foi insultado", "Already insulted")
+		"declare_war":
+			return war.why_not_declare(actor, target) if war else "?"
+		"white_peace":
+			if war == null or war.war_between(actor, target).is_empty():
+				return Loc.s("Não estão em guerra", "Not at war")
 	return ""
 
 
@@ -274,6 +287,17 @@ func act(action: String, actor: String, target: String) -> String:
 		"insult":
 			_add_timed(target, actor, "insulted")
 			msg = Loc.s("%s foi insultado", "%s was insulted") % name
+		"declare_war":
+			var w := war.declare(actor, target)
+			msg = Loc.s("Guerra declarada a %s (%d contra %d países)", "War declared on %s (%d against %d countries)") % [
+					name, w.get("attackers", []).size(), w.get("defenders", []).size()]
+		"white_peace":
+			var w := war.war_between(actor, target)
+			if acceptance_score("white_peace", actor, target) > 0:
+				war.white_peace(int(w["id"]))
+				msg = Loc.s("%s aceitou a paz branca", "%s accepted a white peace") % name
+			else:
+				msg = Loc.s("%s recusou a paz", "%s refused peace") % name
 	_changed(actor)
 	return msg
 

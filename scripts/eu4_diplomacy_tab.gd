@@ -36,7 +36,9 @@ const ACTIONS := {"improve": ["IMPROVERELATIONTITLE", "Melhorar relações", "GF
 		"guarantee": ["", "Garantir independência", "GFX_diplomacy_action_influence"],
 		"break_alliance": ["BREAKALLIANCETITLE", "Romper aliança", "GFX_diplomacy_action_alliance"],
 		"break_marriage": ["", "Romper casamento real", "GFX_diplomacy_action_dynasty"],
-		"insult": ["INSULTTITLE", "Enviar um insulto", "GFX_diplomacy_action_relation"]}
+		"insult": ["INSULTTITLE", "Enviar um insulto", "GFX_diplomacy_action_relation"],
+		"declare_war": ["DECLAREWAR", "Declarar guerra", "GFX_diplomacy_action_declarewar"],
+		"white_peace": ["", "Paz branca", "GFX_diplomacy_action_requestpeace"]}
 const GOOD := Color(0.55, 0.9, 0.45)
 const BAD := Color(1.0, 0.42, 0.35)
 
@@ -194,6 +196,8 @@ func _fill_relations(tag: String) -> void:
 	if d == null or list == null:
 		return
 	var rows := []          # [ícone, texto, países]
+	if view.diplo and view.diplo.war:
+		rows.append(["GFX_diplomacy_war", Loc.s("Em guerra com", "At war with"), view.diplo.war.enemies_of(tag)])
 	rows.append(["GFX_diplomacy_alliances", Loc.t("LEDGER_ALLIES", "Aliados"), d.allies(tag)])
 	rows.append(["GFX_diplomacy_royalmarriage", Loc.t("royal_marriage", "Casamentos reais"), d.marriages(tag)])
 	var subs := []
@@ -251,6 +255,11 @@ func _fill_actions(tag: String) -> void:
 			continue
 		if a == "royal_marriage" and tag in view.diplomacy.marriages(player):
 			continue
+		var at_war: bool = dip.war != null and dip.war.hostile(player, tag)
+		if (a == "declare_war" and at_war) or (a == "white_peace" and not at_war):
+			continue
+		if at_war and a in ["improve", "alliance", "royal_marriage", "guarantee", "insult"]:
+			continue
 		ids.append(a)
 	var rows := view.gui.fill_list(list, "diploactionentry", ids.size())
 	for i in rows.size():
@@ -258,7 +267,7 @@ func _fill_actions(tag: String) -> void:
 		var row: Control = rows[i]
 		var info: Array = ACTIONS[a]
 		var name := Loc.t(info[0], info[1]) if info[0] != "" else Loc.s(info[1], {"guarantee": "Guarantee Independence",
-				"break_marriage": "Break Royal Marriage"}.get(a, info[1]))
+				"break_marriage": "Break Royal Marriage", "white_peace": "White Peace"}.get(a, info[1]))
 		if a == "improve" and dip.is_improving(player, tag):
 			name = Loc.t("RECALL", "Chamar de volta") + " — " + Loc.t("MACRO_IMPROVE_RELATIONS", "Melhorar relações")
 		var btn := row.find_child("button_diploaction", true, false) as BaseButton
@@ -278,7 +287,7 @@ func _fill_actions(tag: String) -> void:
 		var why := dip.why_not(a, player, tag)
 		var tip := name
 		var acc := row.find_child("ai_accept", true, false) as Eu4Gui.Icon
-		if a in ["alliance", "royal_marriage"]:
+		if a in ["alliance", "royal_marriage", "white_peace"]:
 			var score := dip.acceptance_score(a, player, tag)
 			var lines := []
 			for x in dip.acceptance(a, player, tag):

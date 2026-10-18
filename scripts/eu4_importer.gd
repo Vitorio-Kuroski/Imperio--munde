@@ -1008,7 +1008,12 @@ const TRADE_DEFINES := ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRAD
 		"INFANTRY_COST", "CAVALRY_COST", "ARTILLERY_COST", "INFANTRY_TIME", "CAVALRY_TIME", "ARTILLERY_TIME",
 		"INFANTRY_SPEED", "LAND_MAINTENANCE_FACTOR", "LAND_TECH_MAINTENANCE_IMPACT",
 		"LAND_FORCELIMIT_EXTRA_COST_FACTOR", "MONTHLY_REINFORCE", "STARTING_ARMY_SIZE",
-		"INF_REGIMENT_MANPOWER_COST", "MIN_ARMY_MAINTENANCE"]
+		"INF_REGIMENT_MANPOWER_COST", "MIN_ARMY_MAINTENANCE",
+		"BASE_COMBAT_WIDTH", "MAX_COMBAT_WIDTH", "DAYS_PER_PHASE", "COMBAT_DICE_SIDE", "WAR_LENGTH_DAMAGE_MODIFIER",
+		"BATTLE_DAILY_MORALE_DAMAGE", "OVERRUN_FACTOR", "PRESTIGE_FROM_LAND", "MORALE_RECOVERY_SPEED",
+		"MORALE_RECOVERY_SPEED_OWN_TERRITORY", "GARRISON_SIZE", "SIEGE_FORCE_NEEDED_MULTIPLIER", "DAYS_PER_SIEGE_PHASE",
+		"SIEGE_WIN", "SIEGE_MEMORY", "SIEGE_ATTRITION", "SUPPLYLIMIT_BASE_MULTIPLIER", "WARSCORE_MAX_FROM_BATTLES",
+		"SIEGE_BONUS_SUPPLIES_SHORTAGE", "SIEGE_BONUS_FOOD_SHORTAGE", "SIEGE_BONUS_WATER_SHORTAGE", "SIEGE_BONUS_DEFENDERS_DESERT"]
 const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_power"],
 		["development", "local_missionary_strength", "dev_missionary_strength"],
 		["coastal", "province_trade_power_modifier", "coastal_trade_power"],
@@ -1017,7 +1022,7 @@ const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_
 ## Blocos inteiros de modificadores estáticos guardados em trade_rules["statics"] (efeitos numéricos).
 const STATIC_BLOCKS := ["prestige", "emperor", "stability", "positive_stability", "negative_stability",
 		"legitimacy", "num_of_marriages", "republican_tradition",
-		"inverse_republican_tradition", "devotion", "development"]
+		"inverse_republican_tradition", "devotion", "development", "capital_city"]
 
 
 ## [centros de comércio, regras de comércio] (mesma saída do import_eu4.py).
@@ -1427,7 +1432,7 @@ const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX
 		"GFX_diplomacy_amvassal", "GFX_diplomacy_leadunions", "GFX_diplomacy_inunion",
 		"GFX_diplomacy_guaranteed", "GFX_diplomacy_guaranting", "GFX_diplomacy_we_increase_relation",
 		"GFX_diplomacy_they_increase_relation", "GFX_diplomacy_war", "GFX_diplomacy_leadmarch",
-		"GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance",
+		"GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance", "GFX_diplomacy_action_requestpeace",
 		"GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence"]
 const SPRITE_KINDS := ["spritetype", "frameanimatedspritetype", "textspritetype", "corneredtilespritetype",
 		"maskedshieldtype", "progressbartype"]

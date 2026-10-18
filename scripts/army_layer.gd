@@ -4,6 +4,9 @@ extends Node2D
 ## EU4: caixa com a bandeira do país e o tamanho ("8k"), embaixo do centro da província; vários na
 ## mesma província ficam empilhados. Exército em marcha aparece entre as duas províncias. O
 ## selecionado tem borda dourada e o caminho com a seta e os dias até chegar.
+## Guerra: exércitos inimigos do jogador com borda vermelha, em retirada meio apagados; batalha
+## com espadas cruzadas sobre a província; cerco com a barra da fase embaixo do marcador; província
+## ocupada com a bandeira de quem a controla no centro.
 ## Tamanho constante na tela (redesenha quando o zoom muda).
 
 const BOX := Vector2(58, 18)       # na tela
@@ -12,6 +15,9 @@ const GAP := 3.0
 
 var map: MapView
 var army: Army
+var war: War
+var combat: Combat
+var siege: Siege
 var selected := -1
 var _zoom := -1.0
 var _font: Font
@@ -100,6 +106,17 @@ func _draw() -> void:
 			draw_string(_font, Vector2.ZERO, Loc.s("%d dias", "%d days") % army.eta(sel), HORIZONTAL_ALIGNMENT_LEFT,
 					-1, 14, Color.WHITE)
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# províncias ocupadas: bandeira de quem controla
+	if war:
+		for pid in war.controller:
+			var c := _center(int(pid))
+			var fr := Rect2(c + Vector2(-9, -20) * s, Vector2(18, 12) * s)
+			if cam and not view.intersects(fr):
+				continue
+			var fl := map.flag_texture(war.controller[pid])
+			draw_rect(fr.grow(1.0 * s), Color(0.9, 0.2, 0.15))
+			if fl:
+				draw_texture_rect(fl, fr, false)
 	for key in stacks:
 		var list: Array = stacks[key]
 		var base := _pos(list[0]) + Vector2(-box.x * 0.5, 4.0 * s)
@@ -110,13 +127,27 @@ func _draw() -> void:
 				continue
 			_rects[int(a["id"])] = r
 			_counter(a, r, s, int(a["id"]) == selected)
+		if key >= 0:
+			var bottom := base + Vector2(0, (box.y + GAP * s) * list.size())
+			if siege and siege.sieges.has(key):          # barra da fase do cerco
+				var bar := Rect2(bottom, Vector2(box.x, 4.0 * s))
+				draw_rect(bar, Color(0.1, 0.1, 0.1, 0.9))
+				draw_rect(Rect2(bar.position, Vector2(box.x * siege.phase_progress(key), bar.size.y)), Color(0.95, 0.75, 0.2))
+			if combat and combat.battles.has(key):        # espadas cruzadas
+				var c := base + Vector2(box.x * 0.5, -10.0 * s)
+				for d in [Vector2(-1, -1), Vector2(1, -1)]:
+					draw_line(c - d * 7 * s, c + d * 7 * s, Color(0.05, 0.05, 0.05), 4.0 * s)
+					draw_line(c - d * 7 * s, c + d * 7 * s, Color(0.95, 0.85, 0.6), 2.0 * s)
 
 
 func _counter(a: Dictionary, r: Rect2, s: float, sel: bool) -> void:
 	var mine: bool = army.power != null and a["tag"] == army.power.player
-	draw_rect(r, Color(0.08, 0.08, 0.1, 0.88))
-	draw_rect(r, Color(1.0, 0.82, 0.3) if sel else (Color(0.55, 0.85, 0.5) if mine else Color(0.55, 0.55, 0.6)),
-			false, (2.0 if sel else 1.0) * s)
+	var enemy: bool = war != null and army.power != null and war.hostile(army.power.player, a["tag"])
+	var fade := 0.55 if a.get("retreat", false) else 1.0
+	draw_rect(r, Color(0.08, 0.08, 0.1, 0.88 * fade))
+	var border := Color(1.0, 0.82, 0.3) if sel else (Color(0.55, 0.85, 0.5) if mine else \
+			(Color(0.95, 0.25, 0.2) if enemy else Color(0.55, 0.55, 0.6)))
+	draw_rect(r, border, false, (2.0 if sel or enemy else 1.0) * s)
 	var fl := map.flag_texture(a["tag"])
 	var fr := Rect2(r.position + Vector2(1, 1) * s, FLAG * s)
 	if fl:
