@@ -28,6 +28,7 @@ var clock: GameClock
 var power: MonarchPower
 var diplomacy: Diplomacy
 var economy: Economy
+var stability: Stability           # main.gd define (romper casamento custa estabilidade)
 var mods := {}                     # opinion_modifiers do EU4
 var timed := {}                    # "A>B" -> {modificador: [valor, meses restantes ou -1]} (opinião de A sobre B)
 var improving := {}                # país -> [alvos com diplomata melhorando relações]
@@ -264,6 +265,8 @@ func act(action: String, actor: String, target: String) -> String:
 		"break_marriage":
 			diplomacy.remove_relation("royal_marriage", actor, target)
 			_add_timed(target, actor, "break_marriage")
+			if stability:
+				stability.on_break_marriage(actor)
 			msg = Loc.s("Casamento com %s rompido", "Marriage with %s broken") % name
 		"insult":
 			_add_timed(target, actor, "insulted")

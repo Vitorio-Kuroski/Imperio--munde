@@ -35,6 +35,7 @@ var economy: Economy
 var religion: Religion             # opcional (missionários na barra)
 var manpower: Manpower             # opcional (efetivo na barra)
 var prestige: Prestige             # opcional (prestígio na barra)
+var stability: Stability           # opcional (estabilidade na barra)
 var player := ""
 var _flag_tag := ""
 var _dev_version := -1
@@ -95,6 +96,7 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock, pw: MonarchPower, eco: Economy) 
 	_tip("icon_missionary", Loc.t("HINT_MISSIONARY_TITLE", "Missionários"))
 	_tip("icon_manpower", Loc.t("HINT_MANPOWER_TITLE", "Efetivo"))
 	_tip("icon_prestige", Loc.t("HINT_PRESTIGE_TITLE", "Prestígio"))
+	_tip("icon_stability", Loc.t("HINT_STABILITY_TITLE", "Estabilidade"))
 	_tip("icon_merchant", Loc.t("HINT_MERCHANT_TITLE", "Mercadores"))
 	_tip("icon_settler", Loc.t("HINT_COLONIST_TITLE", "Colonos"))
 	_tip("icon_diplomat", Loc.t("HINT_DIPLOMAT_TITLE", "Diplomatas"))
@@ -173,6 +175,9 @@ func refresh() -> void:
 		_text("text_manpower", Manpower.fmt(manpower.of(player)))
 		_tip("text_manpower", Loc.s("Efetivo: %s de %s (+%s por mês)", "Manpower: %s of %s (+%s per month)") % [
 				Manpower.fmt(manpower.of(player)), Manpower.fmt(manpower.max_of(player)), Manpower.fmt(manpower.monthly(player))])
+	if stability:         # estabilidade (dica: custo de aumentar e efeitos)
+		_text("text_stability", Stability.fmt(stability.of(player)))
+		_tip("text_stability", stability.tooltip(player))
 	if prestige:          # prestígio (dica: mudança por ano e efeitos)
 		_text("text_prestige", str(roundi(prestige.of(player))))
 		_tip("text_prestige", prestige.tooltip(player))

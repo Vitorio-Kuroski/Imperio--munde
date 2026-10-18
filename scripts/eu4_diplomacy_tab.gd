@@ -9,14 +9,14 @@ extends RefCounted
 ##  - à direita, num país que não é o do jogador, as ações diplomáticas (DiploActions) com o ícone
 ##    e a seta de "aceitaria/recusaria" (dica com os motivos); no país do jogador, a opinião dos
 ##    outros países sobre ele.
-## O que o jogo ainda não tem (rivais, estabilidade, espiões, confiança, favores,
+## O que o jogo ainda não tem (rivais, espiões, confiança, favores,
 ## exércitos) fica escondido.
 
 const HIDE := ["secondary_religion_icon", "religious_school_icon", "countryshield_glow", "num_relations_bg",
 		"num_relations_value", "num_relations_icon", "reputation_bg", "reputation_icon", "reputation_value",
 		"personality_icons_strip", "policies_icon", "policies_value", "revanchism_icon", "revanchism_value",
 		"spy_icon", "spy_value", "land_forcelimit_value", "land_forcelimit_icon", "naval_forcelimit_value",
-		"naval_forcelimit_icon", "stability_icon", "stability_value",
+		"naval_forcelimit_icon",
 		"techgroup_icon", "election_info", "label_enemies", "enemies_box",
 		"label_rivals", "rivals_box", "label_rivals_not_possible", "sort_search", "sort_search_edit", "sort_name",
 		"sort_opinion", "sort_opinion_1", "sort_opinion_2", "sort_opinion_3", "sort_opinion_4", "sort_opinion_5",
@@ -131,6 +131,8 @@ func fill(tag: String) -> void:
 		var ml := root.find_child("manpower_value", true, false) as Control
 		if ml:
 			ml.z_index = 1        # "116k" passa por cima da borda do ícone (que vem depois no .gui)
+	if view.stability:
+		view._txt(root, "stability_value", Stability.fmt(view.stability.of(tag)), view.stability.tooltip(tag))
 	if view.prestige:
 		view._txt(root, "prestige_value", str(roundi(view.prestige.of(tag))), view.prestige.tooltip(tag))
 	if view.economy:

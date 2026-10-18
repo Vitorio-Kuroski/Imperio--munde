@@ -375,7 +375,8 @@ def eu4_ideas(root, countries, culture_group_of, religion_group_of, loc=None):
 TRADE_DEFINES = ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCHANT_PRESENT", "TRADE_ADDED_VALUE_MODIFER",
                  "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
                  "MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST",
-                 "BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER"]
+                 "BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER",
+                 "PS_BOOST_STABILITY", "BREAK_MARRIAGE_STABILITY_PENALTY"]
 # modificadores estaticos usados no comercio: (bloco, efeito, chave no map.json)
 TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power"),
                 ("development", "local_missionary_strength", "dev_missionary_strength"),
@@ -384,7 +385,7 @@ TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power")
                 ("base_values", "merchants", "base_merchants"),
                 ("core", "local_manpower_modifier", "core_manpower")]
 # blocos inteiros de modificadores estaticos guardados em trade_rules["statics"] (efeitos numericos)
-STATIC_BLOCKS = ["prestige", "emperor"]
+STATIC_BLOCKS = ["prestige", "emperor", "stability", "positive_stability", "negative_stability"]
 
 
 def eu4_trade(root, loc):
@@ -803,7 +804,7 @@ UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "
 GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
              "countrygovernmentview", "countrytechnologyview", "countryideasview",
              "countryeconomyview", "countryreligionview",
-             "macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview"]   # o _override vem antes: as janelas dele valem
+             "macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview"]   # o _override vem antes: as janelas dele valem
 GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",

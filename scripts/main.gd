@@ -17,6 +17,7 @@ var religion := Religion.new()
 var construction := Construction.new()
 var manpower := Manpower.new()
 var prestige := Prestige.new()
+var stability := Stability.new()
 var diplomacy := Diplomacy.new()
 var diplo := DiploActions.new()
 var camera: Camera2D
@@ -69,12 +70,14 @@ func _ready() -> void:
 	construction.setup(map, clock, power, economy)
 	manpower.setup(map, clock, power)
 	prestige.setup(map, clock, power, diplomacy)
+	stability.setup(map, clock, power)
 	economy.religion = religion
 	trade.recompute()
 	economy._recount()
 	power.economy = economy
 	map.diplo_view = diplomacy
 	diplo.setup(map, clock, power, diplomacy, economy)
+	diplo.stability = stability
 
 	camera = Camera2D.new()
 	add_child(camera)
@@ -141,6 +144,7 @@ func _setup_eu4_hud() -> void:
 	eu4_hud.religion = religion
 	eu4_hud.manpower = manpower
 	eu4_hud.prestige = prestige
+	eu4_hud.stability = stability
 	ui.add_child(eu4_hud)
 	ui.move_child(eu4_hud, 0)            # atrás dos painéis e janelas
 	if not eu4_hud.setup(g, map, clock, power, economy):
@@ -174,6 +178,7 @@ func _setup_eu4_hud() -> void:
 		country_view.diplo = diplo
 		country_view.manpower = manpower
 		country_view.prestige = prestige
+		country_view.stability = stability
 		diplo.changed.connect(func(_t): country_view.refresh())
 		country_view.fmt_mods = ideas_window.fmt_mods
 		country_view.techs_requested.connect(func(t: String):
@@ -357,6 +362,7 @@ func _build_ui() -> void:
 	advisors_window.economy = economy
 	advisors_window.fmt = ideas_window.fmt_mods
 	prestige.fmt_mods = ideas_window.fmt_mods
+	stability.fmt_mods = ideas_window.fmt_mods
 	ui.add_child(advisors_window)
 	country_panel.economy = economy
 	country_panel.advisors = advisors
