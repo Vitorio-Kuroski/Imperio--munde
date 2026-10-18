@@ -265,6 +265,29 @@ func build(name: String) -> Control:
 	return _element("windowtype", w)
 
 
+## Monta um elemento de qualquer tipo (botão, ícone, janela...) pelo nome, procurando em todos os
+## .gui carregados, ou só em `file` (nome do .gui sem extensão) — nomes como "shield" se repetem.
+func build_element(name: String, file := "") -> Control:
+	for f in files:
+		if file != "" and f != file:
+			continue
+		var e := _find_any(files[f], name)
+		if not e.is_empty():
+			return _element((e[0] as String).to_lower(), e[1])
+	return null
+
+
+func _find_any(items: Array, name: String) -> Array:
+	for kv in items:
+		if kv[1] is Array:
+			if _val(kv[1], "name") == name and (kv[0] as String).to_lower().ends_with("type"):
+				return kv
+			var r := _find_any(kv[1], name)
+			if not r.is_empty():
+				return r
+	return []
+
+
 ## Barra de rolagem vertical com os sprites do EU4 (setas, trilho e arrastador).
 func style_scrollbar(vs: VScrollBar) -> void:
 	var track := sprite_frame("GFX_scroll_track", 0)

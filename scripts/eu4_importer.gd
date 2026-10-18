@@ -93,7 +93,7 @@ func _walk(dir: String, depth: int) -> void:
 	for sub in d.get_directories():
 		var low: String = sub.to_lower()
 		# não desce em pastas grandes que não interessam
-		if low in ["sound", "music", "tutorial", "dlc", "launcher", "gui", "fonts", "shaders", "assets"]:
+		if low in ["sound", "music", "dlc", "launcher", "gui", "fonts", "shaders", "assets"]:
 			continue
 		if low == "gfx":             # do gfx/ só interessam as bandeiras e os ícones da interface
 			for s2 in DirAccess.get_directories_at(dir + "/" + sub):
@@ -1736,7 +1736,7 @@ const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", 
 		"countrygovernmentview", "countrytechnologyview", "countryideasview",
 		"countryeconomyview", "countryreligionview",
 		"macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
-		"unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview"]   # o _override vem antes: as janelas dele valem
+		"unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend"]   # o _override vem antes: as janelas dele valem
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",

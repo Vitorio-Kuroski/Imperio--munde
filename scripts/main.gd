@@ -26,6 +26,7 @@ var cbs := CasusBelli.new()
 var coalition := Coalition.new()
 var peace := Peace.new()
 var peace_view: Eu4PeaceView        # tela de paz do EU4
+var frontend: Eu4Frontend          # tela de escolha de país do EU4 (frontend.gui)
 var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
 var unit_panel: Eu4UnitPanel       # painel do exército selecionado (telas do EU4)
 var selected_army := -1
@@ -58,6 +59,7 @@ var tech_window: TechWindow
 var ideas_window: IdeasWindow
 var advisors_window: AdvisorsWindow
 var start_panel: CenterContainer
+var _start_outer: VBoxContainer
 var eu4_status: Label
 var eu4_buttons: Array[Button] = []
 var importer: Eu4Importer
@@ -170,7 +172,7 @@ var gui_design_height := EU4_GUI_HEIGHT
 func _apply_gui_scale() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	gui_scale = clampf(vp.y / gui_design_height, 0.5, 3.0)
-	for c in [eu4_hud, province_view, country_view, macro_builder, unit_panel, peace_view]:
+	for c in [eu4_hud, province_view, country_view, macro_builder, unit_panel, peace_view, frontend]:
 		if c:
 			c.set_anchors_preset(Control.PRESET_TOP_LEFT)
 			c.position = Vector2.ZERO
@@ -287,6 +289,7 @@ func _setup_eu4_hud() -> void:
 	else:
 		peace_view.queue_free()
 		peace_view = null
+	_setup_frontend(g)
 	unit_panel = Eu4UnitPanel.new()
 	ui.add_child(unit_panel)
 	ui.move_child(unit_panel, 4)
@@ -383,6 +386,7 @@ func _build_ui() -> void:
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 8)
 	box.add_child(outer)
+	_start_outer = outer
 	var title := Label.new()
 	title.text = "Imperium Mundi — escolha seu país"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -477,6 +481,48 @@ func _build_ui() -> void:
 
 # ------------------------------------------------------------------ mapa do EU4 (opcional)
 ## Botões da tela inicial para importar o mapa e os donos de 1444 dos arquivos do EU4 do jogador.
+## Altura da câmera (fração da máxima) na escolha de país: a região do marcador inteira.
+const FRONTEND_HEIGHT := 0.33
+
+
+## Tela de escolha de país do EU4 no lugar da lista simples (que continua em "Voltar", com a
+## importação do EU4).
+func _setup_frontend(g: Eu4Gui) -> void:
+	frontend = Eu4Frontend.new()
+	ui.add_child(frontend)
+	ui.move_child(frontend, 0)
+	frontend.siege = siege
+	if country_view:
+		frontend.gov_name = country_view._gov_name
+	frontend.focus.connect(func(pid: int, zoom: bool):
+		if pid < 0 or pid >= map.provinces.size():
+			return
+		if zoom:            # marcador: o mapa como no frontend do EU4 (a região inteira)
+			camera.focus(map.province_center(pid), FRONTEND_HEIGHT)
+		else:
+			camera.position = map.province_center(pid)
+			camera.clamp_to_map())
+	if not frontend.setup(g, map, power, diplomacy):
+		frontend.queue_free()
+		frontend = null
+		return
+	frontend.play.connect(_start_game)
+	frontend.back.connect(func():
+		frontend.hide()
+		start_panel.show())
+	start_panel.hide()
+	if eu4_hud:
+		eu4_hud.hide()
+	army_layer.hide()                  # sem exércitos na escolha de país (como no EU4)
+	var again := Button.new()
+	again.text = Loc.s("Voltar à escolha de país do EU4", "Back to the EU4 nation selection")
+	again.pressed.connect(func():
+		start_panel.hide()
+		frontend.show())
+	_start_outer.add_child(again)
+	_start_outer.move_child(again, 1)
+
+
 func _build_eu4_box(parent: VBoxContainer) -> void:
 	var using_eu4 := map.source.begins_with(Eu4Importer.OUT_DIR)
 	var box := VBoxContainer.new()
@@ -598,6 +644,11 @@ func _start_game(tag: String) -> void:
 	if unit_panel:
 		unit_panel.player = tag
 	start_panel.hide()
+	if frontend:
+		frontend.hide()
+	if eu4_hud:
+		eu4_hud.show()
+	army_layer.show()
 	var cap: int = int(map.countries[tag]["capital"])
 	camera.focus(map.province_center(cap), float(Eu4Data.define("NGui", "PROVINCE_FOCUS_ZOOM_HEIGHT", 0.25)))
 	map.select(cap)
@@ -980,6 +1031,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		match event.button_index:
 			MOUSE_BUTTON_LEFT:
+				if player_tag == "" and frontend and frontend.visible:
+					var fp := map.province_at_mouse()          # escolha de país: clicar no mapa
+					if fp >= 0 and map.provinces[fp]["owner"] != "":
+						frontend.select(map.provinces[fp]["owner"], false)
 				if player_tag != "":
 					var pid := map.province_at_mouse()
 					map.select(pid)
