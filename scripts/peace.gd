@@ -18,8 +18,10 @@ extends RefCounted
 ##    perde os exércitos; capital perdida passa para a maior província que sobrou), vassalagem,
 ##    ouro, prestígio (PO_DEMAND_PROVINCES_PRESTIGE 0,25 por desenvolvimento, PO_BECOME_VASSAL_PRESTIGE,
 ##    PO_CONCEDE_DEFEAT_PRESTIGE) e trégua de TRUCE_YEARS (5) + SCALED_TRUCE_YEARS (10) × custo ÷ 100.
-##  - A IA que está ganhando (placar ≥ 25, guerra com 6 meses ou mais) propõe paz ao jogador:
-##    províncias que ocupa e ouro até o placar dela (sinal `offered`).
+##  - A IA que está ganhando (placar ≥ 25, guerra com 6 meses ou mais) pede as províncias que ocupa e
+##    ouro até o placar: ao jogador é uma proposta (sinal `offered`), entre a IA a paz é assinada;
+##    guerra da IA empatada há 5 anos acaba em paz branca. A coalizão só aceita paz branca com placar
+##    ≤ 10 − PEACE_COALITION_FACTOR (30). Tomar províncias gera expansão agressiva (`Coalition`).
 
 signal offered(deal: Dictionary)        # proposta da IA para o jogador
 signal signed(deal: Dictionary)
@@ -33,6 +35,7 @@ var economy: Economy
 var army: Army
 var prestige: Prestige
 var cbs: CasusBelli
+var coalition: Coalition          # main.gd define (expansão agressiva ao assinar)
 var _defs := {}
 var _rng := RandomNumberGenerator.new()
 
@@ -101,6 +104,16 @@ func province_cost(w: Dictionary, pid: int, receiver: String) -> float:
 
 ## peace_cost_factor do objetivo de guerra se a província está nos allowed_provinces dele.
 func _goal_factor(w: Dictionary, pid: int, receiver: String) -> float:
+	return _goal_value(w, pid, receiver, "peace_cost_factor", false)
+
+
+## badboy_factor do objetivo de guerra (expansão agressiva): nas províncias dos allowed_provinces
+## dele, ou em todas se ele não limita as províncias.
+func badboy_factor(w: Dictionary, pid: int, receiver: String) -> float:
+	return _goal_value(w, pid, receiver, "badboy_factor", true)
+
+
+func _goal_value(w: Dictionary, pid: int, receiver: String, key: String, unrestricted: bool) -> float:
 	var gid: String = w.get("war_goal", "")
 	if gid == "" or cbs == null or not cbs.goals.has(gid):
 		return 1.0
@@ -109,12 +122,12 @@ func _goal_factor(w: Dictionary, pid: int, receiver: String) -> float:
 	var factor := 1.0
 	var allowed: Array = []
 	for it in block:
-		if it[0] == "peace_cost_factor" and str(it[1]).is_valid_float():
+		if it[0] == key and str(it[1]).is_valid_float():
 			factor = float(it[1])
 		elif it[0] == "allowed_provinces" and it[1] is Array:
 			allowed = it[1]
 	if allowed.is_empty():
-		return 1.0
+		return factor if unrestricted else 1.0
 	var root := leader(w, "attackers") if block_name == "attacker" else leader(w, "defenders")
 	var from := leader(w, "defenders") if block_name == "attacker" else leader(w, "attackers")
 	return factor if cbs.check_province(allowed, pid, root, from) == true else 1.0
@@ -190,8 +203,9 @@ func accepts(deal: Dictionary, asker: String) -> bool:
 		return false
 	var c := cost(deal)
 	var other: String = deal["giver"] if deal["receiver"] == asker else deal["receiver"]
-	if c <= 0.0:
-		return war.score_for(w, other) <= 10.0           # paz branca
+	if c <= 0.0:                                          # paz branca (a coalizão resiste mais)
+		var coal := _d("PEACE_COALITION_FACTOR", 30) if w.get("coalition", false) and other in w["attackers"] else 0.0
+		return war.score_for(w, other) <= 10.0 - coal
 	if deal["receiver"] == asker:                         # exigência
 		return c <= war.score_for(w, asker) + 0.001
 	return c + 0.001 >= war.score_for(w, other)          # oferta: o que recebem paga o placar deles
@@ -205,6 +219,8 @@ func sign(deal: Dictionary) -> void:
 	var rec: String = deal["receiver"]
 	var giv: String = deal["giver"]
 	var c := cost(deal)
+	if coalition:
+		coalition.apply_deal(deal)
 	var losers := {}
 	for pid in deal.get("provinces", []):
 		var p: Dictionary = map.provinces[int(pid)]
@@ -267,42 +283,65 @@ func _annexed(tag: String) -> void:
 			war.leave_war(int(w["id"]), [tag])
 
 
-# ------------------------------------------------------------------ IA propõe paz ao jogador
+# ------------------------------------------------------------------ IA faz a paz
+## Todo mês: o líder que está ganhando (placar ≥ 25, guerra com 6 meses ou mais, 25% de chance) pede
+## o que ocupa e ouro até o placar; ao jogador é uma proposta (sinal `offered`), entre países da IA a
+## paz é assinada. Guerra da IA empatada há 5 anos ou mais acaba em paz branca (10% por mês).
 func _on_month() -> void:
 	var p := power.player
-	if p == "":
-		return
+	var asked := false
 	for w in war.wars.values().duplicate():
-		var ps := side_of(w, p)
-		if ps == "":
+		if not war.wars.has(int(w["id"])):
 			continue
-		var os := "defenders" if ps == "attackers" else "attackers"
-		var ai := leader(w, os)
-		var me := leader(w, ps)
-		if ai == "" or me != p:
+		var a := leader(w, "attackers")
+		var d := leader(w, "defenders")
+		if a == "" or d == "":
 			continue
-		var s := war.score_for(w, ai)
-		if s < 25.0 or war.months_since_start(w) < 6 or _rng.randf() > 0.25:
+		var s := war.score(w)
+		var winner := a if s > 0.0 else d
+		var loser := d if s > 0.0 else a
+		var ws := absf(s)
+		var months := war.months_since_start(w)
+		if winner == p:
+			continue                                       # o jogador decide a própria paz
+		if ws < 25.0:
+			if loser != p and months >= 60 and _rng.randf() < 0.1:
+				war.white_peace(int(w["id"]))
 			continue
-		var deal := {"war": int(w["id"]), "receiver": ai, "giver": p, "provinces": [], "vassal": false, "gold": 0,
-				"concede": false}
-		var left := s
-		for pid in demandable(w, ai, p):
-			if not (war.controller.get(pid, "") in w[os]):
-				continue                                  # a IA pede só o que ocupa
-			var c := province_cost(w, pid, ai)
-			if c <= left:
-				deal["provinces"].append(pid)
-				left -= c
-		var steps := mini(int(_d("PEACE_COST_GOLD_MAX", 5)), int(left / _d("PEACE_COST_GOLD_STEP", 5)))
-		if steps > 0 and economy.money(p) > 0.0:
-			deal["gold"] = steps
-			left -= steps * _d("PEACE_COST_GOLD_STEP", 5)
-		if deal["provinces"].is_empty() and deal["gold"] == 0 and left >= _d("PEACE_COST_CONCEDE", 10):
-			deal["concede"] = true
-		if cost(deal) > 0.0:
+		if months < 6 or _rng.randf() > 0.25:
+			continue
+		if loser == p and asked:
+			continue                                       # uma proposta ao jogador por mês
+		var deal := ai_deal(w, winner, loser, ws)
+		if cost(deal) <= 0.0:
+			continue
+		if loser == p:
+			asked = true
 			offered.emit(deal)
-			return                                         # uma proposta por mês
+		else:
+			self.sign(deal)                                # (sem self. seria a função sign() do Godot)
+
+
+## Acordo da IA vencedora: províncias que o lado dela ocupa e ouro até o placar `score`.
+func ai_deal(w: Dictionary, winner: String, loser: String, score: float) -> Dictionary:
+	var ws := side_of(w, winner)
+	var deal := {"war": int(w["id"]), "receiver": winner, "giver": loser, "provinces": [], "vassal": false, "gold": 0,
+			"concede": false}
+	var left := score
+	for pid in demandable(w, winner, loser):
+		if not (war.controller.get(pid, "") in w[ws]):
+			continue                                      # a IA pede só o que ocupa
+		var c := province_cost(w, pid, winner)
+		if c <= left:
+			deal["provinces"].append(pid)
+			left -= c
+	var steps := mini(int(_d("PEACE_COST_GOLD_MAX", 5)), int(left / _d("PEACE_COST_GOLD_STEP", 5)))
+	if steps > 0 and economy.money(loser) > 0.0:
+		deal["gold"] = steps
+		left -= steps * _d("PEACE_COST_GOLD_STEP", 5)
+	if deal["provinces"].is_empty() and deal["gold"] == 0 and left >= _d("PEACE_COST_CONCEDE", 10):
+		deal["concede"] = true
+	return deal
 
 
 ## Texto curto do acordo (para a proposta da IA e o aviso).

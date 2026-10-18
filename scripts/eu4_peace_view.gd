@@ -7,6 +7,7 @@ extends Control
 ##  - Lista (peace_list de peace_entry): clicar põe/tira o termo; cada linha com a bandeira de quem
 ##    entrega, o custo em placar e o prestígio; ícone do objetivo de guerra nas províncias que ele
 ##    barateia.
+##  - Expansão agressiva (aggressiveexp_value: a maior que um país recebe; dica com os mais afetados).
 ##  - Ouro com +/− (inccash/deccash), placar da guerra, valor da proposta ÷ placar, prestígio, seta de
 ##    aceitaria/recusaria (terms_accepted/terms_declined), Enviar (send), Limpar (reset_button) e fechar.
 ## As regras e custos ficam em `Peace`.
@@ -17,7 +18,7 @@ const HIDE := ["give_up_cores", "peace_icon_revokecores", "peace_icon_revokecore
 		"peace_icon_returncores", "peace_icon_returncores_glow", "cancel_vassals", "peace_icon_cancelvassal",
 		"peace_icon_cancelvassal_glow", "release_nations", "peace_icon_releasenation", "peace_icon_releasenation_glow",
 		"annul_treaties", "peace_icon_annultreaty", "peace_icon_annultreaty_glow", "suggest_peace_button",
-		"surrender_button", "dip_icon", "dip_value", "aggressiveexp_icon", "aggressiveexp_value", "coalition_icon",
+		"surrender_button", "dip_icon", "dip_value", "coalition_icon",
 		"overex_icon", "overex_value", "adm_icon", "adm_value", "better_offer_icon", "sort_overex", "sort_dip_cost",
 		"belligerents_box", "affected_allies", "affected_enemies", "player_shield_AL", "opponent_shield_AL",
 		"peace_icon_cede_glow", "peace_icon_treaties_glow"]
@@ -207,6 +208,7 @@ func refresh() -> void:
 	_txt("offer_score", "%d%%" % roundi(c), Loc.s("Custo do acordo: %d%% (placar de quem recebe: %d%%)",
 			"Deal cost: %d%% (war score of the receiver: %d%%)") % [roundi(c), roundi(maxf(0.0, mine))])
 	_txt("prestige_value", ("%+.1f" % peace.prestige_gain(deal)).replace(".", Loc.dec))
+	_fill_ae()
 	_txt("cash", str(roundi(peace.gold_amount(deal["giver"], int(deal.get("gold", 0))))),
 			Loc.s("Ouro: %d empréstimo(s) do tamanho dos de quem paga (%d%% de placar cada)",
 			"Gold: %d loan(s) of the payer's loan size (%d%% war score each)") % [int(deal.get("gold", 0)),
@@ -221,6 +223,35 @@ func refresh() -> void:
 	var full := peace.is_full_peace(w, player, enemy)
 	_txt("desc", peace.describe(deal) + "\n" + (Loc.s("Acaba a guerra", "Ends the war") if full else \
 			Loc.s("Paz separada com %s", "Separate peace with %s") % map.countries[enemy]["name"]))
+
+
+## Expansão agressiva do acordo (para quem recebe): a base e, na dica, os países mais afetados.
+func _fill_ae() -> void:
+	var co := peace.coalition
+	for n in ["aggressiveexp_icon", "aggressiveexp_value"]:
+		var x := _find(n)
+		if x:
+			x.visible = co != null
+	if co == null:
+		return
+	var rec: String = deal["receiver"]
+	var got := co.deal_ae(deal)
+	var top := got.keys()
+	top.sort_custom(func(a, b): return got[a] > got[b])
+	var lines := [Loc.s("Expansão agressiva para %s (base %s)", "Aggressive expansion for %s (base %s)") % [
+			map.countries[rec]["name"], ("%.1f" % co.deal_base(deal)).replace(".", Loc.dec)]]
+	for t in top.slice(0, 10):
+		var total: float = co.ae(t, rec) + float(got[t])
+		lines.append("%s: +%s (%s)%s" % [map.countries[t]["name"], ("%.1f" % got[t]).replace(".", Loc.dec),
+				("%.0f" % total), Loc.s(" — pode entrar em coalizão", " — may join a coalition") \
+				if total >= co.threshold() and co.ae(t, rec) < co.threshold() else ""])
+	if top.size() > 10:
+		lines.append(Loc.s("e mais %d países", "and %d more countries") % (top.size() - 10))
+	var mx: float = got[top[0]] if not top.is_empty() else 0.0
+	_txt("aggressiveexp_value", ("%.1f" % mx).replace(".", Loc.dec), "\n".join(lines))
+	var ic := _find("aggressiveexp_icon")
+	if ic:
+		ic.tooltip_text = "\n".join(lines)
 
 
 func _fill_list(w: Dictionary) -> void:

@@ -25,6 +25,7 @@ var combat := Combat.new()
 var siege := Siege.new()
 var war_ai := WarAI.new()
 var cbs := CasusBelli.new()
+var coalition := Coalition.new()
 var peace := Peace.new()
 var peace_view: Eu4PeaceView        # tela de paz do EU4
 var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
@@ -108,6 +109,15 @@ func _ready() -> void:
 	war_ai.setup(map, clock, power, army, war)
 	peace.setup(map, clock, power, diplomacy, war, economy, army, prestige, cbs)
 	peace.offered.connect(_on_peace_offered)
+	coalition.setup(map, clock, power, diplomacy, war, diplo, army, economy, cbs, peace)
+	cbs.diplo = diplo
+	cbs.coalition = coalition
+	diplo.coalition = coalition
+	peace.coalition = coalition
+	coalition.notice.connect(_toast)
+	coalition.changed.connect(func():
+		if country_view:
+			country_view.refresh())
 	combat.battle_ended.connect(_on_battle_ended)
 	siege.captured.connect(_on_captured)
 	war.changed.connect(func():

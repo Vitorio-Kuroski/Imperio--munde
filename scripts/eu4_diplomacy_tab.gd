@@ -38,7 +38,9 @@ const ACTIONS := {"improve": ["IMPROVERELATIONTITLE", "Melhorar relações", "GF
 		"break_marriage": ["", "Romper casamento real", "GFX_diplomacy_action_dynasty"],
 		"insult": ["INSULTTITLE", "Enviar um insulto", "GFX_diplomacy_action_relation"],
 		"declare_war": ["", "Declarar guerra", "GFX_diplomacy_action_declarewar"],
-		"white_peace": ["", "Negociar paz", "GFX_diplomacy_action_requestpeace"]}
+		"white_peace": ["", "Negociar paz", "GFX_diplomacy_action_requestpeace"],
+		"join_coalition": ["", "Entrar na coalizão", "GFX_diplomacy_coalitions"],
+		"leave_coalition": ["", "Sair da coalizão", "GFX_diplomacy_coalitions_against"]}
 const GOOD := Color(0.55, 0.9, 0.45)
 const BAD := Color(1.0, 0.42, 0.35)
 
@@ -198,6 +200,13 @@ func _fill_relations(tag: String) -> void:
 	var rows := []          # [ícone, texto, países]
 	if view.diplo and view.diplo.war:
 		rows.append(["GFX_diplomacy_war", Loc.s("Em guerra com", "At war with"), view.diplo.war.enemies_of(tag)])
+	var co: Coalition = view.diplo.coalition if view.diplo else null
+	if co:
+		var t := co.target_of(tag)
+		rows.append(["GFX_diplomacy_coalitions", Loc.s("Em coalizão contra", "In a coalition against"),
+				[t] if t != "" else []])
+		rows.append(["GFX_diplomacy_coalitions_against", Loc.s("Coalizão contra ele", "Coalition against them"),
+				co.members_against(tag)])
 	rows.append(["GFX_diplomacy_alliances", Loc.t("LEDGER_ALLIES", "Aliados"), d.allies(tag)])
 	rows.append(["GFX_diplomacy_royalmarriage", Loc.t("royal_marriage", "Casamentos reais"), d.marriages(tag)])
 	var subs := []
@@ -260,6 +269,13 @@ func _fill_actions(tag: String) -> void:
 			continue
 		if at_war and a in ["improve", "alliance", "royal_marriage", "guarantee", "insult"]:
 			continue
+		var co: Coalition = dip.coalition
+		var member: bool = co != null and co.target_of(player) == tag
+		if a == "leave_coalition" and not member:
+			continue
+		# entrar só aparece com expansão agressiva contra o país
+		if a == "join_coalition" and (co == null or member or at_war or co.ae(player, tag) < 1.0):
+			continue
 		ids.append(a)
 	var rows := view.gui.fill_list(list, "diploactionentry", ids.size())
 	for i in rows.size():
@@ -268,7 +284,7 @@ func _fill_actions(tag: String) -> void:
 		var info: Array = ACTIONS[a]
 		var name := Loc.t(info[0], info[1]) if info[0] != "" else Loc.s(info[1], {"guarantee": "Guarantee Independence",
 				"break_marriage": "Break Royal Marriage", "white_peace": "Sue for Peace",
-				"declare_war": "Declare War"}.get(a, info[1]))
+				"declare_war": "Declare War", "join_coalition": "Join Coalition", "leave_coalition": "Leave Coalition"}.get(a, info[1]))
 		if a == "improve" and dip.is_improving(player, tag):
 			name = Loc.t("RECALL", "Chamar de volta") + " — " + Loc.t("MACRO_IMPROVE_RELATIONS", "Melhorar relações")
 		var btn := row.find_child("button_diploaction", true, false) as BaseButton
@@ -306,6 +322,10 @@ func _fill_actions(tag: String) -> void:
 		if a == "improve":
 			tip += "\n" + Loc.s("Diplomatas livres: %d/%d · +%s por mês", "Free diplomats: %d/%d · +%s per month") % [
 					dip.free_diplomats(player), dip.diplomats(player), ("%.1f" % dip.improve_rate(player)).replace(".", Loc.dec)]
+		if a in ["join_coalition", "leave_coalition"] and dip.coalition:
+			tip += "\n" + Loc.s("Expansão agressiva nossa contra eles: %d (precisa de %d) · membros: %d",
+					"Our aggressive expansion against them: %d (needs %d) · members: %d") % [roundi(dip.coalition.ae(player, tag)),
+					roundi(dip.coalition.threshold()), dip.coalition.members_against(tag).size()]
 		if a == "declare_war" and dip.cbs:
 			if cb_list.is_empty():
 				tip += "\n" + Loc.s("Sem casus belli: declarar custa %d de estabilidade", "No casus belli: declaring costs %d stability") \

@@ -3,7 +3,8 @@ extends RefCounted
 ## Guerras durante o jogo (as de 1444 em history/wars ficam na `Diplomacy`, só leitura):
 ##  - `declare(atacante, alvo)`: o alvo e os aliados dele (e o suserano/súditos) defendem; os aliados
 ##    do atacante que não são aliados do alvo entram do lado dele (no EU4 eles podem recusar).
-##    Ainda não há casus belli nem custo de estabilidade por declarar sem motivo.
+##    Guerra de coalizão (`declare(..., membros)`): atacam só os membros da coalizão e os súditos
+##    deles; ao fim, todos ficam com trégua com o alvo.
 ##  - Ocupação: `controller[pid]` = quem controla a província (só as ocupadas; senão o dono).
 ##  - Placar (`score`, −100 a +100 para os atacantes): províncias ocupadas (desenvolvimento ocupado
 ##    ÷ desenvolvimento total do lado inimigo × 100) + batalhas (até WARSCORE_MAX_FROM_BATTLES = 40).
@@ -123,8 +124,9 @@ func _bloc(tag: String) -> Array:
 	return out
 
 
-## Declara guerra de `a` a `b` com o casus belli `cb` ("" = sem motivo).
-func declare(a: String, b: String, cb := "", goal := "") -> Dictionary:
+## Declara guerra de `a` a `b` com o casus belli `cb` ("" = sem motivo). Com `coalition` (membros da
+## coalizão contra `b`), atacam só eles e os súditos deles (guerra de coalizão).
+func declare(a: String, b: String, cb := "", goal := "", coalition: Array = []) -> Dictionary:
 	if why_not_declare(a, b) != "":
 		return {}
 	var defenders := _bloc(b)
@@ -138,7 +140,11 @@ func declare(a: String, b: String, cb := "", goal := "") -> Dictionary:
 	for t in _bloc(a):
 		if not (t in defenders):
 			attackers.append(t)
-	for al in diplomacy.allies(a):
+	for m in coalition:
+		for x in _bloc(m):
+			if not (x in defenders) and not (x in attackers):
+				attackers.append(x)
+	for al in (diplomacy.allies(a) if coalition.is_empty() else []):
 		if al in defenders or al in attackers:
 			continue
 		var ok := true
@@ -151,7 +157,9 @@ func declare(a: String, b: String, cb := "", goal := "") -> Dictionary:
 					attackers.append(x)
 	var w := {"id": _next, "name": Loc.s("Guerra %s–%s", "%s–%s War") % [map.countries[a]["name"], map.countries[b]["name"]],
 			"attackers": attackers, "defenders": defenders, "start": [clock.year, clock.month, clock.day],
-			"battle_score": 0.0, "cb": cb, "war_goal": goal}
+			"battle_score": 0.0, "cb": cb, "war_goal": goal, "coalition": not coalition.is_empty()}
+	if not coalition.is_empty():
+		w["name"] = Loc.s("Coalizão contra %s", "Coalition against %s") % map.countries[b]["name"]
 	wars[_next] = w
 	_next += 1
 	changed.emit()
@@ -214,6 +222,10 @@ func end_war(id: int) -> void:
 	if w.is_empty():
 		return
 	wars.erase(id)
+	if w.get("coalition", false) and not w["defenders"].is_empty():
+		# guerra de coalizão: trégua de todos os membros com o alvo (saem da coalizão)
+		for t in w["attackers"]:
+			add_truce(t, w["defenders"][0], float(map.diplomacy_data.get("defines", {}).get("TRUCE_YEARS", 5)))
 	_clear_occupation(w["attackers"], w["defenders"])
 	if army:
 		army.send_home_after_peace()

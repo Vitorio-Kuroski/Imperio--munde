@@ -989,7 +989,7 @@ GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmod
                      "GFX_diplomacy_guaranteed", "GFX_diplomacy_guaranting", "GFX_diplomacy_we_increase_relation",
                      "GFX_diplomacy_they_increase_relation", "GFX_diplomacy_war", "GFX_diplomacy_leadmarch",
                      "GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance", "GFX_diplomacy_action_requestpeace",
-                     "GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence"]
+                     "GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence", "GFX_diplomacy_coalitions"]
 # icones de terreno da tela da provincia (GFX_combat_terrain_<terreno do EU4>)
 COMBAT_TERRAINS = ["GFX_combat_terrain_" + t for t in (
     "coastal_desert", "coastline", "desert", "desert_mountain", "drylands", "farmlands", "forest", "glacier",

@@ -13,6 +13,8 @@ var view: Eu4CountryView
 var root: Control
 var _effects: Label
 var _effects_title: Label
+var _ae: Label
+var _ae_title: Label
 
 
 func setup(v: Eu4CountryView) -> bool:
@@ -34,8 +36,13 @@ func setup(v: Eu4CountryView) -> bool:
 	# efeitos da estabilidade atual: título na faixa vermelha e a lista na caixa grande de baixo
 	# (no EU4 ali ficam a agitação e as revoltas, que o jogo ainda não tem)
 	_effects_title = _label(Vector2(40, 352), Vector2(320, 20))
-	_effects = _label(Vector2(36, 375), Vector2(470, 260))
+	_effects = _label(Vector2(36, 375), Vector2(260, 260))
 	_effects.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# expansão agressiva: os países com mais AE contra nós (e quem já está em coalizão)
+	_ae_title = _label(Vector2(300, 352), Vector2(240, 20))
+	_ae = _label(Vector2(310, 375), Vector2(250, 205))
+	_ae.clip_text = true
+	_ae.mouse_filter = Control.MOUSE_FILTER_PASS
 	return true
 
 
@@ -76,6 +83,38 @@ func fill(tag: String) -> void:
 	_effects_title.text = Loc.s("Efeitos da estabilidade", "Effects of stability")
 	_effects.text = str(view.fmt_mods.call(shown)).replace(", ", "\n") \
 			if not shown.is_empty() and view.fmt_mods.is_valid() else Loc.s("Nenhum (estabilidade 0)", "None (stability 0)")
+
+
+	_fill_ae(tag)
+
+
+func _fill_ae(tag: String) -> void:
+	var co: Coalition = view.diplo.coalition if view.diplo else null
+	_ae.visible = co != null
+	_ae_title.visible = co != null
+	if co == null:
+		return
+	_ae_title.text = Loc.t("aggressive_expansion", "Expansão agressiva")
+	var list := co.ae_against(tag)
+	var lines := []
+	var tips := []
+	for x in list:
+		var t: String = x[0]
+		var line := "%s: %d%s" % [view.map.countries[t]["name"], roundi(x[1]),
+				" *" if t in co.members_against(tag) else ""]
+		if lines.size() < 7:
+			lines.append(line)
+		tips.append(line)
+	if list.is_empty():
+		lines.append(Loc.s("Nenhuma", "None"))
+	var n := co.members_against(tag).size()
+	if n > 0:
+		lines.append(Loc.s("Coalizão contra nós: %d países", "Coalition against us: %d countries") % n)
+	_ae.text = "\n".join(lines)
+	_ae.tooltip_text = Loc.s("Com %d ou mais e opinião negativa, o país entra numa coalizão contra nós (*). Cai %s por ano.",
+			"At %d or more with a negative opinion, the country joins a coalition against us (*). Decays %s per year.") % [
+			roundi(co.threshold()), str(roundi(view.diplo._mod(Coalition.AE_ID, "yearly_decay", 2)))] \
+			+ ("\n" + "\n".join(tips) if not tips.is_empty() else "")
 
 
 func _on_boost() -> void:

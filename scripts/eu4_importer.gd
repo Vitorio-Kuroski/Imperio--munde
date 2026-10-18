@@ -1647,7 +1647,7 @@ const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX
 		"GFX_diplomacy_guaranteed", "GFX_diplomacy_guaranting", "GFX_diplomacy_we_increase_relation",
 		"GFX_diplomacy_they_increase_relation", "GFX_diplomacy_war", "GFX_diplomacy_leadmarch",
 		"GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance", "GFX_diplomacy_action_requestpeace",
-		"GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence"]
+		"GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence", "GFX_diplomacy_coalitions"]
 const SPRITE_KINDS := ["spritetype", "frameanimatedspritetype", "textspritetype", "corneredtilespritetype",
 		"maskedshieldtype", "progressbartype"]
 

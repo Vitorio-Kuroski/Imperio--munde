@@ -16,7 +16,7 @@ extends RefCounted
 
 const NO_CB_STABILITY := -2
 ## Preferência ao escolher o casus belli da declaração (os outros vêm depois, na ordem do arquivo).
-const PREFERRED := ["cb_core", "cb_conquest", "cb_independence_war", "cb_heretic", "cb_crusade", "cb_imperial",
+const PREFERRED := ["cb_super_badboy", "cb_core", "cb_conquest", "cb_independence_war", "cb_heretic", "cb_crusade", "cb_imperial",
 		"cb_nationalist", "cb_tribal_feud", "cb_horde_vs_civ", "cb_claim_throne"]
 const PT_NAMES := {"cb_core": "Reconquista", "cb_conquest": "Conquista", "cb_independence_war": "Guerra de independência",
 		"cb_heretic": "Purgar a heresia", "cb_crusade": "Guerra santa", "cb_imperial": "Imperial",
@@ -29,6 +29,8 @@ var map: MapView
 var power: MonarchPower
 var diplomacy: Diplomacy
 var war: War
+var diplo: DiploActions           # main.gd define (has_opinion_modifier)
+var coalition: Coalition          # main.gd define (coalition_target, num_of_coalition_members...)
 var cbs := {}                     # id -> casus belli (map.casus_belli)
 var goals := {}                   # id -> objetivo de guerra (map.war_goals)
 var _order := []                  # ids na ordem do arquivo
@@ -148,11 +150,11 @@ func _yes(v: Variant) -> bool:
 const ALWAYS_FALSE := ["has_country_flag", "has_global_flag", "mission_completed", "has_ruler_flag",
 		"has_country_modifier", "has_province_flag", "is_excommunicated", "is_defender_of_faith",
 		"is_hegemon", "trade_embargo_by", "trade_league_embargoed_by", "is_trade_league_leader", "is_league_leader",
-		"is_in_league_war", "is_league_enemy", "is_rival", "is_colonial_nation_of", "coalition_target",
-		"is_in_coalition_war", "has_privateers", "has_spawned_supported_rebels", "is_revolution_target",
+		"is_in_league_war", "is_league_enemy", "is_rival", "is_colonial_nation_of", "has_privateers",
+		"has_spawned_supported_rebels", "is_revolution_target",
 		"hre_religion_treaty", "crusade_target", "is_imperial_ban_allowed", "hre_reform_passed", "is_religion_reformed",
 		"has_government_attribute",      # atributos especiais de reformas (guerras santas melhoradas...)
-		"invasion_nation", "colony_claim", "num_of_coalition_members", "succession_claim", "cb_on_government_enemies"]
+		"invasion_nation", "colony_claim", "succession_claim", "cb_on_government_enemies"]
 var unknown := {}                 # condições que o jogo não conhece (para depurar): chave -> vezes
 
 
@@ -294,6 +296,36 @@ func _country_cond(k: String, v: Variant, tag: String, root: String, from: Strin
 			return o != "" and not ov.is_empty() and ov[0] == o and ov[1] == "union"
 		"alliance_with":
 			return _country(s, root, from) in diplomacy.allies(tag)
+		"coalition_target":
+			var o := _country(s, root, from)
+			return coalition != null and o != "" and coalition.target_of(tag) == o
+		"num_of_coalition_members":
+			var t := coalition.target_of(tag) if coalition else ""
+			return t != "" and s.is_valid_float() and coalition.members_against(t).size() >= int(float(s))
+		"is_in_coalition_war":
+			return coalition != null and coalition.in_coalition_war(tag) == _yes(v)
+		"has_opinion_modifier":
+			if diplo == null or not (v is Array):
+				return null
+			var mid := ""
+			var who := ""
+			var val: Variant = null
+			for it in v:
+				match str(it[0]):
+					"modifier":
+						mid = str(it[1])
+					"who":
+						who = _country(str(it[1]), root, from)
+					"value":
+						val = float(str(it[1])) if str(it[1]).is_valid_float() else null
+			if mid == "" or who == "":
+				return null
+			var e: Variant = diplo.timed.get(tag + ">" + who, {}).get(mid)
+			if e == null:
+				# os temporários que o jogo controla; os outros (alianças...) ficam desconhecidos
+				return false if mid in ["aggressive_expansion", "insulted", "improved_relation", "break_alliance",
+						"break_marriage"] else null
+			return val == null or float(e[0]) >= float(val)
 		"truce_with":
 			var o := _country(s, root, from)
 			return war != null and o != "" and war.has_truce(tag, o)
