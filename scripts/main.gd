@@ -25,6 +25,8 @@ var combat := Combat.new()
 var siege := Siege.new()
 var war_ai := WarAI.new()
 var cbs := CasusBelli.new()
+var peace := Peace.new()
+var peace_view: Eu4PeaceView        # tela de paz do EU4
 var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
 var unit_panel: Eu4UnitPanel       # painel do exército selecionado (telas do EU4)
 var selected_army := -1
@@ -104,6 +106,8 @@ func _ready() -> void:
 	combat.setup(map, clock, power, army, war, prestige)
 	siege.setup(map, clock, army, war)
 	war_ai.setup(map, clock, power, army, war)
+	peace.setup(map, clock, power, diplomacy, war, economy, army, prestige, cbs)
+	peace.offered.connect(_on_peace_offered)
 	combat.battle_ended.connect(_on_battle_ended)
 	siege.captured.connect(_on_captured)
 	war.changed.connect(func():
@@ -163,7 +167,7 @@ var gui_design_height := EU4_GUI_HEIGHT
 func _apply_gui_scale() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	gui_scale = clampf(vp.y / gui_design_height, 0.5, 3.0)
-	for c in [eu4_hud, province_view, country_view, macro_builder, unit_panel]:
+	for c in [eu4_hud, province_view, country_view, macro_builder, unit_panel, peace_view]:
 		if c:
 			c.set_anchors_preset(Control.PRESET_TOP_LEFT)
 			c.position = Vector2.ZERO
@@ -265,6 +269,21 @@ func _setup_eu4_hud() -> void:
 	else:
 		macro_builder.queue_free()
 		macro_builder = null
+	peace_view = Eu4PeaceView.new()
+	ui.add_child(peace_view)
+	if peace_view.setup(g, map, peace, war):
+		peace_view.message.connect(_toast)
+		if country_view:
+			country_view.peace_requested.connect(func(t: String):
+				peace_view.player = player_tag
+				for c in [country_view, province_view, macro_builder]:
+					if c:
+						c.hide()
+				_select_army(-1)
+				peace_view.open_with(t))
+	else:
+		peace_view.queue_free()
+		peace_view = null
 	unit_panel = Eu4UnitPanel.new()
 	ui.add_child(unit_panel)
 	ui.move_child(unit_panel, 4)
@@ -880,6 +899,29 @@ func _on_battle_ended(info: Dictionary) -> void:
 			roundi(info["losses"][ours]), roundi(info["losses"][1 - ours]),
 			Loc.s(" — exército aniquilado", " — army annihilated") if info["overrun"] else ""])
 	_refresh_unit_panel()
+
+
+## Proposta de paz da IA (ela está ganhando): pergunta ao jogador.
+func _on_peace_offered(deal: Dictionary) -> void:
+	var dlg := ConfirmationDialog.new()
+	var who: String = map.countries.get(deal["receiver"], {}).get("name", deal["receiver"])
+	dlg.title = Loc.s("Proposta de paz", "Peace offer")
+	dlg.dialog_text = Loc.s("%s propõe paz e exige: %s\n(custo %d%% do placar da guerra)\nAceitar?",
+			"%s offers peace and demands: %s\n(cost %d%% of the war score)\nAccept?") % [who, peace.describe(deal),
+			roundi(peace.cost(deal))]
+	dlg.ok_button_text = Loc.s("Aceitar", "Accept")
+	dlg.cancel_button_text = Loc.s("Recusar", "Refuse")
+	dlg.confirmed.connect(func():
+		peace.sign(deal)
+		_toast(Loc.s("Paz assinada com %s", "Peace signed with %s") % who)
+		dlg.queue_free())
+	dlg.canceled.connect(dlg.queue_free)
+	ui.add_child(dlg)
+	var th := Eu4Theme.build(map.ui_dir) if map.ui_dir != "" else null
+	if th:
+		dlg.theme = th
+	dlg.popup_centered()
+	clock.paused = true
 
 
 func _on_captured(pid: int, by: String, from: String) -> void:

@@ -38,7 +38,7 @@ const ACTIONS := {"improve": ["IMPROVERELATIONTITLE", "Melhorar relações", "GF
 		"break_marriage": ["", "Romper casamento real", "GFX_diplomacy_action_dynasty"],
 		"insult": ["INSULTTITLE", "Enviar um insulto", "GFX_diplomacy_action_relation"],
 		"declare_war": ["", "Declarar guerra", "GFX_diplomacy_action_declarewar"],
-		"white_peace": ["", "Paz branca", "GFX_diplomacy_action_requestpeace"]}
+		"white_peace": ["", "Negociar paz", "GFX_diplomacy_action_requestpeace"]}
 const GOOD := Color(0.55, 0.9, 0.45)
 const BAD := Color(1.0, 0.42, 0.35)
 
@@ -267,7 +267,7 @@ func _fill_actions(tag: String) -> void:
 		var row: Control = rows[i]
 		var info: Array = ACTIONS[a]
 		var name := Loc.t(info[0], info[1]) if info[0] != "" else Loc.s(info[1], {"guarantee": "Guarantee Independence",
-				"break_marriage": "Break Royal Marriage", "white_peace": "White Peace",
+				"break_marriage": "Break Royal Marriage", "white_peace": "Sue for Peace",
 				"declare_war": "Declare War"}.get(a, info[1]))
 		if a == "improve" and dip.is_improving(player, tag):
 			name = Loc.t("RECALL", "Chamar de volta") + " — " + Loc.t("MACRO_IMPROVE_RELATIONS", "Melhorar relações")
@@ -322,6 +322,9 @@ func _fill_actions(tag: String) -> void:
 			for cn in btn.pressed.get_connections():
 				btn.pressed.disconnect(cn["callable"])
 			btn.pressed.connect(func():
+				if a == "white_peace" and not view.peace_requested.get_connections().is_empty():
+					view.peace_requested.emit(tag)      # abre a tela de paz do EU4
+					return
 				last_message = dip.act(a, player, tag)
 				view.refresh())
 	var status := root.find_child("label_rivals_not_possible", true, false) as Label

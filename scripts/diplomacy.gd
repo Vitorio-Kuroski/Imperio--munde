@@ -77,6 +77,9 @@ func add_relation(type: String, a: String, b: String) -> void:
 		"guarantee":
 			_add(_guarantees, a, b)
 			_add(_guarantors, b, a)
+		"vassal":
+			_overlord[b] = [a, "vassal"]
+			_add(_subjects, a, [b, "vassal"])
 	_changed()
 
 

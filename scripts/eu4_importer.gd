@@ -1627,7 +1627,7 @@ const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", 
 		"countrygovernmentview", "countrytechnologyview", "countryideasview",
 		"countryeconomyview", "countryreligionview",
 		"macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
-		"unitpanel_card", "unitpanel_main", "unitpanel_sub"]   # o _override vem antes: as janelas dele valem
+		"unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview"]   # o _override vem antes: as janelas dele valem
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",

@@ -88,6 +88,11 @@ func check(tree: Array, root: String, from: String) -> Variant:
 	return _test(tree, {"tag": root}, root, from)
 
 
+## O mesmo para um bloco no escopo de província (allowed_provinces dos objetivos de guerra).
+func check_province(tree: Array, pid: int, root: String, from: String) -> Variant:
+	return _test(tree, {"pid": pid}, root, from)
+
+
 func best(a: String, b: String) -> String:
 	var l := available(a, b)
 	return l[0] if not l.is_empty() else ""
@@ -141,7 +146,7 @@ func _yes(v: Variant) -> bool:
 
 ## Coisas que o jogo ainda não tem (flags, missões, eventos...): sempre falsas.
 const ALWAYS_FALSE := ["has_country_flag", "has_global_flag", "mission_completed", "has_ruler_flag",
-		"has_country_modifier", "has_province_flag", "truce_with", "is_excommunicated", "is_defender_of_faith",
+		"has_country_modifier", "has_province_flag", "is_excommunicated", "is_defender_of_faith",
 		"is_hegemon", "trade_embargo_by", "trade_league_embargoed_by", "is_trade_league_leader", "is_league_leader",
 		"is_in_league_war", "is_league_enemy", "is_rival", "is_colonial_nation_of", "coalition_target",
 		"is_in_coalition_war", "has_privateers", "has_spawned_supported_rebels", "is_revolution_target",
@@ -289,6 +294,9 @@ func _country_cond(k: String, v: Variant, tag: String, root: String, from: Strin
 			return o != "" and not ov.is_empty() and ov[0] == o and ov[1] == "union"
 		"alliance_with":
 			return _country(s, root, from) in diplomacy.allies(tag)
+		"truce_with":
+			var o := _country(s, root, from)
+			return war != null and o != "" and war.has_truce(tag, o)
 		"war_with":
 			var o := _country(s, root, from)
 			return war != null and o != "" and war.hostile(tag, o)

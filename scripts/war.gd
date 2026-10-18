@@ -18,6 +18,7 @@ var power: MonarchPower
 var diplomacy: Diplomacy
 var wars := {}                    # id -> {id, name, attackers, defenders, start, battle_score}
 var controller := {}              # pid -> tag que ocupa
+var truces := {}                  # "A|B" (ordenado) -> data AAAAMMDD em que a trégua acaba
 var army: Army                    # main.gd define (paz: exércitos voltam para casa)
 var _next := 1
 var _rules := {}
@@ -86,6 +87,9 @@ func why_not_declare(a: String, b: String) -> String:
 		return Loc.s("Não tem províncias", "Has no provinces")
 	if hostile(a, b):
 		return Loc.s("Já estão em guerra", "Already at war")
+	if has_truce(a, b):
+		var t := int(truces[_tkey(a, b)])
+		return Loc.s("Trégua até %s", "Truce until %s") % Loc.date(t / 10000, (t / 100) % 100, t % 100)
 	if b in diplomacy.allies(a):
 		return Loc.s("São aliados (rompa a aliança antes)", "Allied (break the alliance first)")
 	if diplomacy.top_overlord(a) == diplomacy.top_overlord(b):
@@ -199,13 +203,72 @@ func white_peace(id: int) -> void:
 	var w: Dictionary = wars.get(id, {})
 	if w.is_empty():
 		return
+	if not w["attackers"].is_empty() and not w["defenders"].is_empty():
+		add_truce(w["attackers"][0], w["defenders"][0], float(map.diplomacy_data.get("defines", {}).get("TRUCE_YEARS", 5)))
+	end_war(id)
+
+
+## Acaba a guerra: desfaz as ocupações entre os lados e manda para casa quem ficou em terra proibida.
+func end_war(id: int) -> void:
+	var w: Dictionary = wars.get(id, {})
+	if w.is_empty():
+		return
 	wars.erase(id)
-	# desfaz as ocupações entre os dois lados
-	for pid in controller.keys():
-		var o: String = map.provinces[pid]["owner"]
-		var c: String = controller[pid]
-		if (o in w["attackers"] and c in w["defenders"]) or (o in w["defenders"] and c in w["attackers"]):
-			controller.erase(pid)
+	_clear_occupation(w["attackers"], w["defenders"])
 	if army:
 		army.send_home_after_peace()
 	changed.emit()
+
+
+## Paz separada: `tags` saem da guerra (ocupações entre eles e o outro lado desfeitas); se um lado
+## fica vazio, a guerra acaba.
+func leave_war(id: int, tags: Array) -> void:
+	var w: Dictionary = wars.get(id, {})
+	if w.is_empty():
+		return
+	for side in ["attackers", "defenders"]:
+		var other: Array = w["defenders"] if side == "attackers" else w["attackers"]
+		var gone: Array = w[side].filter(func(t): return t in tags)
+		if not gone.is_empty():
+			_clear_occupation(gone, other)
+			w[side] = w[side].filter(func(t): return not (t in tags))
+	if w["attackers"].is_empty() or w["defenders"].is_empty():
+		end_war(id)
+		return
+	if army:
+		army.send_home_after_peace()
+	changed.emit()
+
+
+func _clear_occupation(a: Array, b: Array) -> void:
+	for pid in controller.keys():
+		var o: String = map.provinces[pid]["owner"]
+		var c: String = controller[pid]
+		if (o in a and c in b) or (o in b and c in a):
+			controller.erase(pid)
+
+
+# ------------------------------------------------------------------ trégua
+static func _tkey(a: String, b: String) -> String:
+	return a + "|" + b if a < b else b + "|" + a
+
+
+func today() -> int:
+	return clock.year * 10000 + clock.month * 100 + clock.day
+
+
+## Trégua de `years` anos (com fração em meses) entre `a` e `b`.
+func add_truce(a: String, b: String, years: float) -> void:
+	var months := roundi(years * 12.0)
+	var y := clock.year + (clock.month - 1 + months) / 12
+	var m := (clock.month - 1 + months) % 12 + 1
+	truces[_tkey(a, b)] = maxi(int(truces.get(_tkey(a, b), 0)), y * 10000 + m * 100 + clock.day)
+
+
+func has_truce(a: String, b: String) -> bool:
+	return int(truces.get(_tkey(a, b), 0)) > today()
+
+
+func months_since_start(w: Dictionary) -> int:
+	var s: Array = w.get("start", [clock.year, clock.month, clock.day])
+	return (clock.year - int(s[0])) * 12 + clock.month - int(s[1])
