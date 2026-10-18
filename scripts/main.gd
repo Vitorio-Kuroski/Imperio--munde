@@ -26,7 +26,9 @@ var cbs := CasusBelli.new()
 var coalition := Coalition.new()
 var peace := Peace.new()
 var peace_view: Eu4PeaceView        # tela de paz do EU4
-var frontend: Eu4Frontend          # tela de escolha de país do EU4 (frontend.gui)
+var frontend: Eu4Frontend
+var map_names: MapNames            # nomes dos países e províncias no mapa
+var eu4_gui: Eu4Gui          # tela de escolha de país do EU4 (frontend.gui)
 var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
 var unit_panel: Eu4UnitPanel       # painel do exército selecionado (telas do EU4)
 var selected_army := -1
@@ -139,6 +141,10 @@ func _ready() -> void:
 
 	_build_ui()
 	_setup_eu4_hud()
+	map_names = MapNames.new()          # sob os exércitos
+	map.add_child(map_names)
+	map.move_child(map_names, army_layer.get_index())
+	map_names.setup(map, camera, eu4_gui)
 	_apply_eu4_theme()
 	clock.changed.connect(_refresh_top_bar)
 	clock.month_passed.connect(_on_month_passed)
@@ -188,6 +194,7 @@ func _setup_eu4_hud() -> void:
 	if g == null:
 		return
 	g.res_height = int(gui_design_height)      # layout padrão em qualquer tela
+	eu4_gui = g
 	eu4_hud = Eu4Hud.new()
 	eu4_hud.religion = religion
 	eu4_hud.manpower = manpower
