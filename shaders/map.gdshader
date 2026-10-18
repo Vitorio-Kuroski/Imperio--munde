@@ -82,8 +82,8 @@ int culture_of(vec4 inf) {
 	return int(inf.g * 255.0 + 0.5) + int(inf.b * 255.0 + 0.5) * 256;
 }
 
-float edge_to(int id, vec4 inf, ivec2 p) {
-	int nid = id_at(p);
+// intensidade da linha entre as províncias id e nid (0 = nenhuma)
+float edge_between(int id, vec4 inf, int nid) {
 	if (nid == id) {
 		return 0.0;
 	}
@@ -146,10 +146,52 @@ vec3 terrain_color(vec2 uv) {
 	return mix(mix(c00, c10, w.x), mix(c01, c11, w.x), w.y);
 }
 
+bool river_at(ivec2 p) {
+	return texelFetch(rivers, clamp(p, ivec2(0), ivec2(map_size) - ivec2(1)), 0).r * 255.0 < 253.5;
+}
+
+// O mapa é uma imagem de pixels (provinces.bmp); para não virar quadrados no zoom, cada ponto pega a
+// província com mais peso entre os 4 pixels vizinhos (pesos bilineares): as fronteiras saem
+// arredondadas. A linha da fronteira fica onde os pesos das duas províncias empatam, com espessura
+// constante na tela (fwidth) e bordas suaves.
 void fragment() {
-	ivec2 p = ivec2(UV * map_size);
-	int id = id_at(p);
+	vec2 f = UV * map_size - 0.5;
+	ivec2 i0 = ivec2(floor(f));
+	vec2 w = fract(f);
+	int ids4[4];
+	ids4[0] = id_at(i0);
+	ids4[1] = id_at(i0 + ivec2(1, 0));
+	ids4[2] = id_at(i0 + ivec2(0, 1));
+	ids4[3] = id_at(i0 + ivec2(1, 1));
+	float wt[4];
+	wt[0] = (1.0 - w.x) * (1.0 - w.y);
+	wt[1] = w.x * (1.0 - w.y);
+	wt[2] = (1.0 - w.x) * w.y;
+	wt[3] = w.x * w.y;
+	float sum[4];
+	int best = 0;
+	for (int k = 0; k < 4; k++) {
+		sum[k] = 0.0;
+		for (int j = 0; j < 4; j++) {
+			if (ids4[j] == ids4[k]) {
+				sum[k] += wt[j];
+			}
+		}
+		if (sum[k] > sum[best]) {
+			best = k;
+		}
+	}
+	int id = ids4[best];
+	int other = -1;
+	float wb = 0.0;
+	for (int k = 0; k < 4; k++) {
+		if (ids4[k] != id && sum[k] > wb) {
+			wb = sum[k];
+			other = ids4[k];
+		}
+	}
 	vec4 inf = info_of(id);
+
 	vec3 c = color_of(id).rgb;
 	bool sea = inf.a > 0.5;
 	if (sea) {
@@ -177,13 +219,20 @@ void fragment() {
 	if (id == selected_id) {
 		c = mix(c, vec3(1.0), 0.4);
 	}
-	float e = max(edge_to(id, inf, p + ivec2(1, 0)), edge_to(id, inf, p + ivec2(0, 1)));
-	if (has_rivers && inf.a < 0.5) {
-		float r = texelFetch(rivers, clamp(p, ivec2(0), ivec2(map_size) - ivec2(1)), 0).r * 255.0;
-		if (r < 253.5) {
-			c = mix(c, RIVER_COLOR, 0.85);
-		}
+	if (has_rivers && !sea) {          // rio suavizado pelos 4 pixels vizinhos
+		float rw = (river_at(i0) ? wt[0] : 0.0) + (river_at(i0 + ivec2(1, 0)) ? wt[1] : 0.0)
+				+ (river_at(i0 + ivec2(0, 1)) ? wt[2] : 0.0) + (river_at(i0 + ivec2(1, 1)) ? wt[3] : 0.0);
+		c = mix(c, RIVER_COLOR, 0.85 * smoothstep(0.42, 0.62, rw));
 	}
-	c = mix(c, vec3(0.04), e);
+	float m = sum[best] - wb;          // 0 em cima da fronteira
+	float dm = max(fwidth(m), 1e-5);
+	float e = other >= 0 ? edge_between(id, inf, other) : 0.0;
+	if (e > 0.0) {
+		// px na tela: países, áreas, províncias; de perto crescem com o zoom (fração do pixel do mapa)
+		float ppt = 1.0 / max(fwidth(f.x), 1e-5);
+		float width = e >= 0.7 ? max(2.0, 0.45 * ppt) : (e >= 0.4 ? max(1.4, 0.3 * ppt) : max(1.0, 0.18 * ppt));
+		float dist = m / dm;           // distância até a linha, em px da tela
+		c = mix(c, vec3(0.04), e * (1.0 - smoothstep(width * 0.5 - 0.5, width * 0.5 + 0.5, dist)));
+	}
 	COLOR = vec4(c, 1.0);
 }
