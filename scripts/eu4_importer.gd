@@ -1004,14 +1004,15 @@ const TRADE_DEFINES := ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRAD
 		"TRADE_ADDED_VALUE_MODIFER", "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
 		"MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST",
 		"BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER", "PS_BOOST_STABILITY",
-		"BREAK_MARRIAGE_STABILITY_PENALTY"]
+		"BREAK_MARRIAGE_STABILITY_PENALTY", "FORM_MARRIAGE_HIGHER_PRESTIGE", "FORM_MARRIAGE_HIGHER_LEGITIMACY"]
 const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_power"],
 		["development", "local_missionary_strength", "dev_missionary_strength"],
 		["coastal", "province_trade_power_modifier", "coastal_trade_power"],
 		["mercantilism", "global_prov_trade_power_modifier", "mercantilism_trade_power"],
 		["base_values", "merchants", "base_merchants"], ["core", "local_manpower_modifier", "core_manpower"]]
 ## Blocos inteiros de modificadores estáticos guardados em trade_rules["statics"] (efeitos numéricos).
-const STATIC_BLOCKS := ["prestige", "emperor", "stability", "positive_stability", "negative_stability"]
+const STATIC_BLOCKS := ["prestige", "emperor", "stability", "positive_stability", "negative_stability",
+		"legitimacy", "num_of_marriages"]
 
 
 ## [centros de comércio, regras de comércio] (mesma saída do import_eu4.py).

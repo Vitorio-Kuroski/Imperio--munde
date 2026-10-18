@@ -29,6 +29,7 @@ var power: MonarchPower
 var diplomacy: Diplomacy
 var economy: Economy
 var stability: Stability           # main.gd define (romper casamento custa estabilidade)
+var legitimacy: Legitimacy         # main.gd define (casar com quem tem menos prestígio/legitimidade custa)
 var mods := {}                     # opinion_modifiers do EU4
 var timed := {}                    # "A>B" -> {modificador: [valor, meses restantes ou -1]} (opinião de A sobre B)
 var improving := {}                # país -> [alvos com diplomata melhorando relações]
@@ -252,6 +253,8 @@ func act(action: String, actor: String, target: String) -> String:
 		"alliance", "royal_marriage":
 			if acceptance_score(action, actor, target) > 0:
 				diplomacy.add_relation(action, actor, target)
+				if action == "royal_marriage" and legitimacy:
+					legitimacy.on_marriage(actor, target)
 				msg = Loc.s("%s aceitou", "%s accepted") % name
 			else:
 				msg = Loc.s("%s recusou", "%s declined") % name

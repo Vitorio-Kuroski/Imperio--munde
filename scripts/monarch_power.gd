@@ -34,6 +34,7 @@ var institutions: Institutions   # instituições não adotadas encarecem tecnol
 var economy: Economy             # falência encarece tecnologias, ideias e conselheiros
 var prestige: Prestige           # efeitos do prestígio (fora do cache: mudam todo mês) e do imperador
 var stability: Stability         # efeitos da estabilidade (fora do cache)
+var legitimacy: Legitimacy       # efeitos da legitimidade (fora do cache)
 
 
 func setup(m: MapView, c: GameClock) -> void:
@@ -189,16 +190,18 @@ func modifier(tag: String, key: String) -> float:
 		v += prestige.effect(tag, key)
 	if stability:
 		v += stability.effect(tag, key)
+	if legitimacy:
+		v += legitimacy.effect(tag, key)
 	return v
 
 
 func all_modifiers(tag: String) -> Dictionary:
 	if not _mods_cache.has(tag):
 		_mods_cache[tag] = _sum_mods(tag)
-	if prestige == null and stability == null:
+	if prestige == null and stability == null and legitimacy == null:
 		return _mods_cache[tag]
 	var out: Dictionary = _mods_cache[tag].duplicate()
-	for sys in [prestige, stability]:
+	for sys in [prestige, stability, legitimacy]:
 		if sys:
 			var pe: Dictionary = sys.effects(tag)
 			for k in pe:

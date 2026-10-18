@@ -18,6 +18,7 @@ var construction := Construction.new()
 var manpower := Manpower.new()
 var prestige := Prestige.new()
 var stability := Stability.new()
+var legitimacy := Legitimacy.new()
 var diplomacy := Diplomacy.new()
 var diplo := DiploActions.new()
 var camera: Camera2D
@@ -71,6 +72,7 @@ func _ready() -> void:
 	manpower.setup(map, clock, power)
 	prestige.setup(map, clock, power, diplomacy)
 	stability.setup(map, clock, power)
+	legitimacy.setup(map, clock, power, diplomacy, prestige)
 	economy.religion = religion
 	trade.recompute()
 	economy._recount()
@@ -78,6 +80,7 @@ func _ready() -> void:
 	map.diplo_view = diplomacy
 	diplo.setup(map, clock, power, diplomacy, economy)
 	diplo.stability = stability
+	diplo.legitimacy = legitimacy
 
 	camera = Camera2D.new()
 	add_child(camera)
@@ -145,6 +148,7 @@ func _setup_eu4_hud() -> void:
 	eu4_hud.manpower = manpower
 	eu4_hud.prestige = prestige
 	eu4_hud.stability = stability
+	eu4_hud.legitimacy = legitimacy
 	ui.add_child(eu4_hud)
 	ui.move_child(eu4_hud, 0)            # atrás dos painéis e janelas
 	if not eu4_hud.setup(g, map, clock, power, economy):
@@ -363,6 +367,7 @@ func _build_ui() -> void:
 	advisors_window.fmt = ideas_window.fmt_mods
 	prestige.fmt_mods = ideas_window.fmt_mods
 	stability.fmt_mods = ideas_window.fmt_mods
+	legitimacy.fmt_mods = ideas_window.fmt_mods
 	ui.add_child(advisors_window)
 	country_panel.economy = economy
 	country_panel.advisors = advisors
