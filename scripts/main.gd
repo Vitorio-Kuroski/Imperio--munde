@@ -141,6 +141,11 @@ func _ready() -> void:
 
 	_build_ui()
 	_setup_eu4_hud()
+	if not map.river_lines.is_empty():   # rios em curvas, sob os nomes
+		var rl := RiverLayer.new()
+		map.add_child(rl)
+		map.move_child(rl, army_layer.get_index())
+		rl.setup(map, camera)
 	map_names = MapNames.new()          # sob os exércitos
 	map.add_child(map_names)
 	map.move_child(map_names, army_layer.get_index())

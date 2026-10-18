@@ -108,6 +108,7 @@ var icons := {}                    # chave ("good:grain", "religion:catholic", "
 var _icons_tex: Texture2D          # atlas dos ícones da interface (vazio sem gfx/interface)
 var _icon_cache := {}
 var ui_dir := ""                   # pasta das texturas de interface do EU4 (Eu4Theme), ao lado do mapa
+var river_lines: Array = []         # rios em linhas ([largura, x0, y0, ...], ver RiverLayer)
 var has_terrain_textures := false   # modo terreno com as texturas do EU4 (terrain.bmp ou colormap)
 var gui_dir := ""                  # pasta das telas do EU4 (Eu4Gui)
 var source := ""                   # de onde veio o mapa (caminho do map.json)
@@ -230,7 +231,8 @@ func load_map(map_scale: float) -> void:
 			rivers_tex = ImageTexture.create_from_image(Image.load_from_file(rivers_path))
 	elif ResourceLoader.exists(rivers_path):
 		rivers_tex = load(rivers_path) as Texture2D
-	if rivers_tex:
+	river_lines = data.get("rivers", [])
+	if rivers_tex and river_lines.is_empty():      # sem as linhas (importação antiga): os pixels
 		mat.set_shader_parameter("rivers", rivers_tex)
 		mat.set_shader_parameter("has_rivers", true)
 	# bandeiras (flags.png ao lado do province_ids.png: atlas com FLAG_SIZE px por país)

@@ -590,12 +590,15 @@ func _import() -> String:
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
 	if FileAccess.file_exists(OUT_DIR + "/rivers.png"):
 		DirAccess.remove_absolute(OUT_DIR + "/rivers.png")
+	var river_vec := []
 	if _index.has("map/rivers.bmp"):
 		_set_status("Lendo os rios (rivers.bmp)...")
 		var rv := _bmp8("map/rivers.bmp")
 		if not rv.is_empty() and rv[0] == w and rv[1] == h:
 			# índice da paleta (< 254 = rio; 254 = terra; 255 = mar), o shader lê direto
 			Image.create_from_data(w, h, false, Image.FORMAT_L8, rv[2]).save_png(OUT_DIR + "/rivers.png")
+			_set_status("Rios em linhas...")
+			river_vec = _river_lines(rv[2], w, h)
 	_set_status("Texturas do mapa (relevo, altitude, terreno)...")
 	var map_tex := _map_textures(w, h)
 
@@ -917,7 +920,7 @@ func _import() -> String:
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
 			"centers_of_trade": trade[0], "trade_rules": trade[1], "opinion_modifiers": _opinions(),
-			"casus_belli": cbw[0], "war_goals": cbw[1], "diplomacy_data": _diplomacy_data(), "map_textures": map_tex,
+			"casus_belli": cbw[0], "war_goals": cbw[1], "diplomacy_data": _diplomacy_data(), "map_textures": map_tex, "rivers": river_vec,
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
 			"celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces}))
 	f.close()
@@ -1323,6 +1326,81 @@ func _resolve_subject(name: String, raw: Dictionary, done: Dictionary, depth: in
 		res[k] = own[k]
 	done[name] = res
 	return res
+
+
+## Rios do rivers.bmp em linhas (mesma regra do tools/import_eu4.py river_lines): pixels com índice
+## < 254; vizinhos nas 4 direções e na diagonal só quando nenhum dos dois pixels entre eles é rio;
+## linhas de ponta/junção (grau != 2) a ponta/junção, depois os laços, na ordem dos pixels. Cada
+## linha = [largura, x0, y0, x1, y1, ...]; largura = maior índice >= 3 (3 = mais fino ... 11).
+func _river_lines(data: PackedByteArray, w: int, h: int) -> Array:
+	var val := {}
+	var keys := PackedInt32Array()
+	for i in data.size():
+		if data[i] < 254:
+			val[i] = data[i]
+			keys.append(i)
+	var orth := [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
+	var diag := [Vector2i(1, 1), Vector2i(-1, 1), Vector2i(-1, -1), Vector2i(1, -1)]
+	var nb := {}
+	for k in keys:
+		var y := k / w
+		var x := k % w
+		var out := []
+		for d in orth:
+			var nx: int = x + d.x
+			var ny: int = y + d.y
+			if nx >= 0 and nx < w and ny >= 0 and ny < h and val.has(ny * w + nx):
+				out.append(ny * w + nx)
+		for d in diag:
+			var nx: int = x + d.x
+			var ny: int = y + d.y
+			if nx >= 0 and nx < w and ny >= 0 and ny < h and val.has(ny * w + nx) \
+					and not val.has(y * w + nx) and not val.has(ny * w + x):
+				out.append(ny * w + nx)
+		nb[k] = out
+	var done := {}
+	var lines := []
+	for k in keys:
+		if (nb[k] as Array).size() != 2:
+			for n in nb[k]:
+				if not done.has(_edge_key(k, n)):
+					lines.append(_river_walk(k, n, nb, val, done, w))
+	for k in keys:
+		for n in nb[k]:
+			if not done.has(_edge_key(k, n)):
+				lines.append(_river_walk(k, n, nb, val, done, w))
+	return lines
+
+
+static func _edge_key(a: int, b: int) -> int:
+	return mini(a, b) * 16777216 + maxi(a, b)
+
+
+func _river_walk(a: int, b: int, nb: Dictionary, val: Dictionary, done: Dictionary, w: int) -> Array:
+	var pts := [a, b]
+	done[_edge_key(a, b)] = true
+	var prev := a
+	var cur := b
+	while (nb[cur] as Array).size() == 2 and cur != a:
+		var nxt: int = nb[cur][0] if nb[cur][0] != prev else nb[cur][1]
+		var e := _edge_key(cur, nxt)
+		if done.has(e):
+			break
+		done[e] = true
+		pts.append(nxt)
+		prev = cur
+		cur = nxt
+	var wv := 3
+	var any := false
+	for q in pts:
+		if int(val[q]) >= 3:
+			wv = int(val[q]) if not any else maxi(wv, int(val[q]))
+			any = true
+	var line := [wv]
+	for q in pts:
+		line.append(q % w)
+		line.append(q / w)
+	return line
 
 
 # ------------------------------------------------------------------ texturas do mapa

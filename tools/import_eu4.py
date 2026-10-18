@@ -480,6 +480,65 @@ def map_textures(root, W, H, out_dir):
     return info
 
 
+def river_lines(riv):
+    """Rios do rivers.bmp em linhas (o EU4 desenha curvas a partir dos pixels): pixels com indice
+    < 254; vizinhos nas 4 direcoes, e na diagonal so quando nenhum dos dois pixels entre eles e rio.
+    As linhas vao de uma ponta/juncao (grau != 2) ate outra (os lacos fechados depois), na ordem dos
+    pixels (y, x). Cada linha = [largura, x0, y0, x1, y1, ...]; largura = maior indice >= 3 dela
+    (3 = mais fino ... 11 = mais largo; 0-2 sao marcadores de nascente/afluente/divisao)."""
+    H, W = riv.shape
+    ys, xs = np.nonzero(riv < 254)
+    val = {int(y) * W + int(x): int(riv[y, x]) for y, x in zip(ys, xs)}
+    keys = sorted(val)
+    orth = ((1, 0), (0, 1), (-1, 0), (0, -1))
+    diag = ((1, 1), (-1, 1), (-1, -1), (1, -1))
+    nb = {}
+    for k in keys:
+        y, x = divmod(k, W)
+        out = []
+        for dx, dy in orth:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < W and 0 <= ny < H and ny * W + nx in val:
+                out.append(ny * W + nx)
+        for dx, dy in diag:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < W and 0 <= ny < H and ny * W + nx in val \
+                    and (y * W + nx) not in val and (ny * W + x) not in val:
+                out.append(ny * W + nx)
+        nb[k] = out
+    done = set()
+    lines = []
+
+    def walk(a, b):
+        pts = [a, b]
+        done.add((min(a, b), max(a, b)))
+        prev, cur = a, b
+        while len(nb[cur]) == 2 and cur != a:
+            nxt = nb[cur][0] if nb[cur][0] != prev else nb[cur][1]
+            e = (min(cur, nxt), max(cur, nxt))
+            if e in done:
+                break
+            done.add(e)
+            pts.append(nxt)
+            prev, cur = cur, nxt
+        wv = max([val[q] for q in pts if val[q] >= 3] or [3])
+        line = [wv]
+        for q in pts:
+            line += [q % W, q // W]
+        lines.append(line)
+
+    for k in keys:
+        if len(nb[k]) != 2:
+            for n in nb[k]:
+                if (min(k, n), max(k, n)) not in done:
+                    walk(k, n)
+    for k in keys:
+        for n in nb[k]:
+            if (min(k, n), max(k, n)) not in done:
+                walk(k, n)
+    return lines
+
+
 def to_num(v):
     """"2" -> 2, "0.25" -> 0.25, outra coisa -> None."""
     try:
@@ -1657,11 +1716,14 @@ def main():
         del hm
     terrain_of, terrains = eu4_terrain(root, ids, n_prov)
     rp = os.path.join(root, "map", "rivers.bmp")
+    river_vec = []
     if os.path.isfile(rp):
         riv = Image.open(rp)
         if riv.mode == "P" and riv.size == (W, H):
             # indice da paleta do rivers.bmp (< 254 = rio; 254 = terra, 255 = mar), o shader le direto
             Image.fromarray(np.asarray(riv, dtype=np.uint8), "L").save("assets/eu4/rivers.png", optimize=True)
+            print("Rios em linhas...", flush=True)
+            river_vec = river_lines(np.asarray(riv, dtype=np.uint8))
     del ids
     print("Texturas do mapa (relevo, altitude, terreno)...", flush=True)
     map_tex = map_textures(root, W, H, "assets/eu4")
@@ -2030,7 +2092,7 @@ def main():
                    "advisor_types": advisor_types, "advisors": advisors,
                    "centers_of_trade": centers_of_trade, "trade_rules": trade_rules,
                    "opinion_modifiers": opinion_modifiers, "casus_belli": casus_belli, "war_goals": war_goals,
-                   "diplomacy_data": diplomacy_data, "map_textures": map_tex,
+                   "diplomacy_data": diplomacy_data, "map_textures": map_tex, "rivers": river_vec,
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
                    "celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
