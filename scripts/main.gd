@@ -3,8 +3,6 @@ extends Node2D
 
 const MAP_SCALE := 1.0
 const CAM_SPEED := 900.0
-var zoom_min := 0.25
-const ZOOM_MAX := 8.0
 
 var map: MapView
 var clock := GameClock.new()
@@ -35,7 +33,7 @@ var _press_pos := Vector2.ZERO     # onde o botão/dedo desceu (ordem de marcha 
 var _press_army := false           # o toque começou num marcador de exército
 var diplomacy := Diplomacy.new()
 var diplo := DiploActions.new()
-var camera: Camera2D
+var camera: MapCamera
 var player_tag := ""
 
 # UI
@@ -132,14 +130,9 @@ func _ready() -> void:
 	army_layer.combat = combat
 	army_layer.siege = siege
 
-	camera = Camera2D.new()
+	camera = MapCamera.new()           # zoom do EU4 (altura da câmera, em direção ao ponteiro)
 	add_child(camera)
-	camera.position = Vector2(map.map_w, map.map_h) * MAP_SCALE * 0.5
-	# Zoom que enquadra o mapa inteiro na janela (serve para qualquer tamanho de mapa)
-	var vp := get_viewport_rect().size
-	var fit: float = minf(vp.x / (map.map_w * MAP_SCALE), vp.y / (map.map_h * MAP_SCALE))
-	zoom_min = fit * 0.9
-	camera.zoom = Vector2(fit, fit)
+	camera.setup(Vector2(map.map_w, map.map_h) * MAP_SCALE)
 	camera.make_current()
 
 	_build_ui()
@@ -302,9 +295,7 @@ func _setup_eu4_hud() -> void:
 	else:
 		unit_panel.queue_free()
 		unit_panel = null
-	eu4_hud.zoom_requested.connect(func(f: float):
-		camera.zoom = (camera.zoom * f).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
-		_clamp_camera())
+	eu4_hud.zoom_requested.connect(camera.zoom_center)
 	_apply_gui_scale()
 
 
@@ -608,8 +599,7 @@ func _start_game(tag: String) -> void:
 		unit_panel.player = tag
 	start_panel.hide()
 	var cap: int = int(map.countries[tag]["capital"])
-	camera.position = map.province_center(cap)
-	camera.zoom = Vector2(1.2, 1.2)
+	camera.focus(map.province_center(cap), float(Eu4Data.define("NGui", "PROVINCE_FOCUS_ZOOM_HEIGHT", 0.25)))
 	map.select(cap)
 	_show_province(cap)
 	if country_view == null:
@@ -858,8 +848,7 @@ func _update_tooltip() -> void:
 
 
 func _clamp_camera() -> void:
-	var size := Vector2(map.map_w, map.map_h) * MAP_SCALE
-	camera.position = camera.position.clamp(Vector2.ZERO, size)
+	camera.clamp_to_map()
 
 
 ## Seleciona o exército `id` (−1 tira a seleção): marcador em destaque e o painel do EU4 no lugar
@@ -1002,16 +991,16 @@ func _unhandled_input(event: InputEvent) -> void:
 					else:
 						country_panel.show_country(map, owner if owner != "" else player_tag)
 			MOUSE_BUTTON_WHEEL_UP:
-				camera.zoom = (camera.zoom * 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
+				camera.zoom_by(MapCamera.wheel_factor(event.factor), event.position)
 			MOUSE_BUTTON_WHEEL_DOWN:
-				camera.zoom = (camera.zoom / 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
+				camera.zoom_by(1.0 / MapCamera.wheel_factor(event.factor), event.position)
 	elif event is InputEventScreenDrag and event.index == 0:
 		# celular: arrastar com um dedo move o mapa
 		camera.position -= event.relative / camera.zoom
 		_clamp_camera()
 	elif event is InputEventMagnifyGesture:
 		# celular: pinçar com dois dedos dá zoom
-		camera.zoom = (camera.zoom * event.factor).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
+		camera.zoom_by(event.factor, event.position, false)
 	elif event is InputEventMouseMotion:
 		if event.button_mask & (MOUSE_BUTTON_MASK_RIGHT | MOUSE_BUTTON_MASK_MIDDLE):
 			camera.position -= event.relative / camera.zoom
