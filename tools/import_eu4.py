@@ -387,7 +387,8 @@ TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power")
                 ("core", "local_manpower_modifier", "core_manpower")]
 # blocos inteiros de modificadores estaticos guardados em trade_rules["statics"] (efeitos numericos)
 STATIC_BLOCKS = ["prestige", "emperor", "stability", "positive_stability", "negative_stability",
-                 "legitimacy", "num_of_marriages"]
+                 "legitimacy", "num_of_marriages", "republican_tradition",
+                 "inverse_republican_tradition", "devotion"]
 
 
 def eu4_trade(root, loc):

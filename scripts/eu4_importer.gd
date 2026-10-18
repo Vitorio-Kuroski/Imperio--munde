@@ -1012,7 +1012,8 @@ const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_
 		["base_values", "merchants", "base_merchants"], ["core", "local_manpower_modifier", "core_manpower"]]
 ## Blocos inteiros de modificadores estáticos guardados em trade_rules["statics"] (efeitos numéricos).
 const STATIC_BLOCKS := ["prestige", "emperor", "stability", "positive_stability", "negative_stability",
-		"legitimacy", "num_of_marriages"]
+		"legitimacy", "num_of_marriages", "republican_tradition",
+		"inverse_republican_tradition", "devotion"]
 
 
 ## [centros de comércio, regras de comércio] (mesma saída do import_eu4.py).

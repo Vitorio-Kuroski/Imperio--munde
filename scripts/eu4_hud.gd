@@ -36,7 +36,7 @@ var religion: Religion             # opcional (missionários na barra)
 var manpower: Manpower             # opcional (efetivo na barra)
 var prestige: Prestige             # opcional (prestígio na barra)
 var stability: Stability           # opcional (estabilidade na barra)
-var legitimacy: Legitimacy         # opcional (legitimidade na barra, só para quem a usa)
+var legitimacy: Legitimacy         # opcional (legitimidade/tradição republicana/devoção na barra)
 var player := ""
 var _flag_tag := ""
 var _dev_version := -1
@@ -176,14 +176,18 @@ func refresh() -> void:
 		_text("text_manpower", Manpower.fmt(manpower.of(player)))
 		_tip("text_manpower", Loc.s("Efetivo: %s de %s (+%s por mês)", "Manpower: %s of %s (+%s per month)") % [
 				Manpower.fmt(manpower.of(player)), Manpower.fmt(manpower.max_of(player)), Manpower.fmt(manpower.monthly(player))])
-	for n in ["icon_leg", "text_leg"]:       # legitimidade: só nas monarquias (e tribais)
-		var c := _node(n)
-		if c:
-			c.visible = legitimacy != null and legitimacy.uses(player)
-	if legitimacy and legitimacy.uses(player):
-		_text("text_leg", str(roundi(legitimacy.of(player))))
-		_tip("text_leg", legitimacy.tooltip(player))
-		_tip("icon_leg", legitimacy.tooltip(player))
+	# legitimidade (monarquias e tribais), tradição republicana ou devoção: só o do governo do país
+	var gk := legitimacy.kind(player) if legitimacy else ""
+	for k in Legitimacy.HUD:
+		for n in Legitimacy.HUD[k]:
+			var c := _node(n)
+			if c:
+				c.visible = k == gk
+	if gk != "":
+		var names: Array = Legitimacy.HUD[gk]
+		_text(names[1], str(roundi(legitimacy.of(player))))
+		_tip(names[1], legitimacy.tooltip(player))
+		_tip(names[0], legitimacy.tooltip(player))
 	if stability:         # estabilidade (dica: custo de aumentar e efeitos)
 		_text("text_stability", Stability.fmt(stability.of(player)))
 		_tip("text_stability", stability.tooltip(player))
