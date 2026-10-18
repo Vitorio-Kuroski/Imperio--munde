@@ -1835,7 +1835,7 @@ func _make_gui() -> void:
 		by_low[(k as String).to_lower()] = k
 	var files := {}
 	var used := {}
-	var used_fonts := {}
+	var used_fonts := {"tahoma_60": true}           # fonte dos nomes no mapa (Mapfont)
 	for g in GUI_FILES:
 		var rel: String = by_low.get("interface/%s.gui" % g, "")
 		if rel == "":

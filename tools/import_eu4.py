@@ -1122,7 +1122,7 @@ def make_gui(root):
     def conv(items):
         return [["" if k is None else k, conv(v) if isinstance(v, list) else v] for k, v in items]
 
-    trees, used, used_fonts = {}, set(), set()
+    trees, used, used_fonts = {}, set(), {"tahoma_60"}       # tahoma_60 = fonte dos nomes no mapa (Mapfont)
 
     def refs(items):
         for k, v in items:
