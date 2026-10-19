@@ -20,8 +20,7 @@ const HIDE := ["secondary_religion_icon", "religious_school_icon", "countryshiel
 		"personality_icons_strip", "policies_icon", "policies_value", "revanchism_icon", "revanchism_value",
 		"spy_icon", "spy_value", "land_forcelimit_value", "land_forcelimit_icon", "naval_forcelimit_value",
 		"naval_forcelimit_icon",
-		"techgroup_icon", "election_info", "label_enemies", "enemies_box",
-		"label_rivals", "rivals_box", "label_rivals_not_possible", "sort_search", "sort_search_edit", "sort_name",
+		"techgroup_icon", "election_info", "sort_search", "sort_search_edit", "sort_name",
 		"sort_opinion", "sort_opinion_1", "sort_opinion_2", "sort_opinion_3", "sort_opinion_4", "sort_opinion_5",
 		"show_diplofeedback", "button_createvassals", "feedback_bg", "trust_label", "diplomacy_trust_progress_bar",
 		"diplomacy_trust_progress_frame", "diplomacy_trust_progress_indicator", "trust_value", "favors_label",
@@ -30,7 +29,7 @@ const HIDE := ["secondary_religion_icon", "religious_school_icon", "countryshiel
 		"join_offensive_wars_checkbox", "manual_manage_label", "manual_manage_checkbox", "neutral_icon",
 		"neutral_label", "neutral_checkbox", "friendly_icon", "friendly_label", "friendly_checkbox", "hostile_icon",
 		"hostile_label", "hostile_checkbox", "threatened_icon", "threat_label", "threat_checkbox",
-		"vassal_select_window", "select_rivals_window", "monarch_gender", "heir_gender", "attitude_icons_strip",
+		"vassal_select_window", "monarch_gender", "heir_gender", "attitude_icons_strip",
 		"attitude_icons_strip02", "member_of_HRE"]
 ## Ação -> [chave da localização, nome em português, ícone]
 const ACTIONS := {"improve": ["IMPROVERELATIONTITLE", "Melhorar relações", "GFX_diplomacy_action_relation"],
@@ -71,6 +70,8 @@ var view: Eu4CountryView
 var root: Control
 var mode := ""                      # "actions" ou "opinions" ("" = conforme o país)
 var open_cats := {}                 # categorias de ações abertas (como no EU4, começam fechadas)
+const RIVAL_WINDOW_SHIFT := 72.0
+var _choosing := false              # janela de escolher rivais aberta (select_rivals_window)
 var last_message := ""
 
 
@@ -81,6 +82,31 @@ func setup(v: Eu4CountryView) -> bool:
 		return false
 	for n in HIDE:
 		Eu4CountryView._hide(root, n)
+	var srw := root.find_child("select_rivals_window", true, false) as Control
+	if srw:
+		srw.hide()
+		# o fundo (choose_rivals_bg) só é opaco a partir de 121 px e a faixa verde do cabeçalho vem logo
+		# depois: os rótulos/ordenação (y 20) e a lista (y 40) descem 72 px para ficar sobre ela
+		for ch in srw.get_children():
+			if ch is Control and String(ch.name) not in ["choose_rivals_bg", "back"]:
+				(ch as Control).position.y += RIVAL_WINDOW_SHIFT
+		var lst := srw.find_child("list", true, false) as Control
+		if lst:
+			lst.clip_contents = false     # as linhas começam em x −80 (bandeira e nome à esquerda da lista)
+		var back := srw.find_child("back", true, false) as BaseButton
+		if back:
+			back.pressed.connect(func():
+				_choosing = false
+				view.refresh())
+	for n in ["rivals_box", "label_rivals"]:          # no próprio país: clicar escolhe os rivais
+		var rb := root.find_child(n, true, false) as Control
+		if rb:
+			rb.mouse_filter = Control.MOUSE_FILTER_STOP
+			rb.gui_input.connect(func(e: InputEvent):
+				if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT \
+						and view.tag == view.player and view.diplo and view.diplo.rivals:
+					_choosing = true
+					view.refresh())
 	var ba := root.find_child("show_diploactions", true, false) as BaseButton
 	if ba:
 		ba.tooltip_text = Loc.s("Ações diplomáticas", "Diplomatic actions")
@@ -190,6 +216,7 @@ func fill(tag: String) -> void:
 		var imp: float = dip.timed.get(tag + ">" + player, {}).get("improved_relation", [0.0])[0]
 		view._txt(root, "improve_relation_value", _num(imp), Loc.t("IMPROVE_RELATION_MODIFIER", "Relações melhoradas"))
 	_fill_relations(tag)
+	_fill_rivals(tag)
 	var m2 := mode if mode != "" else ("opinions" if tag == player else "actions")
 	if tag == player or not rel_vis:
 		m2 = "opinions"
@@ -211,6 +238,106 @@ func fill(tag: String) -> void:
 		_fill_actions(tag)
 	else:
 		_fill_opinions(tag)
+
+
+## Linhas "Enemies:" (quem tem o país como rival) e "Rivals:" (os rivais dele) com os escudos; no
+## país do jogador, clicar em Rivals abre a select_rivals_window do EU4 (candidatos com bandeira,
+## nome, opinião, exército e marinha; o botão põe ou tira o rival).
+func _fill_rivals(tag: String) -> void:
+	var rv: Rivals = view.diplo.rivals if view.diplo else null
+	for n in ["label_enemies", "enemies_box", "label_rivals", "rivals_box", "label_rivals_not_possible"]:
+		var x := root.find_child(n, true, false) as Control
+		if x:
+			x.visible = rv != null
+	if rv == null:
+		return
+	_shields(root.find_child("enemies_box", true, false) as Control, rv.enemies_of(tag), "countrydiplomacyview_shielditem")
+	var mine: Array = rv.of(tag)
+	var can := rv.can_pick(tag)
+	_shields(root.find_child("rivals_box", true, false) as Control, mine, "countrydiplomacyview_shielditem_rival")
+	_show(root, "rivals_box", can)
+	_show(root, "label_rivals", can)
+	_show(root, "label_rivals_not_possible", not can)
+	if not can:
+		view._txt(root, "label_rivals_not_possible", Loc.t("no_possible_rivals", "Sem rivais possíveis"),
+				Loc.t("RIVALS_NOT_POSSIBLE_SUBJECT", "Vassalos e sócios menores não escolhem rivais"))
+	var tip := Loc.t("HINT_RIVAL_TEXT", "")
+	if tag == view.player:
+		tip = Loc.s("Clique para escolher os rivais.", "Click to choose rivals.") + ("\n\n" + tip if tip != "" else "")
+	view._txt(root, "label_rivals", Loc.t("RIVALS", "Rivais:"), tip)
+	var srw := root.find_child("select_rivals_window", true, false) as Control
+	if srw:
+		srw.visible = _choosing and tag == view.player
+		var mpv := root.find_child("manpower_value", true, false) as Control
+		if mpv:
+			mpv.visible = not srw.visible      # desenhado por cima (z_index) do resto da aba
+		if srw.visible:
+			_fill_rival_choice(tag, srw)
+
+
+func _show(r: Control, n: String, on: bool) -> void:
+	var x := r.find_child(n, true, false) as Control
+	if x:
+		x.visible = on
+
+
+func _shields(box: Control, tags: Array, item: String) -> void:
+	if box == null:
+		return
+	for ch in box.get_children():
+		box.remove_child(ch)
+		ch.queue_free()
+	for t in tags:
+		var it := view.gui.build(item)
+		if it == null:
+			continue
+		var sh := it.find_child("shield", true, false) as Eu4Gui.Button2
+		if sh:
+			sh.set_flag(_flag_tex(t))
+			sh.tooltip_text = str(view.map.countries.get(t, {}).get("name", t))
+			sh.pressed.connect(func(): view.show_country(t))
+		it.custom_minimum_size = Vector2(30, 32)
+		box.add_child(it)
+
+
+func _fill_rival_choice(tag: String, srw: Control) -> void:
+	var rv: Rivals = view.diplo.rivals
+	var tags: Array = rv.of(tag).duplicate()
+	for t in rv.candidates(tag):
+		if not (t in tags):
+			tags.append(t)
+	var list := srw.find_child("list", true, false) as Control
+	var rows := view.gui.fill_list(list, "possible_rival_entry", tags.size())
+	var army: Army = view.army if "army" in view else null
+	for i in rows.size():
+		var t: String = tags[i]
+		var row: Control = rows[i]
+		var c: Dictionary = view.map.countries.get(t, {})
+		var fl := row.find_child("flag", true, false) as TextureButton
+		if fl:
+			fl.texture_normal = view.map.flag_texture(t)
+			fl.ignore_texture_size = true
+			fl.stretch_mode = TextureButton.STRETCH_SCALE
+		view._txt(row, "name", str(c.get("name", t)))
+		var op := view.diplo.opinion(tag, t)
+		view._txt(row, "opinion", "%+d" % op)
+		if army:
+			view._txt(row, "army", Manpower.fmt(float(army.regiments(t))))
+		view._txt(row, "navy", "0")
+		var is_r := rv.is_rival(tag, t)
+		_show(row, "is_our_rival", is_r)
+		var b := row.find_child("button_action", true, false) as BaseButton
+		if b:
+			var why := rv.why_not_remove(tag, t) if is_r else rv.why_not_add(tag, t)
+			b.disabled = why != ""
+			b.tooltip_text = (Loc.s("Tirar dos rivais (%d pontos diplomáticos)", "Remove rival (%d diplomatic power)") % rv.remove_cost()
+					if is_r else Loc.s("Escolher como rival", "Set as rival")) + (("\n" + why) if why != "" else "")
+			b.pressed.connect(func():
+				if is_r:
+					rv.remove(tag, t)
+				else:
+					rv.add(tag, t)
+				view.refresh())
 
 
 static var _titles := {}
@@ -435,10 +562,9 @@ func _fill_actions(tag: String) -> void:
 			var row := view.gui.add_item(list, "diploactionentry")
 			if row:
 				_todo_row(row, Loc.t(t[0], t[1]))
-	var status := root.find_child("label_rivals_not_possible", true, false) as Label
-	if status:
-		status.visible = last_message != ""
-		status.text = last_message
+	if last_message != "":
+		view.message.emit(last_message)
+		last_message = ""
 
 
 ## Cabeçalho de categoria (cid "" = linha de declarar guerra/pedir paz: sem o +/−).

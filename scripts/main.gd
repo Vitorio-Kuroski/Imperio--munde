@@ -25,6 +25,7 @@ var war_ai := WarAI.new()
 var cbs := CasusBelli.new()
 var coalition := Coalition.new()
 var discovery := Discovery.new()      # Terra Incógnita e névoa de guerra
+var rivals := Rivals.new()            # rivais (aba Diplomacia)
 var peace := Peace.new()
 var peace_view: Eu4PeaceView        # tela de paz do EU4
 var frontend: Eu4Frontend
@@ -106,6 +107,8 @@ func _ready() -> void:
 	diplo.war = war
 	cbs.setup(map, power, diplomacy, war)
 	diplo.cbs = cbs
+	rivals.setup(map, clock, power, diplomacy, war, cbs)
+	diplo.rivals = rivals
 	army.setup(map, clock, power, economy, manpower, diplomacy)
 	economy.army = army
 	combat.setup(map, clock, power, army, war, prestige)
@@ -313,6 +316,7 @@ func _setup_eu4_hud() -> void:
 	if peace_view.setup(g, map, peace, war):
 		peace_view.message.connect(_toast)
 		if country_view:
+			country_view.message.connect(_toast)
 			country_view.peace_requested.connect(func(t: String):
 				peace_view.player = player_tag
 				for c in [country_view, province_view, macro_builder]:
@@ -689,6 +693,7 @@ func _start_game(tag: String) -> void:
 	army_layer.show()
 	if discovery.available():
 		discovery.start()
+	rivals.start()                      # a IA escolhe os rivais (o jogador na aba Diplomacia)
 	var cap: int = int(map.countries[tag]["capital"])
 	camera.focus(map.province_center(cap), float(Eu4Data.define("NGui", "PROVINCE_FOCUS_ZOOM_HEIGHT", 0.25)))
 	map.select(cap)

@@ -16,6 +16,7 @@ signal advisors_requested(tag: String)
 signal summary_requested(tag: String)
 signal peace_requested(tag: String)     # "Negociar paz" na aba Diplomacia (main abre a tela de paz)
 signal closed
+signal message(text: String)        # aviso para o jogador (main mostra)
 
 const TABS := {"tab_court": "court", "tab_gov": "gov", "tab_economy": "economy", "tab_technology": "tech",
 		"tab_ideas": "ideas", "tab_religion": "religion", "tab_stability": "stability",

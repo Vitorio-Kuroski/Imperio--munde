@@ -36,6 +36,7 @@ var legitimacy: Legitimacy         # main.gd define (casar com quem tem menos pr
 var war: War                       # main.gd define (declarar guerra, paz branca)
 var cbs: CasusBelli                # main.gd define (casus belli; sem motivo custa estabilidade)
 var coalition: Coalition           # main.gd define (entrar/sair de coalizões, guerra de coalizão)
+var rivals: Rivals                 # main.gd define (opinião rival/enemy, sem aliança entre rivais)
 var mods := {}                     # opinion_modifiers do EU4
 var timed := {}                    # "A>B" -> {modificador: [valor, meses restantes ou -1]} (opinião de A sobre B)
 var improving := {}                # país -> [alvos com diplomata melhorando relações]
@@ -89,6 +90,11 @@ func breakdown(a: String, b: String) -> Array:
 		out.append(["guaranteed", _mod("guaranteed", "opinion", 10)])
 	if diplomacy.enemies(a, b) == true:
 		out.append(["at_war", _mod("at_war", "opinion", -20)])
+	if rivals:                         # a escolheu b como rival / b escolheu a
+		if rivals.is_rival(a, b):
+			out.append(["rival", _mod("rival", "opinion", -100)])
+		if rivals.is_rival(b, a):
+			out.append(["enemy", _mod("enemy", "opinion", -50)])
 	for id in timed.get(a + ">" + b, {}):
 		var v: float = timed[a + ">" + b][id][0]
 		if absf(v) >= 0.5:
@@ -261,6 +267,10 @@ func _why_not(action: String, actor: String, target: String) -> String:
 			if cur >= _mod("improved_relation", "max", 100):
 				return Loc.s("Relações já no máximo", "Relations already at maximum")
 		"alliance":
+			if rivals and rivals.is_rival(actor, target):
+				return Loc.t("THEY_ARE_OUR_RIVAL", "Não há aliança com um rival")
+			if rivals and rivals.is_rival(target, actor):
+				return Loc.t("THEY_RIVAL_US", "Eles nos têm como rival")
 			if allied:
 				return Loc.s("Já são aliados", "Already allied")
 			var lim := int(_rules.get("min_relations_to_ally", -25))
