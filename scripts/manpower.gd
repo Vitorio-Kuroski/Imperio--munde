@@ -82,7 +82,10 @@ static func fmt(thousands: float) -> String:
 	if thousands < 1.0:
 		return str(roundi(thousands * 1000.0))
 	if thousands < 10.0:
-		return ("%.1fk" % thousands).replace(".", Loc.dec)
+		var s := "%.1f" % thousands
+		if s.ends_with(".0"):           # como o EU4: "3k", não "3.0k"
+			s = s.left(-2)
+		return s.replace(".", Loc.dec) + "k"
 	return "%dk" % roundi(thousands)
 
 
