@@ -236,6 +236,11 @@ func _setup_eu4_hud() -> void:
 	if province_view.setup(g, map, institutions):
 		province_view.manpower = manpower
 		province_view.terrain_tip = _terrain_info
+		province_view.army = army
+		province_view.siege = siege
+		province_view.construction = construction
+		province_view.power = power
+		province_view.diplo = diplo
 	else:
 		province_view.queue_free()
 		province_view = null
@@ -277,6 +282,10 @@ func _setup_eu4_hud() -> void:
 					map.refresh_colors())
 		if province_view:
 			province_view.owner_requested.connect(_show_country)
+			province_view.diplomacy_requested.connect(func(t: String):
+				_show_country(t)
+				country_view.tab = "diplomacy"
+				country_view.refresh())
 	else:
 		country_view.queue_free()
 		country_view = null
