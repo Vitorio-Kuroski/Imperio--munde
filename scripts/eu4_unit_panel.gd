@@ -10,11 +10,15 @@ extends Control
 ##  - Topo: infantaria/cavalaria/artilharia com o número de regimentos e os homens; o "+" recruta
 ##    um regimento daquele tipo na província onde o exército está (se for do jogador).
 ##  - Regimentos com o nome do EU4 (REGIMENT_NAME: "Dalaskogen's 1st Regiment"), tipo e homens.
-##  - Coluna de botões da direita como no EU4 (só os de exército): juntar (attach_unit_button,
-##    quando há outro exército do país parado ali; senão detach_unit_button), próximo/anterior
-##    exército (next/prev_unit_button), ir ao cerco (goto_siege_button, cercando); os de coisas que
-##    o jogo ainda não tem (marcha forçada, caçar rebeldes, terra arrasada, treino, depósito...)
-##    aparecem apagados, com a dica dizendo isso. Missões, transporte e o resto da frota escondidos.
+##  - Coluna de botões da direita como o EU4 atual mostra um exército, nas posições do .gui:
+##    allow_attach | goto_siege_button (y 69), attach_unit_button | reorganize (113), detach_marines |
+##    consolidate (157), barra de supressão de rebeldes (rebel_suppression_icon/_text, ~201: −0,25 por
+##    regimento, INF/CAV/ART_SUPPRESSION), marcha forçada | atacar nativos (237), terra arrasada |
+##    queimar colônia (281), caçar rebeldes | tomar colônia (325), guarnição | depósito (369), treino |
+##    cerco em tapete (413). Funcionam juntar (outro exército do país parado ali), ir ao cerco
+##    (cercando) e próximo/anterior exército (next/prev_unit_button); os outros ficam apagados com a
+##    dica "Ainda não existe neste jogo". home_at_war, detach_unit e exércitos estrangeiros não
+##    aparecem (o EU4 também não os mostra aqui); missões, transporte e frota escondidos.
 ## Só os exércitos do jogador têm botões; os de outros países só mostram.
 
 signal closed
@@ -22,14 +26,15 @@ signal goto(pid: int)              # centralizar o mapa nesta província (main m
 signal selected_changed(id: int)   # próximo/anterior exército (main marca no mapa)
 
 ## Botões da coluna da direita que ainda não fazem nada (aparecem apagados, como no EU4 sem a opção).
-const TODO_BUTTONS := ["allow_attach", "home_at_war", "reorganize_units_button", "consolidate_button",
-		"toggle_foreign_armies_button", "enable_force_march_button", "scorch_button", "enable_rebel_button",
-		"refill_garrison_button", "supply_depot_button", "army_drill_button", "enable_carpet_siege"]
+const TODO_BUTTONS := ["allow_attach", "reorganize_units_button", "detach_marines_button", "consolidate_button",
+		"enable_force_march_button", "attacknatives_button", "scorch_button", "burncolony_button",
+		"enable_rebel_button", "seizecolony_button", "refill_garrison_button", "supply_depot_button",
+		"army_drill_button", "enable_carpet_siege"]
 const MAIN_KEEP := ["regiment_bg", "lu_unit_type_1", "lu_unit_type_1_count", "lu_unit_type_1_value",
 		"lu_build_unit_1_button", "lu_unit_type_2", "lu_unit_type_2_count", "lu_unit_type_2_value",
 		"lu_build_unit_2_button", "lu_unit_type_3", "lu_unit_type_3_count", "lu_unit_type_3_value",
-		"lu_build_unit_3_button", "subunitlist", "attach_unit_button", "detach_unit_button", "goto_siege_button",
-		"next_unit_button", "prev_unit_button"] + TODO_BUTTONS
+		"lu_build_unit_3_button", "subunitlist", "attach_unit_button", "goto_siege_button",
+		"next_unit_button", "prev_unit_button", "rebel_suppression_icon", "rebel_suppression"] + TODO_BUTTONS
 const CARD_KEEP := ["unitpanel_bg_pc", "land_units", "unit1_type", "unit1_count", "unit2_type", "unit2_count",
 		"unit3_type", "unit3_count", "unitstrength_land", "unitlocation", "unit_destination", "disbandbutton",
 		"newunitbutton02", "unitattrition", "unit_attrition_icon", "unit_morale_bar_bg", "unit_morale",
@@ -108,14 +113,12 @@ func setup(g: Eu4Gui, m: MapView, a: Army) -> bool:
 		l.text = Loc.t("GOTO", "Ir para")
 		sel.add_child(l)
 	var off := Loc.s("Ainda não existe neste jogo", "Not in this game yet")
-	for n in TODO_BUTTONS + ["detach_unit_button", "leader_button"]:
+	for n in TODO_BUTTONS + ["leader_button"]:
 		var b := _find(_main, n) as BaseButton
 		if b == null:
 			b = _find(_card, n) as BaseButton
 		if b:
-			b.disabled = true
-			b.modulate = Color(0.5, 0.5, 0.5)
-			b.mouse_filter = Control.MOUSE_FILTER_PASS
+			_set_enabled(b, false)
 			b.tooltip_text = off
 	for n in ["unit_morale", "unit_drill"]:
 		var pb := _find(_card, n)
@@ -126,7 +129,6 @@ func setup(g: Eu4Gui, m: MapView, a: Army) -> bool:
 	var list := _find(_main, "subunitlist") as ScrollContainer
 	if list:
 		list.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
-	_arrange_column()
 	army.changed.connect(func(_t): _queue())
 	army.moved.connect(_queue)
 	hide()
@@ -280,23 +282,28 @@ func refresh() -> void:
 		if b["id"] != id and b["tag"] == tag and b["path"].is_empty():
 			others += 1
 	if at:
-		at.visible = mine and others > 0
-	var de := _find(_main, "detach_unit_button")        # mesmo lugar do attach
-	if de:
-		de.visible = mine and others == 0
+		at.visible = mine
+		_set_enabled(at as BaseButton, others > 0)
 	var sieging: bool = army.siege != null and army.siege.sieges.has(pid) and army.siege.sieges[pid]["tag"] == tag
-	var gs := _find(_main, "goto_siege_button")         # mesmo lugar do home_at_war
+	var gs := _find(_main, "goto_siege_button")
 	if gs:
-		gs.visible = mine and sieging
-	var hw := _find(_main, "home_at_war")
-	if hw:
-		hw.visible = mine and not sieging
+		gs.visible = mine
+		_set_enabled(gs as BaseButton, sieging)
 	for n in TODO_BUTTONS + ["next_unit_button", "prev_unit_button"]:
-		if n != "home_at_war" and _find(_main, n):
+		if _find(_main, n):
 			_find(_main, n).visible = mine
-	var aat := _find(_main, "AllowAttachText")
-	if aat:
-		aat.visible = mine
+	# supressão de rebeldes: −(INF/CAV/ART_SUPPRESSION por regimento) (o jogo ainda não tem agitação)
+	var sup := 0.0
+	for r in a["regs"]:
+		var k: String = {"infantry": "INF", "cavalry": "CAV", "artillery": "ART"}.get(r["type"], "INF")
+		sup += float(Eu4Data.define("NMilitary", k + "_SUPPRESSION", 0.25))
+	_txt(_main, "rebel_suppression", "-" + _n(sup), Loc.t("RR_SUPPRESSION_CAPABILITY", "Redução de agitação") + "\n"
+			+ Loc.f("RR_SUPPRESSION_CAPABILITY_DESC", {"BASE": _n(sup),
+			"MAX_UNREST_REDUCTION": _n(float(Eu4Data.define("NMilitary", "MAX_REBEL_SUPPRESSION", 5.0)))},
+			"Redução de agitação deste exército na província: %s." % _n(sup)))
+	var rl := _find(_main, "rebel_suppression") as Label
+	if rl:
+		rl.add_theme_color_override("font_color", Color(0.2, 0.85, 0.2))
 	var sel := _find(_card, "select_army_button")
 	if sel:
 		sel.tooltip_text = Loc.f("GOTO_PROVINCE", {"PROV": map.provinces[pid]["name"]}, "Ir para %s." % map.provinces[pid]["name"])
@@ -368,37 +375,30 @@ func _recruit(ty: String) -> void:
 		refresh()
 
 
-## Coluna da direita arrumada como o EU4 mostra um exército em terra: no topo a caixa "Friendlies
-## can attach" (allow_attach, x 378 y 69) com o texto ALLOW_ATTACH ao lado (o allow_attach_text
-## comentado no .gui, em x 402... à direita do botão); embaixo a grade do .gui (colunas x 378/421,
-## linhas a cada 44 px desde y 113) com os botões de exército em sequência, sem as casas vazias
-## que no .gui são da frota e das colônias. Juntar/separar fica na primeira casa (y 113, esquerda).
-const COLUMN := ["reorganize_units_button", ["home_at_war", "goto_siege_button"], "consolidate_button",
-		"toggle_foreign_armies_button", "enable_force_march_button", "enable_rebel_button", "scorch_button",
-		"army_drill_button", "enable_carpet_siege", "refill_garrison_button", "supply_depot_button"]
+## Botão do EU4 ativo ou apagado (quadro "desativado" do sprite; sem ele, cinza como o EU4).
+static func _set_enabled(b: BaseButton, on: bool) -> void:
+	b.disabled = not on
+	b.mouse_filter = Control.MOUSE_FILTER_PASS
+	var has_frame := b is TextureButton and (b as TextureButton).texture_disabled != null
+	b.modulate = Color.WHITE
+	b.self_modulate = Color.WHITE
+	if not on and not has_frame:
+		b.material = _grey_mat()
+	else:
+		b.material = null
 
 
-func _arrange_column() -> void:
-	var slot := 1                      # a casa 0 é a de juntar/separar
-	for it in COLUMN:
-		var names: Array = it if it is Array else [it]
-		var pos := Vector2(378 + 43 * (slot % 2), 113 + 44 * (slot / 2))
-		for n in names:
-			var c := _find(_main, n)
-			if c:
-				c.position = pos
-		slot += 1
-	var aa := _find(_main, "allow_attach")
-	if aa and aa.get_parent().get_node_or_null("AllowAttachText") == null:
-		var l := Label.new()
-		l.name = "AllowAttachText"
-		gui.style_label(l, "vic_18")
-		l.text = Loc.t("ALLOW_ATTACH", "Aliados\npodem juntar")
-		l.position = aa.position + Vector2(aa.size.x + 2, 4)
-		l.size = Vector2(504 - l.position.x - 14, 40)
-		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		aa.get_parent().add_child(l)
+static var _grey: ShaderMaterial
+
+
+## Tons de cinza como o PixelShaderGreyed do EU4 (gfx/FX/buttonstate.shader).
+static func _grey_mat() -> ShaderMaterial:
+	if _grey == null:
+		var sh := Shader.new()
+		sh.code = "shader_type canvas_item;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV) * COLOR;\n\tfloat g = dot(c.rgb, vec3(0.212671, 0.715160, 0.072169));\n\tCOLOR = vec4(vec3(g), c.a);\n}\n"
+		_grey = ShaderMaterial.new()
+		_grey.shader = sh
+	return _grey
 
 
 ## Próximo/anterior exército do jogador (next/prev_unit_button).
