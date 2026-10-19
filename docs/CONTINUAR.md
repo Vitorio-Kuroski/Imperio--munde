@@ -17,12 +17,14 @@ jogo; aqui fica só o que não está nele.
 - `Vitorio-Kuroski/Imperio--munde`, branch `ccr-f1dcb778-z4rh1h` (o PR #1 já foi mesclado; os
   commits seguem nesse branch, sem PR novo, a menos que ele peça). Push:
   `git push -u origin ccr-f1dcb778-z4rh1h`. Cada push roda o workflow "APK Android"; confira se passou.
-- Godot 4.3. Python 3 com pillow, numpy, scipy para `tools/`.
+- Godot 4.7.2 (projeto e CI; atualizado da 4.3 a pedido do usuário em 19/10/2026). Python 3 com
+  pillow, numpy, scipy para `tools/`.
 - **Nunca commitar dados da Paradox**: `data/eu4/` e `assets/eu4/` estão no .gitignore. Nunca
   commitar `tools/data/raw/`.
-- Antes de commitar, apague os arquivos gerados pelo editor/testes: `scripts/_t*.gd`,
-  `scripts/_test_import.gd`, `scripts/*.uid`, `assets/*.import`, `assets/world/*.import`,
-  `icon.png.import`.
+- Antes de commitar, apague os scripts de teste (`scripts/_t*.gd`, `scripts/_test_import.gd` e os
+  `.uid` deles). Os `.uid` dos scripts e shaders de verdade **vão para o git** (o Godot 4.4+ os usa
+  para achar os arquivos; o `main.tscn` aponta o main.gd pelo uid); os `.import` ficam fora
+  (.gitignore: o CI reimporta).
 - Mensagens de commit em português, sem identificador de modelo, terminando com:
   ```
   Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -31,7 +33,9 @@ jogo; aqui fica só o que não está nele.
 - **Os dois importadores têm de gerar a mesma saída**: `tools/import_eu4.py` (grava em `data/eu4/`
   e `assets/eu4/`) e `scripts/eu4_importer.gd` (dentro do jogo, grava em `user://eu4/`). Toda mudança
   vai nos dois, e a saída é comparada (JSON por conteúdo, PNG pixel a pixel; os centros das
-  províncias podem diferir em 0,1 por arredondamento, isso já era assim).
+  províncias podem diferir em 0,1 por arredondamento, isso já era assim; desde o Godot 4.7 as imagens
+  que o Godot decodifica — DDS, TGA: ícones, bandeiras, telas, colormaps — diferem do Pillow em até
+  ±1 de cor, o que é aceito).
 - Mantenha o `CLAUDE.md` atualizado a cada recurso novo (é a documentação do projeto).
 
 ## Como testar (o que funcionou nesta sessão)
@@ -55,8 +59,8 @@ mapa (`MapNames`), texturas do mapa (relevo, profundidade, terreno), fronteiras 
 curvas (`RiverLayer`). Detalhes no `CLAUDE.md`.
 
 ## Sessão local (Claude Desktop, 18/10/2026): o que se aprendeu
-- O projeto está em `C:\Users\vitor\Imperio--munde`. Godot 4.7.2 foi baixado em
-  `C:\Users\vitor\godot\` (a pedido do usuário) só para testar; o projeto e o CI continuam no 4.3.
+- O projeto está em `C:\Users\vitor\Imperio--munde`. Godot 4.7.2 em `C:\Users\vitor\godot\`
+  (projeto e CI também na 4.7.2).
   A placa do PC (Intel HD 4600) só roda o renderizador de compatibilidade, como o celular: use
   `Godot_v4.7.2-stable_win64_console.exe --rendering-driver opengl3` nas capturas. Python 3.14 com
   pillow/numpy/scipy (comando `python`, não `python3`).
@@ -70,7 +74,7 @@ curvas (`RiverLayer`). Detalhes no `CLAUDE.md`.
 - O usuário precisa **importar de novo** no jogo para ganhar `terra_incognita.png` e `fow_noise.png`
   (sem elas: Terra Incógnita em cor lisa e névoa sem ruído).
 - Comparação dos importadores: no Godot 4.7 tudo o que o Godot decodifica (DDS, TGA, ícones,
-  bandeiras) difere do Python (±1 nos DDS); o resto é idêntico. Para a comparação exata, Godot 4.3.
+  bandeiras) difere do Python (±1 nos DDS); o resto é idêntico.
 
 ## Pedido em aberto: o resto do visual do mapa do EU4
 1. Água como no EU4: o `pdxwater.shader` é 3D (reflexo, refração do fundo, `colormap_water` a 30%);
