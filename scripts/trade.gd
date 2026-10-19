@@ -51,6 +51,7 @@ var _tech_eff := PackedFloat32Array()   # eficiência comercial somada da tecnol
 var _tech_range := PackedFloat32Array() # alcance comercial somado da tecnologia dip até cada nível
 
 const PROPAGATE_MIN := 10.0             # poder provincial mínimo para propagar rio acima (wiki do EU4)
+const AUTONOMY_TRADE_POWER := -0.5    # local_autonomy_multiplicative do EU4
 const MERCHANT_POWER := 2.0             # poder do mercador no nó (wiki do EU4)
 const MAX_STEER_BONUS_MERCHANTS := 5    # além de 5 mercadores numa rota o valor não sobe mais
 
@@ -432,7 +433,7 @@ func _static() -> void:
 		var gid: String = p.get("trade_goods", "")
 		if gid != "gold" and map.trade_goods.has(gid):
 			prov_value[pid] = map.goods_produced(p) * float(map.trade_goods[gid]["price"])
-		var base := float(p["development"]) * dev_tp
+		var base := float(p["development"]) * dev_tp + map.building_mod(p, "province_trade_power_value")
 		var cot := int(p.get("center_of_trade", 0))
 		if cot > 0:
 			var inland: bool = map.trade_nodes.get(p.get("trade_node", ""), {}).get("inland", false) \
@@ -441,8 +442,9 @@ func _static() -> void:
 		var mult := 1.0
 		if p.get("coastal", false):
 			mult += coastal_tp
-		for bid in p.get("buildings", []):
-			mult += float(map.buildings.get(bid, {}).get("modifiers", {}).get("province_trade_power_modifier", 0.0))
+		# autonomia local (local_autonomy_multiplicative: province_trade_power_modifier −0,5 × autonomia)
+		mult += AUTONOMY_TRADE_POWER * float(p.get("local_autonomy", 0.0)) / 100.0
+		mult += map.building_mod(p, "province_trade_power_modifier")   # construções e modificadores da província
 		_pids.append(pid)
 		_pnode.append(i)
 		_pbase.append(base)

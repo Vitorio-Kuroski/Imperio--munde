@@ -628,6 +628,8 @@ func _import() -> String:
 	var hre := {}                   # províncias do Sacro Império em 1444
 	var cores := {}                 # pid -> núcleos (gravados quando há algum de outro país que não o dono)
 	var claims := {}                # pid -> reivindicações
+	var autonomy := {}              # pid -> autonomia local em 1444 (add_local_autonomy do histórico)
+	var prov_mods := {}             # pid -> modificadores permanentes (estuários, sound_toll...)
 	var cot := {}                   # centro de comércio (nível)
 	var files := _list("history/provinces/")
 	for fi in files.size():
@@ -647,6 +649,10 @@ func _import() -> String:
 			cores[pid] = cc[0]
 		if not cc[1].is_empty():
 			claims[pid] = cc[1]
+		if float(cc[2]) > 0.0:
+			autonomy[pid] = float(cc[2])
+		if not (cc[3] as Array).is_empty():
+			prov_mods[pid] = cc[3]
 		if st.get("owner") is String and st["owner"] != "":
 			owner[pid] = st["owner"]
 		if st.get("culture") is String:
@@ -881,6 +887,10 @@ func _import() -> String:
 					break
 			if claims.has(pid):
 				prov["claims"] = claims[pid]
+			if autonomy.has(pid):
+				prov["local_autonomy"] = autonomy[pid]
+			if prov_mods.has(pid):
+				prov["modifiers"] = prov_mods[pid]
 			var coastal := false
 			for q in neigh[pid]:
 				if sea.has(q) and not lakes.has(q):      # os lagos não deixam a província costeira (EU4)
@@ -1155,9 +1165,22 @@ func _core_claims(items: Array) -> Array:
 					seq.append(kv)
 	var cores := []
 	var claims := []
+	var autonomy := 0.0
+	var mods := []
 	for kv in seq:
+		if (kv[0] == "add_permanent_province_modifier" or kv[0] == "add_province_modifier") and kv[1] is Array:
+			for x in kv[1]:
+				if x[0] == "name" and x[1] is String and not (x[1] in mods):
+					mods.append(x[1])
+					break
+			continue
+		if kv[0] == "remove_province_modifier" and kv[1] is String:
+			mods.erase(kv[1])
+			continue
 		if not (kv[1] is String):
 			continue
+		if (kv[0] == "add_local_autonomy" or kv[0] == "set_local_autonomy") and (kv[1] as String).is_valid_float():
+			autonomy = clampf((autonomy if kv[0] == "add_local_autonomy" else 0.0) + (kv[1] as String).to_float(), 0.0, 100.0)
 		match kv[0]:
 			"add_core":
 				if not (kv[1] in cores):
@@ -1171,7 +1194,7 @@ func _core_claims(items: Array) -> Array:
 				claims.erase(kv[1])
 	cores.sort()
 	claims.sort()
-	return [cores, claims]
+	return [cores, claims, autonomy, mods]
 
 
 ## Árvore do script do EU4 em listas [chave, valor] (chave "" para itens soltos), para o JSON.

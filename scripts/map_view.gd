@@ -59,6 +59,7 @@ var religions: Dictionary = {}     # id -> dict (name, group, color); vazio se o
 var religion_index: Dictionary = {} # id -> 1..N (0 = nenhuma)
 var trade_goods: Dictionary = {}   # id -> dict (name, color, price); vazio se o mapa não tiver produtos
 var trade_good_index: Dictionary = {} # id -> 1..N (0 = nenhum)
+var _event_mods := {}                # nome -> efeitos (common/event_modifiers), cache de province_modifier
 var trade_nodes: Dictionary = {}   # id -> dict (name, color, location, inland, end, outgoing)
 var centers_of_trade: Array = []   # [{id, name, level, type coastal/inland, trade_power}]
 var trade_rules: Dictionary = {}   # regras do comércio (modificadores estáticos e defines do EU4)
@@ -317,12 +318,29 @@ func building_mod(p: Dictionary, key: String) -> float:
 	var s := 0.0
 	for b in p.get("buildings", []):
 		s += float(buildings.get(b, {}).get("modifiers", {}).get(key, 0.0))
+	for m in p.get("modifiers", []):        # modificadores permanentes do histórico (estuários, Sound Toll...)
+		s += float(province_modifier(str(m)).get(key, 0.0))
 	return s
 
 
-## Bens produzidos por ano: produção base × 0,2 + trade_goods_size das construções (manufaturas).
+## Efeitos numéricos de um modificador de common/event_modifiers (em cache).
+func province_modifier(name: String) -> Dictionary:
+	if not _event_mods.has(name):
+		var d := {}
+		var tree = Eu4Data.merged("common/event_modifiers").get(name, [])
+		if tree is Array:
+			for kv in tree:
+				if kv is Array and kv.size() == 2 and str(kv[1]).is_valid_float():
+					d[str(kv[0])] = float(str(kv[1]))
+		_event_mods[name] = d
+	return _event_mods[name]
+
+
+## Bens produzidos por ano: (produção base × 0,2 + trade_goods_size das construções e modificadores)
+## × (1 + trade_goods_size_modifier).
 func goods_produced(p: Dictionary) -> float:
-	return float(p.get("base_production", float(p["development"]) / 3.0)) * 0.2 + building_mod(p, "trade_goods_size")
+	return (float(p.get("base_production", float(p["development"]) / 3.0)) * 0.2 + building_mod(p, "trade_goods_size")) \
+			* maxf(0.0, 1.0 + building_mod(p, "trade_goods_size_modifier"))
 
 
 ## Nome do modo de mapa (localização do EU4, senão em português).

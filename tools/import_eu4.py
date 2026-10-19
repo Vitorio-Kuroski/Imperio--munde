@@ -194,7 +194,9 @@ def state_at(items, cutoff):
 
 def core_claims(items, cutoff):
     """Nucleos e reivindicacoes da provincia no dia de inicio (add_core/remove_core/add_claim/remove_claim
-    no topo e nos blocos datados ate a data, em ordem). -> (nucleos, reivindicacoes), ordenados."""
+    no topo e nos blocos datados ate a data, em ordem), a autonomia local (add/set_local_autonomy, 0-100) e
+    os modificadores de provincia (add_permanent_province_modifier/add_province_modifier, nomes de
+    common/event_modifiers). -> (nucleos, reivindicacoes ordenados, autonomia, modificadores)."""
     seq = [(k, v) for k, v in items if k and not (DATE_RE.match(k) and isinstance(v, list))]
     dated = sorted(((tuple(int(x) for x in k.split(".")), v) for k, v in items
                     if k and DATE_RE.match(k) and isinstance(v, list)), key=lambda t: t[0])
@@ -202,9 +204,22 @@ def core_claims(items, cutoff):
         if d <= cutoff:
             seq += [(k, x) for k, x in v if k]
     cores, claims = [], []
+    autonomy = 0.0
+    mods = []
     for k, v in seq:
+        if k in ("add_permanent_province_modifier", "add_province_modifier") and isinstance(v, list):
+            name = next((x for kk, x in v if kk == "name" and isinstance(x, str)), "")
+            if name and name not in mods:
+                mods.append(name)
+            continue
+        if k == "remove_province_modifier" and isinstance(v, str) and v in mods:
+            mods.remove(v)
+            continue
         if not isinstance(v, str):
             continue
+        if k in ("add_local_autonomy", "set_local_autonomy") and to_num(v) is not None:
+            autonomy = (autonomy if k == "add_local_autonomy" else 0.0) + to_num(v)
+            autonomy = min(100.0, max(0.0, autonomy))
         if k == "add_core" and v not in cores:
             cores.append(v)
         elif k == "remove_core" and v in cores:
@@ -213,7 +228,7 @@ def core_claims(items, cutoff):
             claims.append(v)
         elif k == "remove_claim" and v in claims:
             claims.remove(v)
-    return sorted(cores), sorted(claims)
+    return sorted(cores), sorted(claims), autonomy, mods
 
 
 def script_tree(items):
@@ -1767,6 +1782,8 @@ def main():
     religion = {}
     cores = {}              # pid -> nucleos (quando ha algum de outro pais que nao o dono)
     claims = {}             # pid -> reivindicacoes
+    autonomy = {}           # pid -> autonomia local em 1444 (add_local_autonomy do historico)
+    prov_mods = {}          # pid -> modificadores permanentes (estuarios, sound_toll...)
     for f in glob.glob(os.path.join(root, "history", "provinces", "*.txt")):
         m = re.match(r"\s*(\d+)", os.path.basename(f))
         if not m:
@@ -1776,7 +1793,11 @@ def main():
             continue
         items = parse_script(read_text(f))
         st = state_at(items, cutoff)
-        co, cl = core_claims(items, cutoff)
+        co, cl, au, pm = core_claims(items, cutoff)
+        if au > 0:
+            autonomy[pid] = au
+        if pm:
+            prov_mods[pid] = pm
         if co:
             cores[pid] = co
         if cl:
@@ -2074,6 +2095,10 @@ def main():
                 prov["cores"] = cores[pid]
             if pid in claims:
                 prov["claims"] = claims[pid]
+            if pid in autonomy:
+                prov["local_autonomy"] = autonomy[pid]
+            if pid in prov_mods:
+                prov["modifiers"] = prov_mods[pid]
             prov["base_tax"], prov["base_production"], prov["base_manpower"] = dev_parts.get(pid, (0, 0, 0))
             # costeira = vizinha de mar (os lagos não contam, como no EU4)
             prov["coastal"] = any(q in sea_ids and q not in lake_ids for q in neigh[pid])
