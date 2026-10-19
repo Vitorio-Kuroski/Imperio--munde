@@ -214,6 +214,7 @@ func fill(tag: String) -> void:
 
 
 static var _titles := {}
+static var _gov_cache := {}
 static var _regency := {}
 
 
@@ -221,10 +222,25 @@ static var _regency := {}
 ## "Kingdom", "Království"...). Sem government_rank no histórico o EU4 usa o posto 2 (os ducados o
 ## têm = 1 explícito).
 func rank_title(tag: String) -> String:
-	if _titles.has(tag):
-		return _titles[tag]
+	if not _titles.has(tag):
+		var t := gov_title(tag, "rank")
+		_titles[tag] = t if t != "" else view._gov_name(view.map.countries.get(tag, {}))
+	return _titles[tag]
+
+
+## Posto do país (1–3; 2 quando o histórico não diz).
+func rank_of(tag: String) -> int:
 	var c: Dictionary = view.map.countries.get(tag, {})
-	var rank := clampi(int(c.get("rank", 2)) if c.get("rank") != null else 2, 1, 3)
+	return clampi(int(c.get("rank", 2)) if c.get("rank") != null else 2, 1, 3)
+
+
+## Campo do government_names do país para o posto dele: "rank" (Kingdom), "ruler_male" (King),
+## "ruler_female", "heir_male"...; "" se nenhuma entrada vale.
+func gov_title(tag: String, field: String) -> String:
+	var key := tag + "|" + field
+	if _gov_cache.has(key):
+		return _gov_cache[key]
+	var rank := rank_of(tag)
 	var out := ""
 	var files := Eu4Data.folder("common/government_names")
 	var names := files.keys()
@@ -235,23 +251,21 @@ func rank_title(tag: String) -> String:
 			if not (kv[1] is Array):
 				continue
 			var trig: Array = []
-			var ranks: Array = []
+			var vals: Array = []
 			for x in kv[1]:
 				if x[0] == "trigger" and x[1] is Array:
 					trig = _mechanics(x[1])
-				elif x[0] == "rank" and x[1] is Array:
-					ranks = x[1]
-			if ranks.is_empty() or cbs == null or cbs.check(trig, tag, tag) != true:
+				elif x[0] == field and x[1] is Array:
+					vals = x[1]
+			if vals.is_empty() or cbs == null or cbs.check(trig, tag, tag) != true:
 				continue
-			for r in ranks:
+			for r in vals:
 				if str(r[0]) == str(rank):
 					out = Loc.t(str(r[1]), str(r[1]).capitalize())
 			break
 		if out != "":
 			break
-	if out == "":
-		out = view._gov_name(c)
-	_titles[tag] = out
+	_gov_cache[key] = out
 	return out
 
 

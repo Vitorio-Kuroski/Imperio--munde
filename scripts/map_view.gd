@@ -197,6 +197,15 @@ func load_map(map_scale: float) -> void:
 	advisor_types = data.get("advisor_types", [])
 	institutions = data.get("institutions", [])
 	diplomacy = data.get("diplomacy", [])
+	# união pessoal: o sócio menor tem o governante (e o herdeiro) do sócio maior, como no EU4
+	# (Suécia e Noruega com Christopher III da Dinamarca em 1444)
+	for r in diplomacy:
+		if r.get("type", "") in ["union", "personal_union"] and countries.has(r["first"]) and countries.has(r["second"]):
+			var senior: Dictionary = countries[r["first"]]
+			var junior: Dictionary = countries[r["second"]]
+			for k in ["monarch", "heir"]:
+				if senior.get(k) is Dictionary and not (junior.get(k) is Dictionary and str(junior[k].get("name", "")) != ""):
+					junior[k] = (senior[k] as Dictionary).duplicate(true)
 	emperor = data.get("emperor", "")
 	celestial_emperor = data.get("celestial_emperor", "")
 	wars = data.get("wars", [])

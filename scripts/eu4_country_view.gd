@@ -28,7 +28,7 @@ const TAB_KEYS := {"tab_court": "HEADER_COURT", "tab_gov": "HEADER_GOVERNMENT", 
 const POWER_ICONS := {"adm": "GFX_icon_powers_administrative", "dip": "GFX_icon_powers_diplomatic",
 		"mil": "GFX_icon_powers_military"}
 const COURT_HIDE := ["abdicate_ruler_button", "extend_regency_button", "election_info", "monarch_heir_claim",
-		"support_heir_button", "disinherit_button", "assign_heir_button", "queen_banner_green", "queen_gender",
+		"support_heir_button", "disinherit_button", "assign_heir_button", "queen_gender",
 		"monarch_queen_name", "monarch_queen_age", "monarch_queen_adm_value", "monarch_queen_adm_icon",
 		"monarch_queen_dip_value", "monarch_queen_dip_icon", "monarch_queen_mil_value", "monarch_queen_mil_icon",
 		"monarch_queen_crown_icon", "monarch_queen_personality_list", "court_select"]
@@ -72,7 +72,7 @@ var _tabs: Control
 var _court: Control
 var _gov: Control
 var _pt := {}
-var _focus_points := {}             # "ADM" -> Label com os pontos (na caixa ao lado do ícone)
+var _select_cat := ""               # categoria aberta no "Select Advisor" ("" = fechado)
 
 
 func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
@@ -142,17 +142,15 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 		b.tooltip_text = Loc.t(TAB_KEYS[n], TAB_TIPS[n])
 		var t: String = TABS[n]
 		b.pressed.connect(func(): _on_tab(t))
-	for cat in ["ADM", "DIP", "MIL"]:
-		var ic := _court.find_child("icon_" + cat, true, false) as Control
-		if ic:
-			var l := Label.new()
-			gui.style_label(l, "vic_18")
-			l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			l.position = Vector2(ic.offset_left + 30, ic.offset_top + 5)
-			l.size = Vector2(44, 20)
-			ic.get_parent().add_child(l)
-			_focus_points[cat] = l
+	# o EU4 desenha o ganho mensal e a barra de pontos de cada linha fora da largura da lista (x 370–500)
+	var abl := _court.find_child("abilities_listbox", true, false) as Control
+	if abl:
+		abl.clip_contents = false
+	var back := _court.find_child("back_button", true, false) as BaseButton
+	if back:
+		back.pressed.connect(func():
+			_select_cat = ""
+			refresh())
 	if not Loc.active():       # com a localização do EU4 os rótulos já vêm do .gui
 		_txt(_gov, "accepted_cultures_label", "Culturas aceitas")
 		_txt(_gov, "non_accepted_cultures_label", "Outras culturas")
@@ -365,28 +363,44 @@ func _person(prefix: String, p: Dictionary, title: String) -> void:
 	var name := str(p.get("name", ""))
 	if p.get("dynasty", "") != "":
 		name += " " + str(p["dynasty"])
-	_txt(_court, prefix + "_title" if prefix == "monarch" else prefix + "_name", title + name)
+	_txt(_court, prefix + "_title" if prefix == "monarch" else prefix + "_name", (title + name).strip_edges())
 	var age := _age(p)
-	_txt(_court, prefix + ("_ruler_age" if prefix == "monarch" else "_age"), Loc.s("%d anos", "%d years") % age if age >= 0 else "")
+	_txt(_court, prefix + ("_ruler_age" if prefix == "monarch" else "_age"), Loc.f("AGE", {"AGE": str(age)}, "Idade: %d" % age)
+			if age >= 0 else "")
 	for cat in ["adm", "dip", "mil"]:
-		_txt(_court, "%s_%s_value" % [prefix, cat], str(p.get(cat, "")))
+		_txt(_court, "%s_%s_value" % [prefix, cat], str(int(p.get(cat, 0))) if p.has(cat) else "")
 
 
 func _fill_court() -> void:
 	var c: Dictionary = map.countries[tag]
-	_txt(_court, "window_title", c["name"], _gov_name(c))
+	_txt(_court, "window_title", Loc.t("HEADER_COURT", "Corte"), c["name"])
 	var m: Dictionary = c.get("monarch", {})
-	_person("monarch", m, (Loc.t("FE_RULER", "Governante") + ": ") if m.is_empty() else "")
+	# título do governante como no EU4 (government_names: ruler_male; "King", "Král"...) e regência
+	var rt := diplomacy_tab.gov_title(tag, "ruler_male") if diplomacy_tab else ""
+	var regency := Eu4DiplomacyTab.is_regency(tag) or str(m.get("name", "")) == ""
+	_person("monarch", m, "" if regency else (rt + " " if rt != "" else ""))
+	if regency:
+		_txt(_court, "monarch_title", (str(m.get("name", "")) + " " + Loc.t("INTERREGNUM", "(Interregno)")).strip_edges())
+	_show_in(_court, "monarch_gender", true)
 	var heir: Dictionary = c.get("heir", {})
 	for n in ["monarch_heir_adm_value", "monarch_heir_adm_icon", "monarch_heir_dip_value", "monarch_heir_dip_icon",
 			"monarch_heir_mil_value", "monarch_heir_mil_icon", "monarch_heir_crown_icon", "monarch_heir_age"]:
 		var x := _court.find_child(n, true, false) as Control
 		if x:
 			x.visible = not heir.is_empty()
+	_show_in(_court, "heir_gender", not heir.is_empty())
 	if heir.is_empty():
-		_txt(_court, "monarch_heir_name", Loc.s("Sem herdeiro", "No heir"))
+		_txt(_court, "monarch_heir_name", Loc.t("NO_HEIR", "Sem herdeiro legítimo"))
 	else:
 		_person("monarch_heir", heir, Loc.t("HEIR", "Herdeiro") + ": ")
+	# consorte (o jogo ainda não tem: "No Consort", como o EU4 sem consorte)
+	_show_in(_court, "monarch_queen_name", true)
+	_txt(_court, "monarch_queen_name", Loc.s("Sem consorte", "No Consort"))
+	for n in ["monarch_queen_age", "monarch_queen_adm_value", "monarch_queen_adm_icon", "monarch_queen_dip_value",
+			"monarch_queen_dip_icon", "monarch_queen_mil_value", "monarch_queen_mil_icon", "monarch_queen_crown_icon",
+			"queen_gender"]:
+		_show_in(_court, n, false)
+	_fill_select()
 	# conselheiros (uma linha por categoria)
 	var list := _court.find_child("abilities_listbox", true, false) as Control
 	var rows := gui.fill_list(list, "countrycourtview_abilitylistitem", Advisors.CATS.size() if advisors else 0)
@@ -406,14 +420,20 @@ func _fill_court() -> void:
 			if ic:
 				ic.tooltip_text = Loc.s("%d pontos (+%d por mês)", "%d points (+%d per month)") % [power.points(tag, cat.to_lower()),
 						power.gain(tag, cat.to_lower())]
-			if _focus_points.has(cat):
-				_focus_points[cat].text = str(power.points(tag, cat.to_lower()))
 
 
 func _advisor_row(row: Control, cat: String) -> void:
-	for n in ["advisor_activefor", "advisor_sack", "advisor_promote", "power_progress", "power", "progress_bar_frame",
+	for n in ["advisor_activefor", "advisor_sack", "advisor_promote",
 			"advisor_indicator_religion", "advisor_indicator_religion_icon", "advisor_indicator_culture"]:
 		_hide(row, n)
+	# à direita, como no EU4: ganho mensal de pontos e a barra com os pontos ("70 Power")
+	if power and power.state.has(tag):
+		var pts := power.points(tag, cat)
+		_txt(row, "ability_skill", str(power.gain(tag, cat)), Loc.s("Pontos por mês", "Points per month"))
+		_txt(row, "power", Loc.f("CV_COURT_POWER", {"POWER": str(pts)}, "%d pontos" % pts))
+		var pb := row.find_child("power_progress", true, false) as Eu4Gui.Progress
+		if pb:
+			pb.set_value(float(pts) / float(MonarchPower.MAX_POINTS))
 	var a := advisors.get_hired(tag, cat)
 	var btn := row.find_child("advisor_button", true, false) as Eu4Gui.Button2
 	var icon := row.find_child("advisor_skill_icon", true, false) as Eu4Gui.Icon
@@ -423,16 +443,14 @@ func _advisor_row(row: Control, cat: String) -> void:
 	if mods:
 		mods.offset_right = mods.offset_left + 270     # o efeito cabe numa linha
 	if a.is_empty():
-		_txt(row, "advisor_name", Loc.s("Vago", "Vacant"))
+		_txt(row, "advisor_name", Loc.t("NO_ADVISOR", "Sem conselheiro"))
 		_txt(row, "advisor_ability_skill", "")
-		_txt(row, "ability_skill", "")
-		_txt(row, "advisor_cost", Loc.s("Clique para contratar", "Click to hire"))
+		_txt(row, "advisor_cost", "")
 		gui.fill_list(mods, "advisor_modifier_item", 0)
 	else:
 		var t: Dictionary = advisors.types.get(a["type"], {})
 		_txt(row, "advisor_name", str(a["name"]), str(t.get("name", a["type"])))
 		_txt(row, "advisor_ability_skill", str(int(a["skill"])))
-		_txt(row, "ability_skill", "")
 		_txt(row, "advisor_cost", Loc.s("%s · %s ducados/mês", "%s · %s ducats/month") % [t.get("name", a["type"]),
 				AdvisorsWindow._n(advisors.salary(tag, a))])
 		var items := gui.fill_list(mods, "advisor_modifier_item", 1)
@@ -451,7 +469,74 @@ func _advisor_row(row: Control, cat: String) -> void:
 		btn.tooltip_text = Loc.t("LEDGER_ADVISORS", "Conselheiros")
 		for cn in btn.pressed.get_connections():
 			btn.pressed.disconnect(cn["callable"])
-		btn.pressed.connect(func(): advisors_requested.emit(tag))
+		btn.pressed.connect(func():          # "Select Advisor" do EU4 na própria aba (só o jogador contrata)
+			if tag == player:
+				_select_cat = cat
+				refresh()
+			else:
+				advisors_requested.emit(tag))
+
+
+## "Select Advisor" (court_select) dentro da aba Corte: os candidatos da categoria com retrato,
+## nível, efeito, salário mensal, idade e onde nasceram; clicar contrata; Back volta.
+func _fill_select() -> void:
+	var sel := _court.find_child("court_select", true, false) as Control
+	if sel == null:
+		return
+	sel.visible = _select_cat != "" and advisors != null
+	if not sel.visible:
+		return
+	var cands: Array = advisors.candidates(tag, _select_cat)
+	var list := sel.find_child("court_select_slider", true, false) as Control
+	var rows := gui.fill_list(list, "advisor_selection_entry", cands.size())
+	_show_in(sel, "no_advisors_label", cands.is_empty())
+	for i in rows.size():
+		var a: Dictionary = cands[i]
+		var row: Control = rows[i]
+		var t: Dictionary = advisors.types.get(a["type"], {})
+		for n in ["advisor_indicator_religion", "advisor_indicator_religion_icon", "advisor_indicator_culture",
+				"purchase", "purchase_cost", "effect_icon"]:
+			_hide(row, n)
+		_txt(row, "name", str(a["name"]), str(t.get("name", a["type"])))
+		_txt(row, "skill_value", str(int(a["skill"])))
+		for c2 in ["ADM", "DIP", "MIL"]:
+			_show_in(row, "skill_icon_" + c2, c2.to_lower() == _select_cat)
+		_txt(row, "effect", str(fmt_mods.call(t.get("modifiers", {}))) if fmt_mods.is_valid() else "")
+		_txt(row, "title", AdvisorsWindow._n(advisors.salary(tag, a)) + " " + Loc.s("por mês", "monthly"))
+		_txt(row, "value", "")
+		_txt(row, "desc", Loc.f("AGE", {"AGE": str(int(a.get("age", 0)))}, "Idade: %d" % int(a.get("age", 0))) if a.has("age") else "")
+		var loc := int(a.get("location", -1))
+		_txt(row, "home", (Loc.s("Nascido em %s.", "Born in %s.") % map.provinces[loc]["name"]) if loc >= 0 and loc < map.provinces.size() else "")
+		var pic := row.find_child("advisor_button", true, false) as Eu4Gui.Button2
+		if pic:
+			var tex := map.icon_texture("advisor:" + a["type"])
+			if tex:
+				pic.texture_normal = tex
+				pic.texture_hover = null
+				pic.texture_pressed = null
+				pic.texture_click_mask = null
+			pic.tooltip_text = str(t.get("name", a["type"]))
+		var hire := row.find_child("dismiss_button", true, false) as BaseButton   # a porta da direita contrata
+		var why := "" if economy == null or economy.money(tag) >= advisors.salary(tag, a) \
+				else Loc.s("Dinheiro insuficiente", "Not enough money")
+		for b in [hire, pic]:
+			if b == null:
+				continue
+			for cn in b.pressed.get_connections():
+				b.pressed.disconnect(cn["callable"])
+			b.disabled = why != ""
+			b.pressed.connect(func():
+				if advisors.hire(tag, _select_cat, i):
+					_select_cat = ""
+				refresh())
+		if hire:
+			hire.tooltip_text = Loc.s("Contratar", "Hire") + (("\n" + why) if why != "" else "")
+
+
+func _show_in(root: Control, n: String, on: bool) -> void:
+	var c := root.find_child(n, true, false) as Control
+	if c:
+		c.visible = on
 
 
 func _culture_name(cid: String) -> String:
