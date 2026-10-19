@@ -477,8 +477,13 @@ func _fill_declare() -> void:
 	var agr := _dlg.find_child("AgreeButton", true, false) as BaseButton
 	if agr:
 		var why := view.diplo.why_not("declare_war", a, b)
+		view._set_button_text(agr, Loc.t("CONFIRM", "Confirmar"))
 		agr.disabled = why != ""
-		agr.tooltip_text = why
+		agr.tooltip_text = ("- " + why + "
+
+" if why != "" else "") + Loc.t("WARDESC", "Em guerra, suas tropas podem entrar "
+				+ "nas terras do inimigo. Ocupando províncias e exigindo-as na paz você as conquista. Sem casus belli a "
+				+ "estabilidade cai muito ao declarar.")
 		agr.modulate = Color(0.6, 0.6, 0.6) if why != "" else Color.WHITE
 
 
@@ -849,7 +854,8 @@ func _action_row(row: Control, a: String, tag: String, player: String) -> void:
 			acc.show()
 			acc.set_frame(0)
 		if btn:
-			btn.disabled = why != ""
+			# a janela Declare War abre sempre (como no EU4): o motivo fica no Confirm dela
+			btn.disabled = why != "" and not (a == "declare_war" and _dlg)
 			btn.tooltip_text = tip
 			for cn in btn.pressed.get_connections():
 				btn.pressed.disconnect(cn["callable"])
