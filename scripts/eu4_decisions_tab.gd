@@ -241,14 +241,14 @@ func _fill_decisions(tag: String) -> void:
 		if info:
 			info.mouse_filter = Control.MOUSE_FILTER_PASS
 			info.tooltip_text = title + "\n\n" + Loc.t(d["id"] + "_desc", "") + "\n\n" + Loc.s("Requisitos:", "Requirements:") + "\n" \
-					+ _conditions(d["allow"], tag, cbs)
+					+ _requirements(d["allow"], tag, cbs)
 		var sel := row.find_child("select_button", true, false) as BaseButton
 		if sel:
 			var fx := _effects_text(d, tag)
 			var can := ok and tag == view.player and view.effects != null
 			sel.disabled = not can
 			sel.tooltip_text = (Loc.s("Os requisitos são cumpridos", "The requirements are met") if ok else Loc.s("Os requisitos não são cumpridos", "The requirements are not met")) \
-					+ "\n\n" + Loc.s("Efeitos:", "Effects:") + "\n" + fx
+					+ ":\n" + _requirements(d["allow"], tag, cbs) + "\n\n" + Loc.s("Efeitos:", "Effects:") + "\n" + fx
 			if can:
 				var did: String = d["id"]
 				sel.pressed.connect(func():
@@ -267,6 +267,17 @@ func _effects_text(d: Dictionary, tag: String) -> String:
 	var lines: Array = view.effects.describe(d["effect"], tag)
 	return "
 ".join(lines) if not lines.is_empty() else Loc.s("(só efeitos que este jogo ainda não mostra)", "(only effects this game does not show yet)")
+
+
+var _trig: Eu4Triggers
+
+
+## Requisitos (allow) como na dica do EU4 (`Eu4Triggers`: frases da localização, ✓/✗, recuo).
+func _requirements(tree: Array, tag: String, cbs: CasusBelli) -> String:
+	if _trig == null:
+		_trig = Eu4Triggers.new(view.map, cbs)
+	var t := _trig.text(tree, tag)
+	return t if t != "" else Loc.s("(nenhum)", "(none)")
 
 
 ## Condições do allow, uma por linha, com ✓/✗ (? = o jogo ainda não sabe avaliar).

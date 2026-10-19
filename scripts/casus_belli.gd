@@ -249,6 +249,8 @@ func _cond(k: String, v: Variant, scope: Dictionary, root: String, from: String)
 			return _yes(v)
 		"is_colonial_nation", "is_former_colonial_nation", "is_playing_custom_nation", "is_lesser_in_union_with_player":
 			return not _yes(v)          # não existem nações coloniais nem personalizadas no jogo
+		"army_professionalism":         # ainda não existe: 0, como no começo do EU4
+			return str(v).is_valid_float() and str(v).to_float() <= 0.0
 		"normal_or_historical_nations":
 			return _yes(v)              # regra de jogo: nações históricas (não aleatórias)
 		"end_game_tags_blocked":
