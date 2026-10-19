@@ -126,6 +126,7 @@ func setup(g: Eu4Gui, m: MapView, a: Army) -> bool:
 	var list := _find(_main, "subunitlist") as ScrollContainer
 	if list:
 		list.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	_arrange_column()
 	army.changed.connect(func(_t): _queue())
 	army.moved.connect(_queue)
 	hide()
@@ -293,6 +294,9 @@ func refresh() -> void:
 	for n in TODO_BUTTONS + ["next_unit_button", "prev_unit_button"]:
 		if n != "home_at_war" and _find(_main, n):
 			_find(_main, n).visible = mine
+	var aat := _find(_main, "AllowAttachText")
+	if aat:
+		aat.visible = mine
 	var sel := _find(_card, "select_army_button")
 	if sel:
 		sel.tooltip_text = Loc.f("GOTO_PROVINCE", {"PROV": map.provinces[pid]["name"]}, "Ir para %s." % map.provinces[pid]["name"])
@@ -362,6 +366,39 @@ func _recruit(ty: String) -> void:
 	if not a.is_empty() and a["tag"] == player:
 		army.recruit(player, int(a["loc"]), ty)
 		refresh()
+
+
+## Coluna da direita arrumada como o EU4 mostra um exército em terra: no topo a caixa "Friendlies
+## can attach" (allow_attach, x 378 y 69) com o texto ALLOW_ATTACH ao lado (o allow_attach_text
+## comentado no .gui, em x 402... à direita do botão); embaixo a grade do .gui (colunas x 378/421,
+## linhas a cada 44 px desde y 113) com os botões de exército em sequência, sem as casas vazias
+## que no .gui são da frota e das colônias. Juntar/separar fica na primeira casa (y 113, esquerda).
+const COLUMN := ["reorganize_units_button", ["home_at_war", "goto_siege_button"], "consolidate_button",
+		"toggle_foreign_armies_button", "enable_force_march_button", "enable_rebel_button", "scorch_button",
+		"army_drill_button", "enable_carpet_siege", "refill_garrison_button", "supply_depot_button"]
+
+
+func _arrange_column() -> void:
+	var slot := 1                      # a casa 0 é a de juntar/separar
+	for it in COLUMN:
+		var names: Array = it if it is Array else [it]
+		var pos := Vector2(378 + 43 * (slot % 2), 113 + 44 * (slot / 2))
+		for n in names:
+			var c := _find(_main, n)
+			if c:
+				c.position = pos
+		slot += 1
+	var aa := _find(_main, "allow_attach")
+	if aa and aa.get_parent().get_node_or_null("AllowAttachText") == null:
+		var l := Label.new()
+		l.name = "AllowAttachText"
+		gui.style_label(l, "vic_18")
+		l.text = Loc.t("ALLOW_ATTACH", "Aliados\npodem juntar")
+		l.position = aa.position + Vector2(aa.size.x + 2, 4)
+		l.size = Vector2(504 - l.position.x - 14, 40)
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		aa.get_parent().add_child(l)
 
 
 ## Próximo/anterior exército do jogador (next/prev_unit_button).
