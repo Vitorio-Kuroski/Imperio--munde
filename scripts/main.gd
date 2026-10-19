@@ -31,6 +31,7 @@ var effects := Eu4Effects.new()       # efeitos do EU4 (decisões), flags e modi
 var peace := Peace.new()
 var peace_view: Eu4PeaceView        # tela de paz do EU4
 var frontend: Eu4Frontend
+var main_menu: Eu4MainMenu          # menu principal do EU4 (primeira tela)
 var map_names: MapNames            # nomes dos países e províncias no mapa
 var eu4_gui: Eu4Gui          # tela de escolha de país do EU4 (frontend.gui)
 var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
@@ -174,6 +175,7 @@ func _ready() -> void:
 	map.add_child(map_names)
 	map.move_child(map_names, army_layer.get_index())
 	map_names.setup(map, camera, eu4_gui)
+	map_names.visible = not (main_menu and main_menu.visible)   # o menu principal mostra o mapa sem nomes
 	fog_layer = FogLayer.new()          # Terra Incógnita e névoa: sobre rios e nomes, sob os exércitos
 	map.add_child(fog_layer)
 	map.move_child(fog_layer, army_layer.get_index())
@@ -211,7 +213,7 @@ var gui_design_height := EU4_GUI_HEIGHT
 func _apply_gui_scale() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	gui_scale = clampf(vp.y / gui_design_height, 0.5, 3.0)
-	for c in [eu4_hud, province_view, country_view, macro_builder, unit_panel, peace_view, frontend]:
+	for c in [eu4_hud, province_view, country_view, macro_builder, unit_panel, peace_view, frontend, main_menu]:
 		if c:
 			c.set_anchors_preset(Control.PRESET_TOP_LEFT)
 			c.position = Vector2.ZERO
@@ -566,7 +568,10 @@ func _setup_frontend(g: Eu4Gui) -> void:
 	frontend.play.connect(_start_game)
 	frontend.back.connect(func():
 		frontend.hide()
-		start_panel.show())
+		if main_menu:
+			_show_main_menu(true)
+		else:
+			start_panel.show())
 	start_panel.hide()
 	if eu4_hud:
 		eu4_hud.hide()
@@ -578,6 +583,32 @@ func _setup_frontend(g: Eu4Gui) -> void:
 		frontend.show())
 	_start_outer.add_child(again)
 	_start_outer.move_child(again, 1)
+	# menu principal do EU4 antes da escolha de país
+	main_menu = Eu4MainMenu.new()
+	ui.add_child(main_menu)
+	ui.move_child(main_menu, 1)
+	if not main_menu.setup(g):
+		main_menu.queue_free()
+		main_menu = null
+		return
+	main_menu.single_player.connect(func():
+		_show_main_menu(false)
+		frontend.show())
+	main_menu.options.connect(func():
+		_show_main_menu(false)
+		frontend.hide()
+		start_panel.show())
+	frontend.hide()
+	_show_main_menu(true)
+	_apply_gui_scale()
+
+
+## Menu principal: o mapa no modo terreno, sem nomes, como no EU4; ao sair volta ao político.
+func _show_main_menu(on: bool) -> void:
+	main_menu.visible = on
+	map.set_map_mode(MapView.MapMode.TERRENO if on and map.has_map_mode(MapView.MapMode.TERRENO) else MapView.MapMode.POLITICO)
+	if map_names:
+		map_names.visible = not on
 
 
 func _build_eu4_box(parent: VBoxContainer) -> void:
@@ -703,6 +734,8 @@ func _start_game(tag: String) -> void:
 	start_panel.hide()
 	if frontend:
 		frontend.hide()
+	if main_menu:
+		main_menu.hide()
 	if eu4_hud:
 		eu4_hud.show()
 	army_layer.show()
