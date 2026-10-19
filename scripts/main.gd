@@ -87,6 +87,7 @@ func _ready() -> void:
 	map.inst_view = institutions
 	diplomacy.setup(map)
 	economy.diplomacy = diplomacy
+	trade.clock = clock
 	trade.setup(map, power)
 	economy.trade = trade
 	religion.setup(map, clock, power, economy)

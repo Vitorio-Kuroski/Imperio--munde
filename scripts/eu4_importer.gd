@@ -482,7 +482,8 @@ func _import() -> String:
 	var n_prov := max_id + 1
 	var dmap := _text("map/default.map")
 	var sea := _ids_in_block(dmap, "sea_starts")
-	sea.merge(_ids_in_block(dmap, "lakes"))
+	var lakes := _ids_in_block(dmap, "lakes")
+	sea.merge(lakes)
 	var climates := {}
 	if _index.has("map/climate.txt"):
 		var ct := _text("map/climate.txt")
@@ -882,7 +883,7 @@ func _import() -> String:
 				prov["claims"] = claims[pid]
 			var coastal := false
 			for q in neigh[pid]:
-				if sea.has(q):
+				if sea.has(q) and not lakes.has(q):      # os lagos não deixam a província costeira (EU4)
 					coastal = true
 					break
 			prov["coastal"] = coastal

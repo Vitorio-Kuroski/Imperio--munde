@@ -1633,7 +1633,8 @@ def main():
     print(f"  {len(defs)} provincias (id maximo {max_id})")
 
     dmap = read_text(os.path.join(root, "map", "default.map"))
-    sea_ids = ids_in_block(dmap, "sea_starts") | ids_in_block(dmap, "lakes")
+    lake_ids = ids_in_block(dmap, "lakes")
+    sea_ids = ids_in_block(dmap, "sea_starts") | lake_ids
     climates = {}
     clim = os.path.join(root, "map", "climate.txt")
     if os.path.isfile(clim):
@@ -2074,7 +2075,8 @@ def main():
             if pid in claims:
                 prov["claims"] = claims[pid]
             prov["base_tax"], prov["base_production"], prov["base_manpower"] = dev_parts.get(pid, (0, 0, 0))
-            prov["coastal"] = any(q in sea_ids for q in neigh[pid])
+            # costeira = vizinha de mar (os lagos não contam, como no EU4)
+            prov["coastal"] = any(q in sea_ids and q not in lake_ids for q in neigh[pid])
             prov["base_development"] = prov["development"]
         if pid in node_of:
             prov["trade_node"] = node_of[pid]

@@ -9,7 +9,6 @@ extends RefCounted
 ## (seta azul), renda, poder total, nosso poder e valor. Os mercadores ainda são automáticos: o
 ## botão Send/Change fica apagado.
 
-const TRADE_RANGE := 200.0          # alcance básico do EU4 (fixo no motor, não está nos arquivos)
 const PIE_CENTER := Vector2(320, 133) # piechartType trade_income_from_trade_pie (size = raio 20)
 const PIE_RADIUS := 20.0
 
@@ -74,7 +73,7 @@ func fill(tag: String) -> void:
 		return
 	var c: Dictionary = view.map.countries[tag]
 	_color_pct("trade_efficiency_value", tr.trade_efficiency(tag))
-	view._txt(root, "trade_range_value", str(roundi(TRADE_RANGE * maxf(0.0, 1.0 + pw.modifier(tag, "trade_range_modifier")))))
+	view._txt(root, "trade_range_value", str(roundi(tr.trade_range(tag))))
 	_color_pct("trade_steering_value", pw.modifier(tag, "trade_steering"))
 	_color_pct("global_trade_power_value", pw.modifier(tag, "global_trade_power"))
 	var merc := float(c.get("mercantilism", 10))
@@ -121,9 +120,12 @@ func _fill_nodes(tag: String, tr: Trade) -> void:
 	var list := root.find_child("tradenode_list", true, false) as Control
 	if list == null:
 		return
+	# como o EU4: os nós com províncias do país, mercador ou a capital comercial
 	var ids := []
+	var mine0: Array = tr.merchants.get(tag, [])
 	for i in tr.node_power.size():
-		if float(tr.node_power[i].get(tag, 0.0)) > 0.0:
+		if float(tr.node_power[i].get(tag, 0.0)) > 0.0 and (float(tr.provincial[i].get(tag, 0.0)) > 0.0
+				or i in mine0 or i == tr.home(tag)):
 			ids.append(i)
 	ids.sort_custom(func(a, b): return tr.node_power[a][tag] > tr.node_power[b][tag])
 	var rows := view.gui.fill_list(list, "trade_node_item", ids.size())
@@ -150,7 +152,7 @@ func _fill_nodes(tag: String, tr: Trade) -> void:
 					view.map.countries.get(top, {}).get("name", top), roundi(np[top] / tot * 100.0)]
 		view._txt(row, "location", str(node.get("name", tr.nodes[i])))
 		var collects: bool = tr.collecting[i].has(tag)
-		var steers: bool = tr.steering[i].has(tag)
+		var steers: bool = tr.steering[i].has(tag) or (i in mine and not collects and home >= 0 and tr.reach[i].has(home))
 		var merchant: bool = i in mine
 		var tm := row.find_child("trader_mission", true, false) as Eu4Gui.Icon
 		if tm:              # quadros: 0 = sem mercador, 1 = posto comercial, 2 = mercador
