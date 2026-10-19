@@ -312,6 +312,24 @@ func _why_not(action: String, actor: String, target: String) -> String:
 	return ""
 
 
+## Declarar guerra pela janela do EU4: com o casus belli escolhido ("" = sem casus belli, −2 de
+## estabilidade) e só os aliados marcados.
+func declare_war_with(actor: String, target: String, cb: String, called: Array) -> String:
+	var why := why_not("declare_war", actor, target)
+	if why != "":
+		return why
+	var co: Array = coalition.members_against(target) if coalition and cb == Coalition.COALITION_CB else []
+	var w := war.declare(actor, target, cb, cbs.war_goal_of(cb) if cbs and cb != "" else "", co, called)
+	var msg := Loc.s("Guerra declarada a %s (%d contra %d países)", "War declared on %s (%d against %d countries)") % [
+			map.countries[target]["name"], w.get("attackers", []).size(), w.get("defenders", []).size()]
+	if cb != "":
+		msg += " — " + CasusBelli.name_of(cb)
+	elif stability:
+		stability.add(actor, CasusBelli.NO_CB_STABILITY)
+		msg += Loc.s(" — sem casus belli: %d de estabilidade", " — no casus belli: %d stability") % CasusBelli.NO_CB_STABILITY
+	return msg
+
+
 ## Faz a ação; devolve a mensagem do resultado (aceito/recusado).
 func act(action: String, actor: String, target: String) -> String:
 	var why := why_not(action, actor, target)

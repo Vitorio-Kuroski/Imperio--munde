@@ -230,7 +230,7 @@ func _find(items: Array, name: String) -> Array:
 	for kv in items:
 		if kv[1] is Array:
 			var k := (kv[0] as String).to_lower()
-			if k == "windowtype" and _val(kv[1], "name") == name:
+			if (k == "windowtype" or k == "eu3dialogtype") and _val(kv[1], "name") == name:
 				return kv[1]
 			var r := _find(kv[1], name)
 			if not r.is_empty():
@@ -406,7 +406,7 @@ func _element(kind: String, items: Array) -> Control:
 	var name := str(_val(items, "name", ""))
 	var c: Control = null
 	match kind:
-		"windowtype", "containerwindowtype":
+		"windowtype", "containerwindowtype", "eu3dialogtype":   # eu3dialogtype = diálogo (DeclareWarDialog)
 			c = Control.new()
 			c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			if _yes(items, "fullscreen"):
@@ -435,7 +435,7 @@ func _element(kind: String, items: Array) -> Control:
 			ic.scale = Vector2(sc, sc) if sc > 0.0 else Vector2.ONE
 			c = ic
 			_place(c, items, ic.custom_minimum_size)
-		"guibuttontype", "buttontype", "checkboxtype":
+		"guibuttontype", "buttontype", "checkboxtype", "shieldtype":   # shieldtype = escudo do país (set_flag)
 			var spr := str(_val(items, "quadtexturesprite", _val(items, "spritetype", "")))
 			var b := Button2.new()
 			if sprites.has(spr):

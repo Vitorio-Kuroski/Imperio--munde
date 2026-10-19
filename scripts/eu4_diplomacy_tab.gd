@@ -71,7 +71,11 @@ var root: Control
 var mode := ""                      # "actions" ou "opinions" ("" = conforme o país)
 var open_cats := {}                 # categorias de ações abertas (como no EU4, começam fechadas)
 const RIVAL_WINDOW_SHIFT := 72.0
-var _choosing := false              # janela de escolher rivais aberta (select_rivals_window)
+var _choosing := false
+var _dlg: Control                   # DeclareWarDialog do EU4
+var _war_target := ""
+var _war_cb := ""                   # casus belli escolhido ("" = sem casus belli)
+var _called: Array = []             # aliados chamados              # janela de escolher rivais aberta (select_rivals_window)
 var last_message := ""
 
 
@@ -107,6 +111,7 @@ func setup(v: Eu4CountryView) -> bool:
 						and view.tag == view.player and view.diplo and view.diplo.rivals:
 					_choosing = true
 					view.refresh())
+	_setup_declare()
 	var ba := root.find_child("show_diploactions", true, false) as BaseButton
 	if ba:
 		ba.tooltip_text = Loc.s("Ações diplomáticas", "Diplomatic actions")
@@ -338,6 +343,187 @@ func _fill_rival_choice(tag: String, srw: Control) -> void:
 				else:
 					rv.add(tag, t)
 				view.refresh())
+
+
+## Posição da DeclareWarDialog na aba: o fundo dela (Background em −12, −15) cobre a parte de baixo da
+## tela do país, logo abaixo da faixa "Diplomacy", como nas capturas do EU4.
+const DLG_POS := Vector2(12, 0)
+
+
+func _setup_declare() -> void:
+	_dlg = view.gui.build("DeclareWarDialog")
+	if _dlg == null:
+		return
+	root.add_child(_dlg)
+	_dlg.position = DLG_POS
+	_dlg.z_index = 2                  # acima do manpower_value (z_index 1) da aba
+	_dlg.hide()
+	for n in ["aggressive_expansion", "colonial_war_button", "colonial_war_text", "incomplete_enemy_forces_info_icon",
+			"chance_string"]:
+		var c := _dlg.find_child(n, true, false) as Control
+		if c:
+			c.hide()
+	var desc := _dlg.find_child("Description", true, false) as Label
+	if desc:                         # o texto fica na coluna da esquerda, com quebra de linha
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc.size = Vector2(255, 160)
+		desc.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	var dec := _dlg.find_child("DeclineButton", true, false) as BaseButton
+	if dec:
+		dec.pressed.connect(func(): _dlg.hide())
+	var agr := _dlg.find_child("AgreeButton", true, false) as BaseButton
+	if agr:
+		agr.pressed.connect(func():
+			var msg := view.diplo.declare_war_with(view.player, _war_target, _war_cb, _called)
+			_dlg.hide()
+			view.message.emit(msg)
+			view.refresh())
+	var nb := _dlg.find_child("no_wargoal_banner", true, false) as BaseButton
+	if nb:
+		nb.pressed.connect(func():
+			_war_cb = ""
+			_fill_declare())
+
+
+## Abre a janela de declarar guerra a `tag` com o melhor casus belli e todos os aliados chamados.
+func open_declare(tag: String) -> void:
+	_war_target = tag
+	var cbs: CasusBelli = view.diplo.cbs
+	_war_cb = cbs.best(view.player, tag) if cbs else ""
+	_called = []
+	for al in view.diplomacy.allies(view.player):
+		_called.append(al)
+	_dlg.show()
+	_dlg.move_to_front()            # por cima do que a aba montou depois
+	_fill_declare()
+
+
+func _goal_name(goal: String, a: String, b: String) -> String:
+	var wg: Dictionary = {}
+	for g in view.map.war_goals:
+		if g["id"] == goal:
+			wg = g
+	var typ := str(wg.get("type", ""))
+	var cap_of := a if typ.begins_with("defend") else b
+	var cap := int(view.map.countries.get(cap_of, {}).get("capital", -1))
+	var cap_name: String = view.map.provinces[cap]["name"] if cap >= 0 and cap < view.map.provinces.size() else ""
+	return Loc.f(goal, {"CAPITAL": cap_name}, Eu4Importer.pretty_key(goal))
+
+
+func _fill_declare() -> void:
+	var a := view.player
+	var b := _war_target
+	var map := view.map
+	var cbs: CasusBelli = view.diplo.cbs
+	for n in [["LeftShield", a], ["RightShield", b]]:
+		var sh := _dlg.find_child(n[0], true, false) as Eu4Gui.Button2
+		if sh:
+			sh.set_flag(_flag_tex(n[1]))
+			sh.tooltip_text = str(map.countries.get(n[1], {}).get("name", n[1]))
+	view._txt(_dlg, "Title", Loc.t("WARTITLE", "Declarar guerra"))
+	# texto: casus belli e objetivo de guerra (ou sem casus belli)
+	var txt := ""
+	var goal := cbs.war_goal_of(_war_cb) if cbs and _war_cb != "" else ""
+	if _war_cb != "":
+		txt = Loc.s("Casus belli: %s", "Casus Belli: %s") % CasusBelli.name_of(_war_cb) + "
+" + Loc.t(_war_cb + "_desc", "")
+		if goal != "":
+			txt += "
+
+" + Loc.t("WAR_GOAL", "Objetivo de guerra") + ": " + _goal_name(goal, a, b) + "
+" \
+					+ Loc.f(goal + "_desc", {"COUNTRY": map.countries[a]["name"] if goal.begins_with("defend") else map.countries[b]["name"]}, "")
+	else:
+		txt = Loc.t("STABHIT_FROM_NO_CB", "Sem casus belli") + "
+" + Loc.s("Declarar sem casus belli custa %d de estabilidade.",
+				"Declaring without a casus belli costs %d stability.") % -CasusBelli.NO_CB_STABILITY
+	var desc := _dlg.find_child("Description", true, false) as Label
+	if desc:
+		desc.text = txt
+	# lista dos casus belli (o escolhido com a faixa verde e o objetivo embaixo)
+	var list := _dlg.find_child("war_goals", true, false) as Control
+	view.gui.fill_list(list, "", 0)
+	for cb in (cbs.available(a, b) if cbs else []):
+		var row := view.gui.add_item(list, "DeclareWarDialog_wargoalcbentry")
+		if row == null:
+			continue
+		view._txt(row, "name", CasusBelli.name_of(cb))
+		var ban := row.find_child("banner", true, false) as Control
+		if ban:
+			ban.modulate = Color.WHITE if cb == _war_cb else Color(0.6, 0.6, 0.6)
+			ban.mouse_filter = Control.MOUSE_FILTER_STOP
+			ban.tooltip_text = Loc.t(cb + "_desc", "")
+			var cbid: String = cb
+			ban.gui_input.connect(func(e: InputEvent):
+				if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+					_war_cb = cbid
+					_fill_declare())
+		if cb == _war_cb and goal != "":
+			var gr := view.gui.add_item(list, "DeclareWarDialog_wargoalentry")
+			if gr:
+				view._txt(gr, "name", _goal_name(goal, a, b))
+	var nb := _dlg.find_child("no_wargoal_banner", true, false) as Eu4Gui.Button2
+	if nb:
+		nb.set_frame(1 if _war_cb == "" else 0)
+	# aliados dos dois lados (os nossos com a marca de chamar) e os exércitos de cada lado
+	var s := view.diplo.war.sides(a, b, [], _called)
+	var att: Array = s[0]
+	var dfn: Array = s[1]
+	_belligerents(_dlg.find_child("enemies", true, false) as Control, dfn.filter(func(t): return t != b), "DeclareWarDialog_enemyentry", false)
+	var callable := view.diplomacy.allies(a).filter(func(t): return not (t in dfn))
+	_belligerents(_dlg.find_child("allies", true, false) as Control, callable, "DeclareWarDialog_allyentry", true)
+	_totals("enemies", dfn)
+	_totals("allies", att)
+	var agr := _dlg.find_child("AgreeButton", true, false) as BaseButton
+	if agr:
+		var why := view.diplo.why_not("declare_war", a, b)
+		agr.disabled = why != ""
+		agr.tooltip_text = why
+		agr.modulate = Color(0.6, 0.6, 0.6) if why != "" else Color.WHITE
+
+
+func _belligerents(list: Control, tags: Array, item: String, ours: bool) -> void:
+	if list == null:
+		return
+	var rows := view.gui.fill_list(list, item, tags.size())
+	for i in rows.size():
+		var t: String = tags[i]
+		var row: Control = rows[i]
+		var fl := row.find_child("country_flag", true, false) as Eu4Gui.Button2
+		if fl:
+			fl.set_flag(_flag_tex(t))
+		view._txt(row, "name", str(view.map.countries.get(t, {}).get("name", t)))
+		for n in ["favors_cost", "promise_land_checkbox", "ai_accept", "ai_coalition"]:
+			var c := row.find_child(n, true, false) as Control
+			if c:
+				c.hide()
+		var cb := row.find_child("call_checkbox", true, false) as Eu4Gui.Button2
+		if cb:
+			var on: bool = (t in _called) if ours else true
+			cb.set_frame(1 if on else 0)
+			cb.tooltip_text = (Loc.s("Chamar para a guerra", "Call to arms") if ours else Loc.s("Entra na guerra", "Joins the war"))
+			if ours:
+				cb.pressed.connect(func():
+					if t in _called:
+						_called.erase(t)
+					else:
+						_called.append(t)
+					_fill_declare())
+
+
+## Infantaria/cavalaria/artilharia (milhares de homens) e regimentos de um lado da guerra.
+func _totals(prefix: String, tags: Array) -> void:
+	var army: Army = view.army
+	var men := {"infantry": 0.0, "cavalry": 0.0, "artillery": 0.0}
+	if army:
+		for ar in army.armies.values():
+			if ar["tag"] in tags:
+				for r in ar["regs"]:
+					men[r["type"]] = float(men.get(r["type"], 0.0)) + float(r["str"])
+	view._txt(_dlg, prefix + "_infantry_value", Manpower.fmt(men["infantry"]))
+	view._txt(_dlg, prefix + "_cavalry_value", Manpower.fmt(men["cavalry"]))
+	view._txt(_dlg, prefix + "_artillery_value", Manpower.fmt(men["artillery"]))
+	view._txt(_dlg, prefix + "_total_amount_value", Manpower.fmt(men["infantry"] + men["cavalry"] + men["artillery"]))
 
 
 static var _titles := {}
@@ -668,6 +854,9 @@ func _action_row(row: Control, a: String, tag: String, player: String) -> void:
 			for cn in btn.pressed.get_connections():
 				btn.pressed.disconnect(cn["callable"])
 			btn.pressed.connect(func():
+				if a == "declare_war" and _dlg:
+					open_declare(tag)               # janela Declare War do EU4
+					return
 				if a == "white_peace" and not view.peace_requested.get_connections().is_empty():
 					view.peace_requested.emit(tag)      # abre a tela de paz do EU4
 					return

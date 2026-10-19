@@ -100,6 +100,18 @@ func remove_relation(type: String, a: String, b: String) -> void:
 	_changed()
 
 
+## `sub` deixa de ser súdito (independência ganha na guerra).
+func release(sub: String) -> void:
+	if not _overlord.has(sub):
+		return
+	var ov: String = _overlord[sub][0]
+	_overlord.erase(sub)
+	_subjects[ov] = _subjects.get(ov, []).filter(func(x): return x[0] != sub)
+	relations = relations.filter(func(r): return not (r["second"] == sub and r["first"] == ov
+			and not (r["type"] in ["alliance", "royal_marriage", "guarantee"])))
+	_changed()
+
+
 func _changed() -> void:
 	if map.map_mode == MapView.MapMode.DIPLOMACIA:
 		map.refresh_colors()

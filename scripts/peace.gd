@@ -231,6 +231,9 @@ func sign(deal: Dictionary) -> void:
 		_fix_capital(t)
 	if deal.get("vassal", false):
 		diplomacy.add_relation("vassal", rec, giv)
+	# guerra de independência: o súdito que vence a paz fica livre (o suserano aceitou os termos)
+	if not diplomacy.overlord(rec).is_empty() and diplomacy.overlord(rec)[0] == giv and war.is_independence(rec, giv):
+		diplomacy.release(rec)
 	var g := minf(gold_amount(giv, int(deal.get("gold", 0))), maxf(0.0, economy.money(giv)))
 	if g > 0.0:
 		economy.treasury[giv] = economy.money(giv) - g
