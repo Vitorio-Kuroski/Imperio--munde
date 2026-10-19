@@ -819,8 +819,15 @@ func _action_row(row: Control, a: String, tag: String, player: String) -> void:
 			ic.set_sprite(view.gui, info[2], 0)
 		var cbi := row.find_child("cb_list_icon", true, false) as Control
 		var cb_list: Array = dip.cbs.available(player, tag) if a == "declare_war" and dip.cbs else []
+		if cbi == null and a == "declare_war":   # a linha do topo (de categoria) não tem: monta a da diploactionentry
+			cbi = view.gui.build_element("cb_list_icon", "countrydiplomacyview")
+			if cbi:
+				row.add_child(cbi)
 		if cbi:
-			cbi.visible = not cb_list.is_empty()
+			cbi.visible = not cb_list.is_empty()   # pergaminho: temos casus belli contra o país
+			cbi.tooltip_text = Loc.t("CASUS_BELLIS", "Casus belli") + ":
+" + "
+".join(cb_list.map(func(c): return CasusBelli.name_of(c)))
 		var dico := row.find_child("diplomat", true, false) as Control
 		if dico:
 			dico.visible = a == "improve"
