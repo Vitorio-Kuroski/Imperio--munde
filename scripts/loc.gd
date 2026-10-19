@@ -58,6 +58,17 @@ static func f(key: String, vars: Dictionary, fallback := "") -> String:
 	return s
 
 
+## Inteiro com separador de milhar como no EU4 ("7,371"; em português "7.371").
+static func num(v: float) -> String:
+	var n := roundi(v)
+	var s := str(absi(n))
+	var out := ""
+	while s.length() > 3:
+		out = ("," if dec == "." else ".") + s.right(3) + out
+		s = s.left(-3)
+	return ("-" if n < 0 else "") + s + out
+
+
 ## Nome de um efeito (modificador) do EU4.
 static func modifier(key: String, fallback := "") -> String:
 	for k in ["MODIFIER_" + key.to_upper(), key, key.to_upper()]:

@@ -48,6 +48,8 @@ var queue := {}                   # pid -> [{tag, type, left, total, paid}]
 var budget := {}                  # tag -> 0..1 (barra de manutenção do exército)
 var _next_id := 1
 var _count := {}                  # tag -> exércitos já criados (para o nome)
+var _reg_num := {}                # província -> regimentos já criados nela (nome do regimento)
+var _army_names := {}             # tag -> army_names de common/countries do EU4 (cache)
 var _rules := {}
 var _terrain := {}                # id do terreno -> custo de movimento
 var _astar := AStar2D.new()
@@ -210,25 +212,87 @@ func count(a: Dictionary, type: String) -> int:
 
 func _new_army(tag: String, pid: int) -> Dictionary:
 	_count[tag] = int(_count.get(tag, 0)) + 1
-	var a := {"id": _next_id, "tag": tag, "name": army_name(int(_count[tag])), "loc": pid, "regs": [],
+	var a := {"id": _next_id, "tag": tag, "name": _pick_army_name(tag, pid), "loc": pid, "regs": [],
 			"path": [], "days": 0, "need": 0, "since": _day, "retreat": false}
 	armies[_next_id] = a
 	_next_id += 1
 	return a
 
 
+## Sufixo ordinal do EU4 (localização ST/ND/RD/TH: 1st, 2nd, 3rd, 4th, 11th...).
+static func ordinal(n: int) -> String:
+	var k := "TH"
+	if n % 100 < 11 or n % 100 > 13:
+		k = {1: "ST", 2: "ND", 3: "RD"}.get(n % 10, "TH")
+	return Loc.t(k, {"ST": "st", "ND": "nd", "RD": "rd", "TH": "th"}[k])
+
+
+## Nome padrão do n-ésimo exército (ARMY_NAME do EU4: "$NUM$$ORDER$ Army").
 static func army_name(n: int) -> String:
 	if Loc.active():
-		var suf := "th"
-		if n % 100 < 11 or n % 100 > 13:
-			suf = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-		return "%d%s Army" % [n, suf]
+		return Loc.f("ARMY_NAME", {"NUM": str(n), "ORDER": ordinal(n)}, "%d%s Army" % [n, ordinal(n)])
 	return "%dº Exército" % n
 
 
-func _reg(tag: String, type: String, st := 1.0) -> Dictionary:
+## army_names do país (common/countries/<arquivo>.txt, achado por common/country_tags).
+func _names_of(tag: String) -> Array:
+	if _army_names.has(tag):
+		return _army_names[tag]
+	var out := []
+	var file := ""
+	for f in Eu4Data.folder("common/country_tags").values():
+		for kv in f:
+			if kv[0] == tag:
+				file = str(kv[1]).get_file().get_basename()
+				break
+		if file != "":
+			break
+	for kv in Eu4Data.folder("common/countries").get(file, []):
+		if kv[0] == "army_names" and kv[1] is Array:
+			for it in kv[1]:
+				out.append(str(it[1]))
+			break
+	_army_names[tag] = out
+	return out
+
+
+## Nome de um exército novo: o primeiro dos army_names do EU4 que o país ainda não usa ($PROVINCE$ =
+## onde ele nasce); acabada a lista, ARMY_NAME com o número.
+func _pick_army_name(tag: String, pid: int) -> String:
+	var used := {}
+	for a in armies.values():
+		if a["tag"] == tag:
+			used[a["name"]] = true
+	for nm in _names_of(tag):
+		var n: String = nm.replace("$PROVINCE$", str(map.provinces[pid]["name"]))
+		if not used.has(n):
+			return n
+	var k := int(_count.get(tag, 1))
+	while used.has(army_name(k)):
+		k += 1
+	return army_name(k)
+
+
+func _reg(tag: String, type: String, home := -1, st := 1.0) -> Dictionary:
 	var u: Dictionary = units(tag).get(type, {})
-	return {"type": type, "unit": str(u.get("id", "")), "str": st, "morale": max_morale(tag)}
+	var r := {"type": type, "unit": str(u.get("id", "")), "str": st, "morale": max_morale(tag)}
+	if home >= 0:                     # província de origem e número (nome do regimento)
+		_reg_num[home] = int(_reg_num.get(home, 0)) + 1
+		r["home"] = home
+		r["num"] = int(_reg_num[home])
+	return r
+
+
+## Nome do regimento como no EU4 (REGIMENT_NAME: "$HOME$'s $NUM$$ORDER$ Regiment").
+func reg_name(r: Dictionary) -> String:
+	if not r.has("home"):
+		return ""
+	var n := int(r["num"])
+	var home: String = map.provinces[int(r["home"])]["name"]
+	if Loc.active():
+		return Loc.f("REGIMENT_NAME", {"HOME": home, "NUM": str(n), "ORDER": ordinal(n)},
+				"%s's %d%s Regiment" % [home, n, ordinal(n)])
+	return "%dº Regimento de %s" % [n, home]
 
 
 func mark_dirty() -> void:
@@ -244,8 +308,13 @@ func _starting_armies() -> void:
 		var n := maxi(1, roundi(force_limit(tag) * size))
 		var cav := n / 4 if units(tag).has("cavalry") else 0
 		var a := _new_army(tag, cap)
+		# origem dos regimentos: as províncias do país pelo efetivo base, em rodízio (APROXIMAÇÃO:
+		# o EU4 não guarda de onde vêm os regimentos de 1444)
+		var homes := map.provinces_of(tag)
+		homes.sort_custom(func(x, y): return float(x.get("base_manpower", 0)) > float(y.get("base_manpower", 0)))
 		for i in n:
-			a["regs"].append(_reg(tag, "cavalry" if i < cav else "infantry"))
+			var home := int(homes[i % homes.size()]["id"]) if not homes.is_empty() else cap
+			a["regs"].append(_reg(tag, "cavalry" if i < cav else "infantry", home))
 
 
 ## Motivo de não poder recrutar `type` em `pid` ("" = pode).
@@ -519,7 +588,7 @@ func _on_day() -> void:
 				break
 		if target.is_empty():
 			target = _new_army(q["tag"], pid)
-		target["regs"].append(_reg(q["tag"], q["type"]))
+		target["regs"].append(_reg(q["tag"], q["type"], pid))
 		any = true
 		_changed(q["tag"])
 	if any:

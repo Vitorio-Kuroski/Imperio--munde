@@ -320,6 +320,10 @@ func _setup_eu4_hud() -> void:
 	ui.move_child(unit_panel, 4)
 	if unit_panel.setup(g, map, army):
 		unit_panel.closed.connect(func(): _select_army(-1))
+		unit_panel.goto.connect(func(pid: int):
+			camera.position = map.province_center(pid)
+			_clamp_camera())
+		unit_panel.selected_changed.connect(_select_army)
 	else:
 		unit_panel.queue_free()
 		unit_panel = null

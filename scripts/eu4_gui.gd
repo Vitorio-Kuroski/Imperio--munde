@@ -631,17 +631,28 @@ class Progress extends Control:
 		add_child(_fill)
 		set_value(0.0)
 
+	## Barra vertical (progressbarType com horizontal = no, ex.: moral no cartão do exército):
+	## enche de baixo para cima. O .gfx guarda isso, mas os importadores não; quem usa liga.
+	var vertical := false
+
 	func set_value(r: float) -> void:
 		r = clampf(r, 0.0, 1.0)
 		if _tex == null:
 			return
 		var at := AtlasTexture.new()
 		at.atlas = _tex
-		at.region = Rect2(0, 0, maxf(1.0, _tex.get_width() * r), _tex.get_height())
+		var w := _tex.get_width()
+		var h := _tex.get_height()
+		if vertical:
+			at.region = Rect2(0, h * (1.0 - r), w, maxf(1.0, h * r))
+			_fill.position = Vector2(0, custom_minimum_size.y * (1.0 - r))
+			_fill.size = Vector2(custom_minimum_size.x, custom_minimum_size.y * r)
+		else:
+			at.region = Rect2(0, 0, maxf(1.0, w * r), h)
+			_fill.position = Vector2.ZERO
+			_fill.size = Vector2(custom_minimum_size.x * r, custom_minimum_size.y)
 		_fill.texture = at
 		_fill.visible = r > 0.0
-		_fill.position = Vector2.ZERO
-		_fill.size = Vector2(custom_minimum_size.x * r, custom_minimum_size.y)
 
 
 ## Barra deslizante do EU4 (scrollbarType horizontal): setas nas pontas, trilho e o botão na
