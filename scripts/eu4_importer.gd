@@ -1912,7 +1912,7 @@ const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_plains", "GFX_combat_terrain_savannah", "GFX_combat_terrain_steppe",
 		"GFX_combat_terrain_woods"]
 ## Sprites usados pelo jogo além dos citados nos .gui (botões dos modos de mapa).
-const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
+const GUI_EXTRA_SPRITES := ["GFX_diplomacy_action_economy", "GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
 		"GFX_mapmode_religion", "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas",
 		"GFX_mapmode_institutions", "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
 		"GFX_scroll_track", "GFX_country_icon_religion",

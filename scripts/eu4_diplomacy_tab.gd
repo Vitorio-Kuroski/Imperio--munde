@@ -6,9 +6,12 @@ extends RefCounted
 ##    entre o país e o jogador (dica com os modificadores);
 ##  - relações (diplomatic_listbox): aliados, casamentos reais, súditos, suserano, garantias e
 ##    relações sendo melhoradas, cada linha com os escudos dos países (clicar abre o país);
-##  - à direita, num país que não é o do jogador, as ações diplomáticas (DiploActions) com o ícone
-##    e a seta de "aceitaria/recusaria" (dica com os motivos); no país do jogador, a opinião dos
-##    outros países sobre ele.
+##  - à direita, num país que não é o do jogador, as ações diplomáticas como no EU4: "Declarar
+##    guerra" (ou "Pedir paz" em guerra) no topo e as categorias (diploactionentry_category com +/−,
+##    DIPLOMACYACTION_CATEGORY_*: aliança, influência, relações, dinásticas, secretas, economia) que
+##    abrem as ações (diploactionentry) com o X vermelho quando não dá (ai_accept, dica com os
+##    motivos); as ações do EU4 que o jogo ainda não tem aparecem apagadas (`TODO_ACTIONS`). No país
+##    do jogador, a opinião dos outros países sobre ele.
 ## O que o jogo ainda não tem (rivais, espiões, confiança, favores,
 ## exércitos) fica escondido.
 
@@ -41,12 +44,33 @@ const ACTIONS := {"improve": ["IMPROVERELATIONTITLE", "Melhorar relações", "GF
 		"white_peace": ["", "Negociar paz", "GFX_diplomacy_action_requestpeace"],
 		"join_coalition": ["", "Entrar na coalizão", "GFX_diplomacy_coalitions"],
 		"leave_coalition": ["", "Sair da coalizão", "GFX_diplomacy_coalitions_against"]}
+## Categorias da lista de ações do EU4, na ordem (chave DIPLOMACYACTION_CATEGORY_<id>, ícone) e as
+## ações de cada uma (as nossas de DiploActions e, apagadas, as do EU4 que ainda não existem aqui).
+const CATEGORIES := [["alliance", "GFX_diplomacy_action_alliance"], ["influence", "GFX_diplomacy_action_influence"],
+		["relation", "GFX_diplomacy_action_relation"], ["dynasty", "GFX_diplomacy_action_dynasty"],
+		["covert", "GFX_diplomacy_action_covert"], ["economy", "GFX_diplomacy_action_economy"]]
+const CATEGORY_NAMES := {"alliance": "Ações de aliança", "influence": "Ações de influência", "relation": "Ações de relações",
+		"dynasty": "Ações dinásticas", "covert": "Ações secretas", "economy": "Ações econômicas"}
+const CATEGORY_OF := {"alliance": "alliance", "break_alliance": "alliance", "join_coalition": "alliance",
+		"leave_coalition": "alliance", "guarantee": "influence", "improve": "relation", "insult": "relation",
+		"royal_marriage": "dynasty", "break_marriage": "dynasty"}
+## Ações do EU4 que o jogo ainda não tem: categoria -> [[chave do título, nome em português]].
+const TODO_ACTIONS := {"alliance": [["ASKSUPPORTINDEPENDENCETITLE", "Pedir apoio à independência"],
+			["OFFERCONDOTTIERITITLE", "Oferecer condottieri"]],
+		"influence": [["ENFORCEPEACETITLE", "Impor a paz"], ["VASSALTITLE", "Oferecer vassalagem"],
+			["CURRYFAVORSTITLE", "Pedir favores"], ["THREATENWARTITLE", "Ameaçar com guerra"],
+			["INFLUENCENATIONTITLE", "Influenciar nação"]],
+		"relation": [],
+		"dynasty": [["CLAIMTITLE", "Reivindicar o trono"]],
+		"covert": [["FABRICATECLAIMTITLE", "Fabricar reivindicação"], ["SUPPORTREBELSTITLE", "Apoiar rebeldes"]],
+		"economy": [["embargo", "Embargo"]]}
 const GOOD := Color(0.55, 0.9, 0.45)
 const BAD := Color(1.0, 0.42, 0.35)
 
 var view: Eu4CountryView
 var root: Control
 var mode := ""                      # "actions" ou "opinions" ("" = conforme o país)
+var open_cats := {}                 # categorias de ações abertas (como no EU4, começam fechadas)
 var last_message := ""
 
 
@@ -91,7 +115,7 @@ func fill(tag: String) -> void:
 	var dip := view.diplo
 	var d := view.diplomacy
 	var player := view.player
-	view._txt(root, "window_title", Loc.t("HEADER_DIPLOMACY", "Diplomacia") + " — " + c["name"])
+	view._txt(root, "window_title", Loc.t("HEADER_DIPLOMACY", "Diplomacia"))
 	var sh := root.find_child("countryshield", true, false) as Eu4Gui.Button2
 	if sh:
 		sh.set_flag(_flag_tex(tag))
@@ -99,7 +123,7 @@ func fill(tag: String) -> void:
 	if ri:
 		ri.set_religion(map.religions.get(c.get("religion", ""), {}))
 	view._txt(root, "label_nation", c["name"])
-	view._txt(root, "label_fog", view._gov_name(c))
+	view._txt(root, "label_fog", rank_title(tag))
 	var rank := root.find_child("government_rank", true, false) as Eu4Gui.Icon
 	if rank:
 		rank.set_frame(clampi(int(c.get("rank", 1)) - 1, 0, 2))
@@ -110,13 +134,17 @@ func fill(tag: String) -> void:
 		hre.tooltip_text = Loc.t("HINT_HRE_TITLE", "Sacro Império")
 	# governante e herdeiro
 	var m: Dictionary = c.get("monarch", {})
-	view._txt(root, "label_ruler", (str(m.get("name", "")) + " " + str(m.get("dynasty", ""))).strip_edges())
+	var ruler := (str(m.get("name", "")) + " " + str(m.get("dynasty", ""))).strip_edges()
+	if is_regency(tag) or ruler == "":       # regência (regent = yes no histórico) ou sem governante
+		ruler = (ruler + " " + Loc.t("INTERREGNUM", "(Interregno)")).strip_edges()
+	view._txt(root, "label_ruler", ruler)
 	for cat in ["adm", "dip", "mil"]:
-		view._txt(root, "ruler_%s_value" % cat, str(m.get(cat, "")))
+		view._txt(root, "ruler_%s_value" % cat, str(int(m.get(cat, 0))))
 	var heir: Dictionary = c.get("heir", {})
 	view._txt(root, "monarch_heir_label", Loc.t("HEIR", "Herdeiro") + ":" if not heir.is_empty() else "")
-	view._txt(root, "monarch_heir_name", (str(heir.get("name", "")) + " " + str(heir.get("dynasty", ""))).strip_edges())
-	view._txt(root, "monarch_heir_info", ("%s/%s/%s" % [heir.get("adm", ""), heir.get("dip", ""), heir.get("mil", "")]) \
+	view._txt(root, "monarch_heir_name", (str(heir.get("name", "")) + " " + str(heir.get("dynasty", ""))).strip_edges()
+			if not heir.is_empty() else Loc.t("NO_HEIR", "Sem herdeiro legítimo"))
+	view._txt(root, "monarch_heir_info", ("%d/%d/%d" % [int(heir.get("adm", 0)), int(heir.get("dip", 0)), int(heir.get("mil", 0))]) \
 			if not heir.is_empty() else "")
 	# números do país
 	var pw := view.power
@@ -183,6 +211,96 @@ func fill(tag: String) -> void:
 		_fill_actions(tag)
 	else:
 		_fill_opinions(tag)
+
+
+static var _titles := {}
+static var _regency := {}
+
+
+## Título do posto do país como no EU4 (common/government_names: a primeira entrada cujo trigger vale;
+## "Kingdom", "Království"...). Sem government_rank no histórico o EU4 usa o posto 2 (os ducados o
+## têm = 1 explícito).
+func rank_title(tag: String) -> String:
+	if _titles.has(tag):
+		return _titles[tag]
+	var c: Dictionary = view.map.countries.get(tag, {})
+	var rank := clampi(int(c.get("rank", 2)) if c.get("rank") != null else 2, 1, 3)
+	var out := ""
+	var files := Eu4Data.folder("common/government_names")
+	var names := files.keys()
+	names.sort()
+	var cbs: CasusBelli = view.diplo.cbs if view.diplo else null
+	for f in names:
+		for kv in files[f]:
+			if not (kv[1] is Array):
+				continue
+			var trig: Array = []
+			var ranks: Array = []
+			for x in kv[1]:
+				if x[0] == "trigger" and x[1] is Array:
+					trig = _mechanics(x[1])
+				elif x[0] == "rank" and x[1] is Array:
+					ranks = x[1]
+			if ranks.is_empty() or cbs == null or cbs.check(trig, tag, tag) != true:
+				continue
+			for r in ranks:
+				if str(r[0]) == str(rank):
+					out = Loc.t(str(r[1]), str(r[1]).capitalize())
+			break
+		if out != "":
+			break
+	if out == "":
+		out = view._gov_name(c)
+	_titles[tag] = out
+	return out
+
+
+## has_reform = <governo>_mechanic (reforma que o EU4 dá a todo governo daquele tipo, fora da lista de
+## reformas do país) vira government = <governo>.
+static func _mechanics(tree: Array) -> Array:
+	var out := []
+	for kv in tree:
+		if kv[0] == "has_reform" and str(kv[1]).ends_with("_mechanic"):
+			out.append(["government", str(kv[1]).trim_suffix("_mechanic")])
+		elif kv[1] is Array:
+			out.append([kv[0], _mechanics(kv[1])])
+		else:
+			out.append(kv)
+	return out
+
+
+## O governante de 1444 é um conselho de regência (`regent = yes` no history/countries)?
+static func is_regency(tag: String) -> bool:
+	if _regency.has(tag):
+		return _regency[tag]
+	var hist := Eu4Data.folder("history/countries")
+	var tree: Array = []
+	for k in hist:
+		if str(k).begins_with(tag + " ") or str(k).begins_with(tag + "-") or str(k) == tag:
+			tree = hist[k]
+			break
+	var best := -1
+	var regent := false
+	for kv in tree:                     # o monarch mais recente até 11/11/1444
+		var mons := []
+		if kv[0] == "monarch" and kv[1] is Array:
+			mons.append([kv[1], 0])
+		elif kv[1] is Array:
+			var d := Discovery._date_num(str(kv[0]))
+			if d < 0 or d > 14441111:
+				continue
+			for x in kv[1]:
+				if x[0] == "monarch" and x[1] is Array:
+					mons.append([x[1], d])
+		for mon in mons:
+			if int(mon[1]) >= best:
+				best = int(mon[1])
+				regent = false
+				for x in mon[0]:
+					if x[0] == "regent" and str(x[1]) == "yes":
+						regent = true
+	_regency[tag] = regent
+	return regent
 
 
 func _value(r: Control, n: String, text: String, v: float, tip: String) -> void:
@@ -277,10 +395,78 @@ func _fill_actions(tag: String) -> void:
 		if a == "join_coalition" and (co == null or member or at_war or co.ae(player, tag) < 1.0):
 			continue
 		ids.append(a)
-	var rows := view.gui.fill_list(list, "diploactionentry", ids.size())
-	for i in rows.size():
-		var a: String = ids[i]
-		var row: Control = rows[i]
+	view.gui.fill_list(list, "", 0)
+	# topo: declarar guerra / pedir paz (sem categoria, como no EU4)
+	for a in ids:
+		if a in ["declare_war", "white_peace"]:
+			var top := view.gui.add_item(list, "diploactionentry_category")
+			if top:
+				_category_row(top, "", Loc.t("WARTITLE" if a == "declare_war" else "PEACETITLE",
+						"Declarar guerra" if a == "declare_war" else "Pedir paz"), ACTIONS[a][2])
+				_action_row(top, a, tag, player)
+	for cat in CATEGORIES:
+		var cid: String = cat[0]
+		var head := view.gui.add_item(list, "diploactionentry_category")
+		if head == null:
+			continue
+		_category_row(head, cid, Loc.t("DIPLOMACYACTION_CATEGORY_" + cid, CATEGORY_NAMES[cid]), cat[1])
+		if not open_cats.get(cid, false):
+			continue
+		for a in ids:
+			if CATEGORY_OF.get(a, "") == cid:
+				var row := view.gui.add_item(list, "diploactionentry")
+				if row:
+					_action_row(row, a, tag, player)
+		for t in TODO_ACTIONS[cid]:
+			var row := view.gui.add_item(list, "diploactionentry")
+			if row:
+				_todo_row(row, Loc.t(t[0], t[1]))
+	var status := root.find_child("label_rivals_not_possible", true, false) as Label
+	if status:
+		status.visible = last_message != ""
+		status.text = last_message
+
+
+## Cabeçalho de categoria (cid "" = linha de declarar guerra/pedir paz: sem o +/−).
+func _category_row(row: Control, cid: String, title: String, icon: String) -> void:
+	var btn := row.find_child("button_diploaction", true, false) as BaseButton
+	if btn:
+		view._set_button_text(btn, title)
+	var ic := row.find_child("category_icon", true, false) as Eu4Gui.Icon
+	if ic:
+		ic.visible = view.gui.sprites.has(icon)
+		if ic.visible:
+			ic.set_sprite(view.gui, icon, 0)
+	var ex := row.find_child("expand", true, false) as Eu4Gui.Icon
+	if ex:
+		ex.visible = cid != ""
+		ex.set_frame(1 if open_cats.get(cid, false) else 0)
+	if btn and cid != "":
+		btn.pressed.connect(func():
+			open_cats[cid] = not open_cats.get(cid, false)
+			view.refresh())
+
+
+## Ação do EU4 que o jogo ainda não tem: apagada, com o X vermelho.
+func _todo_row(row: Control, name: String) -> void:
+	var btn := row.find_child("button_diploaction", true, false) as BaseButton
+	if btn:
+		view._set_button_text(btn, name)
+		btn.disabled = true
+		btn.tooltip_text = name + "\n" + Loc.s("Ainda não existe neste jogo", "Not in this game yet")
+	for n in ["action_icon", "cb_list_icon", "diplomat"]:
+		var c := row.find_child(n, true, false) as Control
+		if c:
+			c.hide()
+	var acc := row.find_child("ai_accept", true, false) as Eu4Gui.Icon
+	if acc:
+		acc.show()
+		acc.set_frame(0)
+
+
+func _action_row(row: Control, a: String, tag: String, player: String) -> void:
+	var dip := view.diplo
+	if true:
 		var info: Array = ACTIONS[a]
 		var name := Loc.t(info[0], info[1]) if info[0] != "" else Loc.s(info[1], {"guarantee": "Guarantee Independence",
 				"break_marriage": "Break Royal Marriage", "white_peace": "Sue for Peace",
@@ -288,12 +474,9 @@ func _fill_actions(tag: String) -> void:
 		if a == "improve" and dip.is_improving(player, tag):
 			name = Loc.t("RECALL", "Chamar de volta") + " — " + Loc.t("MACRO_IMPROVE_RELATIONS", "Melhorar relações")
 		var btn := row.find_child("button_diploaction", true, false) as BaseButton
-		if btn:
+		var top := a in ["declare_war", "white_peace"]      # linha de categoria: o texto já está
+		if btn and not top:
 			view._set_button_text(btn, name)
-			var l := btn.get_node_or_null("Text") as Label
-			if l:
-				l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-				l.offset_left = 26
 		var ic := row.find_child("action_icon", true, false) as Eu4Gui.Icon
 		if ic and view.gui.sprites.has(info[2]):
 			ic.set_sprite(view.gui, info[2], 0)
@@ -316,9 +499,10 @@ func _fill_actions(tag: String) -> void:
 					else Loc.s("Recusaria (%+d)", "Would decline (%+d)") % score)
 			if acc:
 				acc.visible = true
-				acc.set_frame(0 if score > 0 else 1)
+				acc.set_frame(1 if score > 0 else 0)   # quadros: 0 = X, 1 = visto, 2 = mão, 3 = ?
 		elif acc:
-			acc.hide()
+			acc.visible = why != ""          # X vermelho: não dá para fazer
+			acc.set_frame(0)
 		if a == "improve":
 			tip += "\n" + Loc.s("Diplomatas livres: %d/%d · +%s por mês", "Free diplomats: %d/%d · +%s per month") % [
 					dip.free_diplomats(player), dip.diplomats(player), ("%.1f" % dip.improve_rate(player)).replace(".", Loc.dec)]
@@ -335,9 +519,11 @@ func _fill_actions(tag: String) -> void:
 						+ "\n" + Loc.s("Será usado: %s", "Will use: %s") % CasusBelli.name_of(cb_list[0])
 		if why != "":
 			tip += "\n" + why
+		if acc and why != "":
+			acc.show()
+			acc.set_frame(0)
 		if btn:
 			btn.disabled = why != ""
-			btn.modulate = Color.WHITE if why == "" else Color(0.6, 0.6, 0.6)
 			btn.tooltip_text = tip
 			for cn in btn.pressed.get_connections():
 				btn.pressed.disconnect(cn["callable"])
@@ -347,10 +533,6 @@ func _fill_actions(tag: String) -> void:
 					return
 				last_message = dip.act(a, player, tag)
 				view.refresh())
-	var status := root.find_child("label_rivals_not_possible", true, false) as Label
-	if status:
-		status.visible = last_message != ""
-		status.text = last_message
 
 
 ## Opinião dos outros países sobre `tag` (os de relação mais forte primeiro).
