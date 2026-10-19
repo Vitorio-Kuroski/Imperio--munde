@@ -31,6 +31,7 @@ var _mods_cache := {}            # tag -> modificadores somados
 var _slots_at := PackedInt32Array() # vagas de grupos de ideias por nível adm (acumulado)
 var advisors: Advisors           # conselheiros somam nível aos pontos e efeitos aos modificadores
 var institutions: Institutions   # instituições não adotadas encarecem tecnologias; adotadas dão bônus
+var policies: Policies           # efeitos das políticas adotadas
 var economy: Economy             # falência encarece tecnologias, ideias e conselheiros
 var prestige: Prestige           # efeitos do prestígio (fora do cache: mudam todo mês) e do imperador
 var stability: Stability         # efeitos da estabilidade (fora do cache)
@@ -233,6 +234,8 @@ func _sum_mods(tag: String) -> Dictionary:
 		add.call(advisors.modifiers(tag))
 	if institutions:
 		add.call(institutions.modifiers(tag))
+	if policies:
+		add.call(policies.modifiers(tag))
 	if economy:
 		add.call(economy.modifiers(tag))
 	var rid: String = map.countries.get(tag, {}).get("religion", "")      # efeitos da religião do país

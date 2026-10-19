@@ -20,12 +20,12 @@ signal message(text: String)        # aviso para o jogador (main mostra)
 
 const TABS := {"tab_court": "court", "tab_gov": "gov", "tab_economy": "economy", "tab_technology": "tech",
 		"tab_ideas": "ideas", "tab_religion": "religion", "tab_stability": "stability",
-		"tab_diplomacy": "summary"}
+		"tab_diplomacy": "summary", "tab_decisions": "decisions"}
 const TAB_TIPS := {"tab_court": "Corte", "tab_gov": "Governo", "tab_economy": "Economia", "tab_religion": "Religião", "tab_technology": "Tecnologia", "tab_ideas": "Ideias",
-		"tab_stability": "Estabilidade e Expansão", "tab_diplomacy": "Diplomacia"}
+		"tab_stability": "Estabilidade e Expansão", "tab_diplomacy": "Diplomacia", "tab_decisions": "Decisões e Políticas"}
 const TAB_KEYS := {"tab_court": "HEADER_COURT", "tab_gov": "HEADER_GOVERNMENT", "tab_economy": "HEADER_ECONOMY",
 		"tab_religion": "HEADER_RELIGION", "tab_technology": "HEADER_TECHNOLOGY", "tab_ideas": "HEADER_IDEAS",
-		"tab_stability": "HEADER_STABILITY_EXPANSION", "tab_diplomacy": "HEADER_DIPLOMACY"}
+		"tab_stability": "HEADER_STABILITY_EXPANSION", "tab_diplomacy": "HEADER_DIPLOMACY", "tab_decisions": "HEADER_DECISIONS"}
 const POWER_ICONS := {"adm": "GFX_icon_powers_administrative", "dip": "GFX_icon_powers_diplomatic",
 		"mil": "GFX_icon_powers_military"}
 const COURT_HIDE := ["abdicate_ruler_button", "extend_regency_button", "election_info", "monarch_heir_claim",
@@ -63,6 +63,8 @@ var economy_tab: Eu4EconomyTab
 var religion_tab: Eu4ReligionTab
 var diplomacy_tab: Eu4DiplomacyTab
 var stability_tab: Eu4StabilityTab
+var decisions_tab: Eu4DecisionsTab
+var policies: Policies              # main.gd define (aba Decisões e Políticas)
 var diplomacy: Diplomacy            # main.gd define (relações)
 var diplo: DiploActions             # main.gd define (opiniões e ações diplomáticas)
 var manpower: Manpower              # main.gd define (efetivo)
@@ -99,6 +101,9 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 	stability_tab = Eu4StabilityTab.new()
 	if not stability_tab.setup(self):
 		stability_tab = null
+	decisions_tab = Eu4DecisionsTab.new()
+	if not decisions_tab.setup(self):
+		decisions_tab = null
 	ideas_tab = Eu4IdeasTab.new()
 	if ideas_tab.setup(self):
 		ideas_tab.choose_group_requested.connect(func(t: String): ideas_requested.emit(t))
@@ -124,6 +129,8 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 		pages.append(diplomacy_tab.root)
 	if stability_tab:
 		pages.append(stability_tab.root)
+	if decisions_tab:
+		pages.append(decisions_tab.root)
 	for v in pages:
 		var close := v.find_child("close_button", true, false) as BaseButton
 		if close:
@@ -262,6 +269,10 @@ func _on_tab(t: String) -> void:
 			if stability_tab and stability:
 				tab = t
 				refresh()
+		"decisions":
+			if decisions_tab:
+				tab = t
+				refresh()
 		"tech":
 			if tech_tab:
 				tab = t
@@ -311,7 +322,9 @@ func refresh() -> void:
 		diplomacy_tab.root.visible = tab == "diplomacy"
 	if stability_tab:
 		stability_tab.root.visible = tab == "stability"
-	for pg in [_court, _gov, tech_tab.root if tech_tab else null, ideas_tab.root if ideas_tab else null,
+	if decisions_tab:
+		decisions_tab.root.visible = tab == "decisions"
+	for pg in [decisions_tab.root if decisions_tab else null, _court, _gov, tech_tab.root if tech_tab else null, ideas_tab.root if ideas_tab else null,
 			economy_tab.root if economy_tab else null, religion_tab.root if religion_tab else null,
 			diplomacy_tab.root if diplomacy_tab else null, stability_tab.root if stability_tab else null]:
 		if pg and pg.visible:
@@ -321,6 +334,8 @@ func refresh() -> void:
 		var b := tw.find_child(n, false, false) as Eu4Gui.Button2 if tw else null
 		if b and b.visible:
 			b.set_frame(1 if TABS[n] == tab or (TABS[n] == "summary" and tab == "diplomacy") else 0)
+	if _tabs:
+		_tabs.visible = true            # a aba Decisões a esconde enquanto se escolhe uma política
 	match tab:
 		"court":
 			_fill_court()
@@ -338,6 +353,8 @@ func refresh() -> void:
 			diplomacy_tab.fill(tag)
 		"stability":
 			stability_tab.fill(tag)
+		"decisions":
+			decisions_tab.fill(tag)
 
 
 func _gov_name(c: Dictionary) -> String:

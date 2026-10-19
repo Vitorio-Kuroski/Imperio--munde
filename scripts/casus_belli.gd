@@ -218,6 +218,18 @@ func _cond(k: String, v: Variant, scope: Dictionary, root: String, from: String)
 			return res
 		"always":
 			return _yes(v)
+		"is_colonial_nation", "is_former_colonial_nation", "is_playing_custom_nation", "is_lesser_in_union_with_player":
+			return not _yes(v)          # não existem nações coloniais nem personalizadas no jogo
+		"normal_or_historical_nations":
+			return _yes(v)              # regra de jogo: nações históricas (não aleatórias)
+		"end_game_tags_blocked":
+			return not _yes(v)          # regra de jogo padrão do EU4: não bloqueia
+		"tooltip", "custom_tooltip":
+			return true                 # só texto da dica
+		"custom_trigger_tooltip":
+			return _test(v, scope, root, from) if v is Array else null
+		"was_tag":                      # APROXIMAÇÃO: o jogo ainda não guarda as tags que o país já teve
+			return tag != "" and tag == str(v)
 		"is_revolutionary":
 			return not _yes(v)
 		"has_dlc":
@@ -234,6 +246,13 @@ func _cond(k: String, v: Variant, scope: Dictionary, root: String, from: String)
 		r = _prov_cond(k, v, pid, root, from)
 	elif tag != "":
 		r = _country_cond(k, v, tag, root, from)
+	if r == null and v is String and (v == "yes" or v == "no"):
+		# gatilho pronto do EU4 (common/scripted_triggers): "x = yes" avalia o bloco, "x = no" o nega
+		var st: Variant = Eu4Data.merged("common/scripted_triggers").get(k)
+		if st is Array and not JSON.stringify(st).contains("$"):
+			r = _test(st, scope, root, from)
+			if v == "no":
+				r = _not(r)
 	if r == null:
 		unknown[k] = int(unknown.get(k, 0)) + 1
 	return r
@@ -267,8 +286,8 @@ func _country_cond(k: String, v: Variant, tag: String, root: String, from: Strin
 			return str(c.get("primary_culture", "")) == (str(map.countries[o].get("primary_culture", "")) if o != "" else s)
 		"culture_group":
 			var o := _country(s, root, from)
-			if o == "":
-				return null             # o mapa guarda o nome do grupo, não o id
+			if o == "":                 # id do grupo (common/cultures): o mapa guarda só o nome
+				return _cul_group_id(str(c.get("primary_culture", ""))) == s
 			var g := _cul_group(str(c.get("primary_culture", "")))
 			return g != "" and g == _cul_group(str(map.countries[o].get("primary_culture", "")))
 		"is_neighbor_of":
@@ -370,6 +389,11 @@ func _country_cond(k: String, v: Variant, tag: String, root: String, from: Strin
 			return s.is_valid_float() and TechWindow.level_of(map, tag, "dip", power) >= int(float(s))
 		"adm_tech", "mil_tech":
 			return s.is_valid_float() and TechWindow.level_of(map, tag, k.substr(0, 3), power) >= int(float(s))
+		"has_idea_group":
+			for g in power.adopted(tag):
+				if g["id"] == s:
+					return true
+			return false
 		"full_idea_group":
 			for g in power.adopted(tag):
 				if g["id"] == s:
@@ -452,8 +476,41 @@ func _prov_cond(k: String, v: Variant, pid: int, root: String, from: String) -> 
 	return null
 
 
+var _rel_groups := {}
+
+
+## Id do grupo religioso em common/religions ("christian" para catholic). O mapa guarda só o nome
+## traduzido do grupo ("Cristã"), que não serve para comparar com religion_group = christian.
 func _rel_group(rid: String) -> String:
+	if _rel_groups.is_empty():
+		var rel := Eu4Data.merged("common/religions")
+		for gid in rel:
+			if not (rel[gid] is Array):
+				continue
+			for kv in rel[gid]:
+				if kv[1] is Array and JSON.stringify(kv[1]).contains("\"icon\""):
+					_rel_groups[kv[0]] = gid
+		_rel_groups[""] = ""
+	if _rel_groups.size() > 1:
+		return str(_rel_groups.get(rid, ""))
 	return str(map.religions.get(rid, {}).get("group", ""))
+
+
+var _group_ids := {}
+
+
+## Id do grupo da cultura em common/cultures ("scandinavian" para swedish).
+func _cul_group_id(cid: String) -> String:
+	if _group_ids.is_empty():
+		for gid in Eu4Data.merged("common/cultures"):
+			var tree: Variant = Eu4Data.merged("common/cultures")[gid]
+			if not (tree is Array):
+				continue
+			for kv in tree:
+				if kv[1] is Array and not (kv[0] in ["graphical_culture", "male_names", "female_names", "dynasty_names", "country", "province"]):
+					_group_ids[kv[0]] = gid
+		_group_ids[""] = ""
+	return str(_group_ids.get(cid, ""))
 
 
 func _cul_group(cid: String) -> String:
