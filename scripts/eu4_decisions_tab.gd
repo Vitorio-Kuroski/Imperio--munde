@@ -9,8 +9,9 @@ extends RefCounted
 ##    país vê (potential) em três colunas; a lista dos efeitos somados (COUNTRY_POLICIES_EFFECT).
 ##  - Decisões nacionais (decisions/, via Eu4Data): as que o país vê (`potential` verdadeiro pelo
 ##    avaliador do CasusBelli; o que ele não conhece conta como falso), "major" com a faixa própria;
-##    "?" com a descrição e as condições do `allow` (✓/✗). Os efeitos das decisões (scripts do
-##    EU4) ainda não existem: o botão de tomar fica apagado.
+##    "?" com a descrição e as condições do `allow` (✓/✗). O botão de tomar (select_button) fica
+##    ativo no país do jogador quando o `allow` vale; a dica lista os efeitos (`Eu4Effects.describe`)
+##    e clicar pede confirmação e roda o bloco `effect` (`take`).
 
 const SLOT := Vector2(100, 32)      # tamanho das janelas de vaga no .gui
 const ROW_DROP := 17.0
@@ -21,7 +22,9 @@ const CAT_ROWS := {"adm": "adminstrative_policies", "dip": "diplomacy_policies",
 var view: Eu4CountryView
 var root: Control
 var _picking := false
-var _decisions: Array = []         # [{id, major, potential, allow}] (lidas uma vez)
+var _decisions: Array = []         # [{id, major, potential, allow, effect}] (lidas uma vez)
+var _confirm: ConfirmationDialog
+var _pending := ""                 # decisão esperando a confirmação
 
 
 func setup(v: Eu4CountryView) -> bool:
@@ -49,14 +52,48 @@ func setup(v: Eu4CountryView) -> bool:
 			for d in kv[1]:
 				if not (d[1] is Array):
 					continue
-				var e := {"id": str(d[0]), "major": false, "potential": [], "allow": []}
+				var e := {"id": str(d[0]), "major": false, "potential": [], "allow": [], "effect": []}
 				for x in d[1]:
 					match x[0]:
 						"major":
 							e["major"] = str(x[1]) == "yes"
-						"potential", "allow":
+						"potential", "allow", "effect":
 							e[x[0]] = x[1] if x[1] is Array else []
 				_decisions.append(e)
+	_confirm = ConfirmationDialog.new()
+	_confirm.ok_button_text = Loc.t("DECISION_TAKE", Loc.s("Tomar a decisão", "Take decision"))
+	_confirm.cancel_button_text = Loc.t("CANCEL", "Cancelar")
+	_confirm.confirmed.connect(func():
+		if take(view.player, _pending):
+			view.message.emit(Loc.s("Decisão tomada: %s", "Decision taken: %s") % _title(_pending))
+		view.refresh())
+	root.add_child(_confirm)
+	return true
+
+
+func _find(id: String) -> Dictionary:
+	for d in _decisions:
+		if d["id"] == id:
+			return d
+	return {}
+
+
+func _title(id: String) -> String:
+	return Loc.t(id + "_title", Eu4Importer.pretty_key(id))
+
+
+## Pode tomar a decisão agora (potential e allow verdadeiros)?
+func can_take(tag: String, id: String) -> bool:
+	var d := _find(id)
+	var cbs: CasusBelli = view.diplo.cbs if view.diplo else null
+	return not d.is_empty() and cbs != null and view.effects != null 			and cbs.check(d["potential"], tag, tag) == true and cbs.check(d["allow"], tag, tag) == true
+
+
+## Toma a decisão: roda o bloco `effect` com ROOT = o país.
+func take(tag: String, id: String) -> bool:
+	if not can_take(tag, id):
+		return false
+	view.effects.run(_find(id)["effect"], tag)
 	return true
 
 
@@ -194,7 +231,7 @@ func _fill_decisions(tag: String) -> void:
 		var di := row.find_child("decision_icon", true, false) as Control
 		if di:
 			di.hide()
-		var title := Loc.t(d["id"] + "_title", Eu4Importer.pretty_key(d["id"]))
+		var title := _title(d["id"])
 		var tl := row.find_child("title", true, false) as Label
 		if tl:
 			tl.text = title
@@ -207,12 +244,29 @@ func _fill_decisions(tag: String) -> void:
 					+ _conditions(d["allow"], tag, cbs)
 		var sel := row.find_child("select_button", true, false) as BaseButton
 		if sel:
-			sel.disabled = true
+			var fx := _effects_text(d, tag)
+			var can := ok and tag == view.player and view.effects != null
+			sel.disabled = not can
 			sel.tooltip_text = (Loc.s("Os requisitos são cumpridos", "The requirements are met") if ok else Loc.s("Os requisitos não são cumpridos", "The requirements are not met")) \
-					+ "\n" + Loc.s("Os efeitos das decisões ainda não existem neste jogo", "Decision effects are not in this game yet")
+					+ "\n\n" + Loc.s("Efeitos:", "Effects:") + "\n" + fx
+			if can:
+				var did: String = d["id"]
+				sel.pressed.connect(func():
+					_pending = did
+					_confirm.title = _title(did)
+					_confirm.dialog_text = Loc.s("Tomar a decisão «%s»?", "Take the decision \"%s\"?") % _title(did) + "\n\n" + fx
+					_confirm.popup_centered())
 		var cb := row.find_child("decision_checkbox", true, false) as BaseButton
 		if cb:
 			cb.tooltip_text = Loc.s("Avisar quando der para tomar", "Notify when it can be taken")
+
+
+func _effects_text(d: Dictionary, tag: String) -> String:
+	if view.effects == null:
+		return ""
+	var lines: Array = view.effects.describe(d["effect"], tag)
+	return "
+".join(lines) if not lines.is_empty() else Loc.s("(só efeitos que este jogo ainda não mostra)", "(only effects this game does not show yet)")
 
 
 ## Condições do allow, uma por linha, com ✓/✗ (? = o jogo ainda não sabe avaliar).

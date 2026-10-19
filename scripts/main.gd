@@ -27,6 +27,7 @@ var coalition := Coalition.new()
 var discovery := Discovery.new()      # Terra Incógnita e névoa de guerra
 var rivals := Rivals.new()            # rivais (aba Diplomacia)
 var policies := Policies.new()        # políticas (aba Decisões e Políticas)
+var effects := Eu4Effects.new()       # efeitos do EU4 (decisões), flags e modificadores de país
 var peace := Peace.new()
 var peace_view: Eu4PeaceView        # tela de paz do EU4
 var frontend: Eu4Frontend
@@ -111,6 +112,14 @@ func _ready() -> void:
 	rivals.setup(map, clock, power, diplomacy, war, cbs)
 	policies.setup(map, clock, power, cbs)
 	power.policies = policies
+	effects.setup(map, clock, power, cbs)
+	effects.economy = economy
+	cbs.economy = economy
+	effects.prestige = prestige
+	effects.stability = stability
+	effects.legitimacy = legitimacy
+	effects.diplomacy = diplomacy
+	effects.religion = religion
 	diplo.rivals = rivals
 	army.setup(map, clock, power, economy, manpower, diplomacy)
 	economy.army = army
@@ -262,6 +271,8 @@ func _setup_eu4_hud() -> void:
 		country_view.diplomacy = diplomacy
 		country_view.diplo = diplo
 		country_view.policies = policies
+		country_view.effects = effects
+		effects.changed.connect(func(_t): country_view.refresh())
 		country_view.manpower = manpower
 		country_view.prestige = prestige
 		country_view.stability = stability

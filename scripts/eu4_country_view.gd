@@ -65,6 +65,7 @@ var diplomacy_tab: Eu4DiplomacyTab
 var stability_tab: Eu4StabilityTab
 var decisions_tab: Eu4DecisionsTab
 var policies: Policies              # main.gd define (aba Decisões e Políticas)
+var effects: Eu4Effects             # main.gd define (tomar decisões)
 var diplomacy: Diplomacy            # main.gd define (relações)
 var diplo: DiploActions             # main.gd define (opiniões e ações diplomáticas)
 var manpower: Manpower              # main.gd define (efetivo)

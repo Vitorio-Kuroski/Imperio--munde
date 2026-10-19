@@ -36,6 +36,7 @@ var economy: Economy             # falência encarece tecnologias, ideias e cons
 var prestige: Prestige           # efeitos do prestígio (fora do cache: mudam todo mês) e do imperador
 var stability: Stability         # efeitos da estabilidade (fora do cache)
 var legitimacy: Legitimacy       # efeitos da legitimidade (fora do cache)
+var effects: Eu4Effects          # modificadores de país dos efeitos do EU4 (decisões)
 
 
 func setup(m: MapView, c: GameClock) -> void:
@@ -243,6 +244,8 @@ func _sum_mods(tag: String) -> Dictionary:
 		add.call(map.religions[rid].get("modifiers", {}))
 	if prestige:
 		add.call(prestige.static_modifiers(tag))
+	if effects:
+		add.call(effects.modifiers(tag))
 	return out
 
 

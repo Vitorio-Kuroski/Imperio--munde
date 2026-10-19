@@ -9,8 +9,9 @@ extends RefCounted
 ##    (NOT = nenhum dos itens), mudança de escopo (FROM, ROOT, capital_scope, any_owned_province,
 ##    any_neighbor_province) e as condições mais usadas (vizinhança, religião, grupo religioso,
 ##    governo, reformas, tag, grupo tecnológico, cultura, súditos, Sacro Império, imperador,
-##    núcleos e reivindicações de 1444, região, continente...). O que depende de coisas que o jogo
-##    ainda não tem (flags, missões, eventos, excomunhão, trégua) é falso; condição desconhecida deixa
+##    núcleos e reivindicações de 1444, região, continente...). Flags e modificadores de país vêm do
+##    `Eu4Effects`; o que depende de coisas que o jogo ainda não tem (missões, excomunhão...) é
+##    falso; condição desconhecida deixa
 ##    o resultado desconhecido, e desconhecido no fim conta como falso.
 ##  - Declarar guerra sem casus belli custa NO_CB_STABILITY (2) de estabilidade (regra do EU4).
 
@@ -31,6 +32,8 @@ var diplomacy: Diplomacy
 var war: War
 var diplo: DiploActions           # main.gd define (has_opinion_modifier)
 var coalition: Coalition          # main.gd define (coalition_target, num_of_coalition_members...)
+var economy: Economy              # main.gd define (treasury, years_of_income)
+var effects: Eu4Effects           # Eu4Effects.setup define (flags, modificadores de país, change_tag)
 var cbs := {}                     # id -> casus belli (map.casus_belli)
 var goals := {}                   # id -> objetivo de guerra (map.war_goals)
 var _order := []                  # ids na ordem do arquivo
@@ -106,10 +109,35 @@ func war_goal_of(cb: String) -> String:
 
 # ------------------------------------------------------------------ avaliação
 ## Bloco = AND dos itens (vazio = verdadeiro).
+## if/else_if/else (gatilhos condicionais do EU4): `if = { limit = { A } B }` exige B só se A vale;
+## o `else` seguinte vale quando nenhum if/else_if da corrente teve o limit verdadeiro.
 func _test(items: Array, scope: Dictionary, root: String, from: String) -> Variant:
 	var res: Variant = true
+	var taken: Variant = true          # algum if/else_if anterior da corrente teve o limit verdadeiro
 	for it in items:
-		var v: Variant = _cond(str(it[0]), it[1], scope, root, from)
+		var k := str(it[0])
+		var v: Variant
+		if k == "if" or k == "else_if" or k == "else":
+			if not (it[1] is Array):
+				continue
+			if k != "if" and taken == true:
+				continue
+			if k == "else":
+				v = true if taken == null else _test(it[1], scope, root, from)
+				taken = true
+			else:
+				var lim: Variant = true
+				var body := []
+				for kv in it[1]:
+					if kv[0] == "limit":
+						lim = _test(kv[1], scope, root, from) if kv[1] is Array else null
+					else:
+						body.append(kv)
+				taken = lim
+				v = _test(body, scope, root, from) if lim == true else (true if lim == false else null)
+		else:
+			taken = true
+			v = _cond(k, it[1], scope, root, from)
 		if v == false:
 			return false
 		if v == null:
@@ -139,6 +167,8 @@ func _country(v: String, root: String, from: String) -> String:
 			return root
 		"FROM":
 			return from
+	if effects:                   # quem formou outra nação (change_tag) responde pela tag nova
+		return effects.key_of(v)
 	return v if map.countries.has(v) else ""
 
 
@@ -147,8 +177,7 @@ func _yes(v: Variant) -> bool:
 
 
 ## Coisas que o jogo ainda não tem (flags, missões, eventos...): sempre falsas.
-const ALWAYS_FALSE := ["has_country_flag", "has_global_flag", "mission_completed", "has_ruler_flag",
-		"has_country_modifier", "has_province_flag", "is_excommunicated", "is_defender_of_faith",
+const ALWAYS_FALSE := ["mission_completed", "has_ruler_flag", "has_province_flag", "is_excommunicated", "is_defender_of_faith",
 		"is_hegemon", "trade_embargo_by", "trade_league_embargoed_by", "is_trade_league_leader", "is_league_leader",
 		"is_in_league_war", "is_league_enemy", "is_rival", "is_colonial_nation_of", "has_privateers",
 		"has_spawned_supported_rebels", "is_revolution_target",
@@ -228,8 +257,14 @@ func _cond(k: String, v: Variant, scope: Dictionary, root: String, from: String)
 			return true                 # só texto da dica
 		"custom_trigger_tooltip":
 			return _test(v, scope, root, from) if v is Array else null
-		"was_tag":                      # APROXIMAÇÃO: o jogo ainda não guarda as tags que o país já teve
-			return tag != "" and tag == str(v)
+		"was_tag":                      # tags que o país já teve (change_tag do Eu4Effects)
+			return tag != "" and (effects.was_tag(tag, str(v)) if effects else tag == str(v))
+		"has_country_flag":
+			return tag != "" and effects != null and effects.has_flag(tag, str(v))
+		"has_global_flag":
+			return effects != null and effects.has_global_flag(str(v))
+		"has_country_modifier":
+			return tag != "" and effects != null and effects.has_modifier(tag, str(v))
 		"is_revolutionary":
 			return not _yes(v)
 		"has_dlc":
@@ -263,7 +298,9 @@ func _country_cond(k: String, v: Variant, tag: String, root: String, from: Strin
 	var s := str(v)
 	match k:
 		"tag":
-			return tag == _country(s, root, from) or tag == s
+			if s.to_upper() == "ROOT" or s.to_upper() == "FROM":
+				return tag == _country(s, root, from)
+			return (effects.current_tag(tag) if effects else tag) == s
 		"government":
 			return str(c.get("government", "")) == s
 		"has_reform":
@@ -348,6 +385,8 @@ func _country_cond(k: String, v: Variant, tag: String, root: String, from: Strin
 		"truce_with":
 			var o := _country(s, root, from)
 			return war != null and o != "" and war.has_truce(tag, o)
+		"is_at_war":
+			return war != null and war.at_war(tag) == _yes(v)
 		"war_with":
 			var o := _country(s, root, from)
 			return war != null and o != "" and war.hostile(tag, o)
@@ -363,6 +402,39 @@ func _country_cond(k: String, v: Variant, tag: String, root: String, from: Strin
 			return dyn != "" and dyn == (str(map.countries[o].get("monarch", {}).get("dynasty", "")) if o != "" else s)
 		"government_rank":
 			return s.is_valid_float() and int(c.get("rank", 1)) >= int(float(s))
+		"adm_power", "dip_power", "mil_power":
+			return s.is_valid_float() and power.points(tag, k.substr(0, 3)) >= float(s)
+		"treasury":
+			return economy != null and s.is_valid_float() and economy.money(tag) >= float(s)
+		"years_of_income":
+			return economy != null and s.is_valid_float() \
+					and economy.money(tag) >= float(s) * 12.0 * float(economy.income(tag).get("total", 0.0))
+		"stability":
+			return effects != null and effects.stability != null and s.is_valid_float() and effects.stability.of(tag) >= int(float(s))
+		"prestige":
+			return effects != null and effects.prestige != null and s.is_valid_float() and effects.prestige.of(tag) >= float(s)
+		"owns_core_province":
+			return s.is_valid_int() and int(s) < map.provinces.size() and map.provinces[int(s)]["owner"] == tag 					and _prov_cond("is_core", tag, int(s), root, from) == true
+		"num_of_owned_provinces_with":
+			if not (v is Array):
+				return null
+			var need := 1
+			var conds := []
+			for it in v:
+				if str(it[0]) == "value":
+					need = int(float(str(it[1]))) if str(it[1]).is_valid_float() else 1
+				else:
+					conds.append(it)
+			var cnt := 0
+			for p in map.provinces_of(tag):
+				var r: Variant = _test(conds, {"pid": int(p["id"])}, root, from)
+				if r == null:
+					return null
+				if r == true:
+					cnt += 1
+					if cnt >= need:
+						return true
+			return false
 		"owns":
 			return s.is_valid_int() and int(s) < map.provinces.size() and map.provinces[int(s)]["owner"] == tag
 		"is_emperor":
@@ -444,7 +516,7 @@ func _prov_cond(k: String, v: Variant, pid: int, root: String, from: String) -> 
 		"is_core":
 			var o := _country(s, root, from)
 			return o != "" and (o in p.get("cores", []) or (p["owner"] == o and not p.has("cores")))
-		"is_claim":
+		"is_claim", "is_permanent_claim":
 			var o := _country(s, root, from)
 			return o != "" and o in p.get("claims", [])
 		"religion":
