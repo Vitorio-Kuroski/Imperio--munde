@@ -395,7 +395,7 @@ static var _grey: ShaderMaterial
 static func _grey_mat() -> ShaderMaterial:
 	if _grey == null:
 		var sh := Shader.new()
-		sh.code = "shader_type canvas_item;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV) * COLOR;\n\tfloat g = dot(c.rgb, vec3(0.212671, 0.715160, 0.072169));\n\tCOLOR = vec4(vec3(g), c.a);\n}\n"
+		sh.code = "shader_type canvas_item;\nvoid fragment() {\n\tvec4 c = COLOR;\n\tfloat g = dot(c.rgb, vec3(0.212671, 0.715160, 0.072169));\n\tCOLOR = vec4(vec3(g), c.a);\n}\n"
 		_grey = ShaderMaterial.new()
 		_grey.shader = sh
 	return _grey
