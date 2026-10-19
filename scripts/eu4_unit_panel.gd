@@ -38,7 +38,14 @@ const MAIN_KEEP := ["regiment_bg", "lu_unit_type_1", "lu_unit_type_1_count", "lu
 const CARD_KEEP := ["unitpanel_bg_pc", "land_units", "unit1_type", "unit1_count", "unit2_type", "unit2_count",
 		"unit3_type", "unit3_count", "unitstrength_land", "unitlocation", "unit_destination", "disbandbutton",
 		"newunitbutton02", "unitattrition", "unit_attrition_icon", "unit_morale_bar_bg", "unit_morale",
-		"unit_morale_frame", "unit_drill", "unit_drill_frame", "leader_button", "unitleader", "select_army_button"]
+		"unit_morale_frame", "unit_drill", "unit_drill_frame", "leader_button", "unitleader", "select_army_button",
+		"army_professionalism_level", "remove_unit_from_selection_button", "detach_siege_button", "attach_to_transport_button",
+		"conform_to_template_button", "loot_capability_icon", "loot_capability", "siege_capability_icon",
+		"siege_capability"]
+## Faixa de cima ("1 Armies") do multi_unitpanel: o EU4 a mostra também com um exército só.
+const MULTI_KEEP := ["multiselect_bg", "desc", "mergebutton", "deselect_all", "reorganizebutton"]
+## Botões do cartão que o jogo ainda não tem (apagados).
+const CARD_TODO := ["detach_siege_button", "attach_to_transport_button", "conform_to_template_button"]
 const SUB_KEEP := ["band_regiment", "icon_type", "subunit_amount", "subunit_type", "RegName"]
 const FRAMES := {"infantry": 0, "cavalry": 1, "artillery": 2}
 
@@ -49,6 +56,7 @@ var player := ""
 var id := -1
 var _main: Control
 var _card: Control
+var _multi: Control                # faixa "1 Armies" (multi_unitpanel)
 var _name: Label
 var _rows: Array = []              # linhas da lista de regimentos (reaproveitadas)
 
@@ -73,6 +81,30 @@ func setup(g: Eu4Gui, m: MapView, a: Army) -> bool:
 	add_child(_card)
 	_keep(_main, MAIN_KEEP)
 	_keep(_card, CARD_KEEP)
+	_multi = gui.build("multi_unitpanel")
+	if _multi:
+		var mw := gui.find_window("multi_unitpanel")
+		_multi.position = Eu4Gui._vec(gui._resolve(mw), "show_position")
+		add_child(_multi)                # por cima do cartão, como no EU4
+		_keep(_multi, MULTI_KEEP)
+		var ul := _find(_multi, "unitlist")
+		if ul:
+			ul.hide()
+		_button(_multi, "deselect_all", func(): close(), Loc.t("DESELECT_ALL", "Fechar todos"))
+		for n in ["mergebutton", "reorganizebutton"]:
+			var b := _find(_multi, n) as BaseButton
+			if b:
+				_set_enabled(b, false)
+				b.tooltip_text = Loc.t("MERGE_UNITS" if n == "mergebutton" else "REORGANIZE_UNITS", "") + "\n" \
+						+ Loc.s("Só com mais de um exército selecionado (ainda não existe neste jogo)",
+						"Needs more than one selected army (not in this game yet)")
+	_button(_card, "remove_unit_from_selection_button", func(): close(), Loc.t("DESELECT_UNIT", "Tirar da seleção"))
+	for n in CARD_TODO:
+		var b := _find(_card, n) as BaseButton
+		if b:
+			_set_enabled(b, false)
+			b.tooltip_text = Loc.t("CONFORM_TO_TEMPLATE", "") + "\n" if n == "conform_to_template_button" else ""
+			b.tooltip_text += Loc.s("Ainda não existe neste jogo", "Not in this game yet")
 	_name = Label.new()            # unitname é um editBoxType (o Eu4Gui não monta)
 	gui.style_label(_name, "vic_18")
 	_name.position = Vector2(52, 49)
@@ -214,6 +246,23 @@ func refresh() -> void:
 		(mor as Eu4Gui.Progress).set_value(army.morale(a) / mx if mx > 0.0 else 0.0)
 		mor.tooltip_text = Loc.s("Moral: %s / %s", "Morale: %s / %s") % [_n(army.morale(a)), _n(mx)]
 	_txt(_card, "unitleader", Loc.t("NO_LEADER", "Sem general"))
+	if _multi:
+		_txt(_multi, "desc", "1 " + Loc.t("ARMIES", "Exércitos"))
+	# saque (INF/CAV/ART_LOOT ducados/mês por regimento) e o maior forte que dá para cercar
+	# (homens ÷ (SIEGE_FORCE_NEEDED_MULTIPLIER × guarnição de 1000 por nível))
+	var loot := 0.0
+	for r in a["regs"]:
+		var k: String = {"infantry": "INF", "cavalry": "CAV", "artillery": "ART"}.get(r["type"], "INF")
+		loot += float(Eu4Data.define("NMilitary", k + "_LOOT", 0.1)) * float(r["str"])
+	_txt(_card, "loot_capability", ("%.1f" % loot).replace(".", Loc.dec), Loc.t("LOOT_CAPABILITY", "Saque máximo por mês") + "\n" \
+			+ Loc.t("LOOT_CAPABILITY_DESC", ""))
+	var need := float(Eu4Data.define("NMilitary", "SIEGE_FORCE_NEEDED_MULTIPLIER", 3)) * float(Eu4Data.define("NMilitary", "GARRISON_SIZE", 1000))
+	_txt(_card, "siege_capability", str(int(army.strength(a) * 1000.0 / need)) if need > 0 else "0",
+			Loc.t("SIEGE_CAPABILITY", "Maior forte que dá para cercar") + "\n" + Loc.t("SIEGE_CAPABILITY_DESC", ""))
+	for n in ["loot_capability", "siege_capability"]:
+		var l := _find(_card, n) as Label
+		if l:
+			l.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
 	_txt(_card, "unitstrength_land", Loc.num(army.strength(a) * 1000.0),
 			Loc.s("Moral %s de %s · manutenção %s ducados/mês (todos os regimentos do país)",
 			"Morale %s of %s · maintenance %s ducats/month (all of the country's regiments)") % [
@@ -272,7 +321,7 @@ func refresh() -> void:
 			b.tooltip_text = Loc.s("Recrutar %s aqui: %d ducados, 1000 homens, %d dias", "Recruit %s here: %d ducats, 1000 men, %d days") % [
 					u.get("name", ty), ceili(army.reg_cost(tag, ty)), army.reg_days(tag, ty)] + ("\n" + why if why != "" else "") \
 					+ _queue_text(int(a["loc"]), tag)
-	for n in ["newunitbutton02", "disbandbutton"]:
+	for n in ["newunitbutton02", "disbandbutton", "remove_unit_from_selection_button"] + CARD_TODO:
 		var x := _find(_card, n)
 		if x:
 			x.visible = mine
