@@ -36,13 +36,51 @@ func _rule(k: String, default: float) -> float:
 	return float(_rules.get(k, default))
 
 
-## Efetivo que a província dá ao máximo do país (milhares).
+## Efetivo que a província dá ao máximo do país (milhares), como o EU4: (efetivo base × 250 +
+## local_manpower) × (1 + núcleo 0,75 + província de terra 0,25 (`land_province`) + cultura não aceita
+## (−0,15 no mesmo grupo, `same_culture_group`; −0,33 fora, `non_accepted_culture`) + construções e
+## modificadores) × (1 − autonomia local).
 func province_manpower(p: Dictionary) -> float:
 	if p["sea"] or p["owner"] == "":
 		return 0.0
+	var owner: String = p["owner"]
 	var base := float(p.get("base_manpower", float(p["development"]) / 3.0))
-	return base * _rule("base_mp_to_manpower", 0.25) * maxf(0.0, 1.0 + _rule("core_manpower", 0.75) \
-			+ map.building_mod(p, "local_manpower_modifier")) + map.building_mod(p, "local_manpower")
+	var mod := 1.0 + _static("land_province", 0.25) + map.building_mod(p, "local_manpower_modifier")
+	if not p.has("cores") or owner in p["cores"]:
+		mod += _rule("core_manpower", 0.75)
+	var cul: String = p.get("culture", "")
+	var c: Dictionary = map.countries.get(owner, {})
+	var prim: String = c.get("primary_culture", "")
+	if cul != "" and prim != "" and cul != prim and not (cul in c.get("accepted_cultures", [])):
+		var same := _group_of(cul) != "" and _group_of(cul) == _group_of(prim)
+		mod += _static("same_culture_group", -0.15) if same else _static("non_accepted_culture", -0.33)
+	var autonomy := clampf(float(p.get("local_autonomy", 0.0)) / 100.0, 0.0, 1.0)
+	return (base * _rule("base_mp_to_manpower", 0.25) + map.building_mod(p, "local_manpower")) * maxf(0.0, mod) \
+			* (1.0 - autonomy)
+
+
+var _statics := {}
+var _groups := {}
+
+
+## local_manpower_modifier de um modificador estático do EU4 (common/static_modifiers).
+func _static(block: String, default: float) -> float:
+	if not _statics.has(block):
+		var v := default
+		var tree = Eu4Data.merged("common/static_modifiers").get(block, [])
+		if tree is Array:
+			for kv in tree:
+				if kv is Array and kv.size() == 2 and kv[0] == "local_manpower_modifier" and str(kv[1]).is_valid_float():
+					v = float(str(kv[1]))
+		_statics[block] = v
+	return _statics[block]
+
+
+func _group_of(cul: String) -> String:
+	if _groups.is_empty():
+		for id in map.cultures:
+			_groups[id] = str(map.cultures[id].get("group", ""))
+	return str(_groups.get(cul, ""))
 
 
 func _recount() -> void:

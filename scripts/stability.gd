@@ -1,7 +1,7 @@
 class_name Stability
 extends RefCounted
 ## Estabilidade dos países, regras do EU4:
-##  - Vai de −3 a +3; em 1444 todo país começa com +1.
+##  - Vai de −3 a +3; em 1444 todo país começa com 0 (como no EU4: Suécia e Noruega mostram +0).
 ##  - Aumentar (`boost`) custa PS_BOOST_STABILITY (100) pontos adm × (1 + stability_cost_modifier);
 ##    cada ponto de estabilidade positiva soma +50% ao custo (modificador estático positive_stability).
 ##  - Efeitos: modificadores estáticos `stability` × estabilidade, `positive_stability` × estabilidade
@@ -16,7 +16,8 @@ signal changed(tag: String)
 
 const MIN := -3
 const MAX := 3
-const START := 1
+const START := 0
+const AI_TARGET := 1             # a IA aumenta a estabilidade até aqui
 ## Efeitos mostrados na dica (os de estamentos, harmonia, decadência... ficam de fora).
 const TIP_KEYS := ["global_tax_modifier", "global_missionary_strength", "yearly_corruption",
 		"global_institution_spread", "stability_cost_modifier", "global_trade_power", "global_spy_defence",
@@ -140,5 +141,5 @@ static func fmt(s: int) -> String:
 
 func _on_month() -> void:
 	for t in value:
-		if t != power.player and of(t) < START and why_not(t) == "":
+		if t != power.player and of(t) < AI_TARGET and why_not(t) == "":
 			boost(t)
