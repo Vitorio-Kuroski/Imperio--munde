@@ -34,6 +34,7 @@ var collected: Array = []               # posição -> {tag: ducados por mês}
 var prov_value: PackedFloat32Array      # por província
 var prov_power: PackedFloat32Array
 var merchants := {}                     # tag -> [posições dos nós com mercador]
+var dev := {}                           # tag -> desenvolvimento total (para o poder de caravana)
 var _income := {}                       # tag -> ducados por mês
 var _cot := {}                          # "coastal1" -> poder
 var _rules := {}
@@ -158,6 +159,7 @@ func recompute() -> void:
 	if _static_version != map.owner_version:
 		_static()
 	var cmod := {}
+	dev.clear()
 	var nodes_of := {}                  # tag -> [nós onde tem poder]
 	for k in _pids.size():
 		var pid := _pids[k]
@@ -169,6 +171,8 @@ func recompute() -> void:
 		if not cmod.has(owner):
 			cmod[owner] = maxf(0.0, 1.0 + _country_power_mod(owner))
 			nodes_of[owner] = []
+			dev[owner] = 0.0
+		dev[owner] += float(map.provinces[pid].get("development", 0))
 		prov_power[pid] = _pbase[k] * cmod[owner]
 		var d: Dictionary = node_power[i]
 		if not d.has(owner):
@@ -185,6 +189,8 @@ func recompute() -> void:
 		homes[tag] = h
 		if h >= 0:
 			node_power[h][tag] = float(node_power[h].get(tag, 0.0)) + cap_power
+			if map.trade_nodes.get(nodes[h], {}).get("inland", false):
+				node_power[h][tag] += caravan_power(tag)     # bônus de caravana: só no nó do interior
 			collecting[h][tag] = true
 	var gmod := {}
 	for tag in cmod:
@@ -293,6 +299,16 @@ func _static() -> void:
 		_pids.append(pid)
 		_pnode.append(i)
 		_pbase.append(base * mult)
+
+
+## Poder de caravana ("Inland bonus" da aba Comércio): desenvolvimento ÷ CARAVAN_FACTOR (3), entre
+## CARAVAN_POWER_MIN (2) e MAX (50), × (1 + caravan_power). Soma ao poder no nó da capital comercial
+## quando ele é do interior.
+func caravan_power(tag: String) -> float:
+	var f := maxf(0.001, float(Eu4Data.define("NEconomy", "CARAVAN_FACTOR", 3.0)))
+	var v := clampf(float(dev.get(tag, 0.0)) / f, float(Eu4Data.define("NEconomy", "CARAVAN_POWER_MIN", 2.0)),
+			float(Eu4Data.define("NEconomy", "CARAVAN_POWER_MAX", 50.0)))
+	return v * maxf(0.0, 1.0 + power.modifier(tag, "caravan_power"))
 
 
 ## Renda de comércio do país por mês.
