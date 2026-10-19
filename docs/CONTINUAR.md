@@ -48,56 +48,40 @@ jogo; aqui fica só o que não está nele.
   a data).
 
 ## O que foi feito por último (já commitado)
-Expansão agressiva e coalizões, `Eu4Data` (todos os scripts do EU4 importados), zoom do EU4
-(`MapCamera`), tela de escolha de país do EU4 (`Eu4Frontend`), nomes de países e províncias no mapa
-(`MapNames`), texturas do mapa (relevo `world_normal.bmp`, profundidade `heightmap.bmp`, terreno
-`terrain.bmp`), fronteiras suavizadas no shader e rios em curvas (`RiverLayer`). Detalhes no
-`CLAUDE.md`.
+Terra Incógnita e névoa de guerra com as texturas do EU4 (`Discovery`, `FogLayer`) e o mar com o
+`colormap_water`. Antes: expansão agressiva e coalizões, `Eu4Data` (todos os scripts do EU4
+importados), zoom do EU4 (`MapCamera`), tela de escolha de país do EU4 (`Eu4Frontend`), nomes no
+mapa (`MapNames`), texturas do mapa (relevo, profundidade, terreno), fronteiras suavizadas e rios em
+curvas (`RiverLayer`). Detalhes no `CLAUDE.md`.
 
-## Pedido em aberto: texturas de Terra Incógnita, névoa de guerra, água e terreno
-O usuário quer o visual do EU4 usando as texturas originais. Elas **não estavam** nos arquivos que
-ele mandou para a sessão na nuvem (lá só havia `gfx/interface`, `gfx/flags`, `gfx/fonts`); na
-instalação dele devem estar em:
-- `gfx/map/` — Terra Incógnita, névoa, água, bordas, etc.
-- `gfx/FX/` — shaders do EU4 (mostram como as texturas são combinadas; leia-os para reproduzir).
-- `map/terrain/` — `colormap_spring/summer/autumn/winter.dds`, `colormap_water.dds`, `atlas0.dds`,
-  `atlas_normal0.dds` e afins.
+## Sessão local (Claude Desktop, 18/10/2026): o que se aprendeu
+- O projeto está em `C:\Users\vitor\Imperio--munde`. Godot 4.7.2 foi baixado em
+  `C:\Users\vitor\godot\` (a pedido do usuário) só para testar; o projeto e o CI continuam no 4.3.
+  A placa do PC (Intel HD 4600) só roda o renderizador de compatibilidade, como o celular: use
+  `Godot_v4.7.2-stable_win64_console.exe --rendering-driver opengl3` nas capturas. Python 3.14 com
+  pillow/numpy/scipy (comando `python`, não `python3`).
+- Na instalação do usuário **não existe `gfx/map`**: as texturas do mapa estão em `map/terrain/`
+  (`map_overlay_tile.dds` = Terra Incógnita, `Fogofwar.dds` = ruído da névoa, colormaps, `atlas0.dds`,
+  `water_border.dds`, `border*.dds`, `waternormal.bmp`...) e os shaders em `gfx/FX/` (`pdxmap.shader`,
+  `pdxwater.shader`, `standardfuncsgfx.fxh`).
+- Colormaps testados com os arquivos reais: certos (norte para cima). O mar saía **branco** porque o
+  `map.gdshader` tinha 9 texturas e o renderizador de compatibilidade só aceita 8; corrigido (paleta
+  do terreno na linha 5 da paleta das províncias). Ver "Limite de texturas" no CLAUDE.md.
+- O usuário precisa **importar de novo** no jogo para ganhar `terra_incognita.png` e `fow_noise.png`
+  (sem elas: Terra Incógnita em cor lisa e névoa sem ruído).
+- Comparação dos importadores: no Godot 4.7 tudo o que o Godot decodifica (DDS, TGA, ícones,
+  bandeiras) difere do Python (±1 nos DDS); o resto é idêntico. Para a comparação exata, Godot 4.3.
 
-Já pronto para isso:
-- Os dois importadores já procuram `map/terrain/colormap_summer.dds` (ou outra estação) e
-  `colormap_water.dds` e gravam `colormap.png`/`colormap_water.png`; o shader
-  (`shaders/map.gdshader`) usa no modo terreno e no mar (`has_colormap`, `has_water_colormap`).
-  **Nunca foi testado com os arquivos reais**: confira os nomes, o formato DDS (o leitor do jogo é
-  `Eu4Importer._dds`: RGBA com máscaras e DXT1/3/5) e o resultado na tela.
-- O importador do jogo só lê de `gfx/` as pastas `flags`, `interface` e `fonts`
-  (`Eu4Importer._walk` e `_rel`); para usar `gfx/map` e `gfx/FX` é preciso liberar essas pastas lá
-  e no Python.
-
-Falta fazer:
-1. Examinar `gfx/map`, `gfx/FX` e `map/terrain` da instalação e decidir o que importar (os dois
-   importadores, mesma saída) e como o shader do mapa vai usar (seguir os shaders de `gfx/FX`).
-2. **Terra Incógnita** (regras do EU4, dados já importados em `Eu4Data`):
-   - O que cada país conhece vem do `discovered_by` de `history/provinces` (por grupo tecnológico —
-     western, eastern, ottoman, muslim, chinese... — e por tag, inclusive datado, ex.
-     `1707.5.12 = { discovered_by = GBR }`); vale o estado em 11/11/1444.
-   - Constantes do `defines.lua`: `PROVINCE_DISCOVERY_YEARS_TECHNOLOGY = 50` e
-     `PROVINCE_DISCOVERY_YEARS_RELIGION = 100` (descobertas se espalham pelo grupo/religião),
-     `PROVINCE_DISCOVERY_PRESTIGE = 0.1`, `MAX_DISCOVERED_PROVINCE_DISTANCE = 500`,
-     `MIN_SHIPS_TO_EXPLORE`, `EXPLORATION_TRAVEL_TIME`, `SEA_EXPLORE_SPEED`.
-   - Dica do EU4 (localização `HINT_TERRAINCOGNITA_TEXT`): sem explorador/conquistador não se entra
-     em Terra Incógnita, exceto em terra de quem está em guerra com você. O jogo ainda não tem
-     generais nem frota, então exploradores/conquistadores ficam para depois.
-   - Província desconhecida aparece como Terra Incógnita no mapa e não entra no caminho dos
-     exércitos (`Army.find_path`/`allowed_owners`).
-3. **Névoa de guerra**: no EU4 só se vê o que está perto das suas províncias, das dos aliados/súditos
-   e dos seus exércitos; o resto fica sob névoa (exércitos inimigos escondidos). Única regra nos
-   arquivos: `FOG_OF_WAR_FORGET_CHANCE = 1` (IA esquece unidade escondida, % por dia). Textos:
-   "Fog of War", ação de espionagem `INFILTRATEDESC` (tira a névoa do alvo).
-4. Água e bordas com as texturas do EU4, colormaps por estação (`map/seasons.txt`), texturas de
-   detalhe do terreno (`atlas0.dds` + `terrain.bmp`).
-
-O usuário aceitou fazer as regras de Terra Incógnita/névoa com visual provisório enquanto as
-texturas não chegam, mas a escolha final ficou para quando os arquivos estiverem disponíveis.
+## Pedido em aberto: o resto do visual do mapa do EU4
+1. Água como no EU4: o `pdxwater.shader` é 3D (reflexo, refração do fundo, `colormap_water` a 30%);
+   no 2D o jogo usa o `colormap_water` + profundidade (aproximação). Falta uma aproximação melhor
+   (ondas animadas com `waternormal.bmp`, `water_border.dds` na costa).
+2. Colormaps por estação (`map/seasons.txt`; hoje só o de verão) e texturas de detalhe do terreno
+   (`atlas0.dds` 2048² em ladrilhos + `atlas_normal0.dds`, índice do `terrain.bmp`; ver
+   `sample_terrain`/`calculate_index` no `pdxmap.shader`). Cuidado com o limite de 8 texturas.
+3. Bordas do EU4 (`border0..7.dds`, `border*corner.dds`): hoje são linhas do shader.
+4. Exploradores/conquistadores e frota (para entrar na Terra Incógnita), compartilhar mapas,
+   alcance de visão exato e a IA respeitando a névoa (`FOG_OF_WAR_FORGET_CHANCE`).
 
 ## Outras coisas que ainda não existem (ver "Ainda NÃO existem" no CLAUDE.md)
 Devolver núcleos/libertar países/anular tratados na paz, cansaço de guerra, IA que declara guerra/

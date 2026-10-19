@@ -438,7 +438,8 @@ def eu4_all_data(root, out):
 
 
 # texturas do mapa do EU4 gravadas ao lado do province_ids.png (o shader do mapa usa)
-MAP_TEXTURES = ["normal.png", "height.png", "terrain_idx.png", "colormap.png", "colormap_water.png"]
+MAP_TEXTURES = ["normal.png", "height.png", "terrain_idx.png", "colormap.png", "colormap_water.png",
+                "terra_incognita.png", "fow_noise.png"]
 COLORMAPS = ["colormap_summer", "colormap_spring", "colormap_autumn", "colormap_winter"]
 
 
@@ -446,7 +447,8 @@ def map_textures(root, W, H, out_dir):
     """Texturas do mapa do EU4: normal.png (map/world_normal.bmp, relevo para a luz), height.png
     (map/heightmap.bmp a cada 2 px, profundidade do mar), terrain_idx.png (indice do
     map/terrain.bmp a cada 2 px; as cores da paleta vao em terrain_palette) e, se a instalacao tem,
-    colormap.png (map/terrain/colormap_summer.dds ou outra estacao) e colormap_water.png.
+    colormap.png (map/terrain/colormap_summer.dds ou outra estacao), colormap_water.png,
+    terra_incognita.png (map_overlay_tile.dds) e fow_noise.png (Fogofwar.dds, canal R).
     Devolve {"terrain_palette": [[r, g, b] x 256]} (vazio sem o terrain.bmp)."""
     info = {}
     for f in MAP_TEXTURES:
@@ -471,12 +473,20 @@ def map_textures(root, W, H, out_dir):
             pal = (tb.getpalette() or []) + [0] * 768
             info["terrain_palette"] = [pal[i * 3:i * 3 + 3] for i in range(256)]
     tdir = os.path.join(mdir, "terrain")
-    for name, dst in [(c, "colormap.png") for c in COLORMAPS] + [("colormap_water", "colormap_water.png")]:
-        p = os.path.join(tdir, name + ".dds")
-        if os.path.isfile(p) and not os.path.isfile(os.path.join(out_dir, dst)):
+    files = {f.lower(): f for f in os.listdir(tdir)} if os.path.isdir(tdir) else {}
+    # map_overlay_tile.dds = Terra Incognita (TITexture dos shaders, repetida a cada 1876x2048 px);
+    # Fogofwar.dds = ruido animado da nevoa de guerra (FoWDiffuse, canal vermelho)
+    for name, dst in [(c, "colormap.png") for c in COLORMAPS] + [("colormap_water", "colormap_water.png"),
+                                                                  ("map_overlay_tile", "terra_incognita.png"),
+                                                                  ("fogofwar", "fow_noise.png")]:
+        if name + ".dds" not in files:
+            continue
+        p = os.path.join(tdir, files[name + ".dds"])
+        if not os.path.isfile(os.path.join(out_dir, dst)):
             im = load_rgba(p, False)
             if im is not None:
-                im.convert("RGB").save(os.path.join(out_dir, dst), optimize=True)
+                im = im.getchannel("R") if dst == "fow_noise.png" else im.convert("RGB")
+                im.save(os.path.join(out_dir, dst), optimize=True)
     return info
 
 

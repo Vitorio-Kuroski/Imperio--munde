@@ -54,6 +54,7 @@ var _astar := AStar2D.new()
 var war: War                      # main.gd define (guerras: entrar em terra inimiga)
 var combat: Combat                # Combat.setup define
 var siege: Siege                  # Siege.setup define
+var discovery: Discovery          # main.gd define (Terra Incógnita: só entra em terra de inimigo)
 var _day := 0                     # dias desde o início (ordem de chegada nas províncias)
 var _fl_version := -1
 var _fl := {}                     # tag -> limite de força (cache até um dono mudar)
@@ -401,7 +402,16 @@ func allowed_owners(tag: String) -> Dictionary:
 
 
 func can_enter(tag: String, pid: int) -> bool:
-	return allowed_owners(tag).has(map.provinces[pid]["owner"])
+	return allowed_owners(tag).has(map.provinces[pid]["owner"]) and _known_or_enemy(tag, pid)
+
+
+## Terra Incógnita: sem explorador/conquistador (o jogo ainda não tem) só se entra na terra de quem
+## está em guerra com o país (HINT_TERRAINCOGNITA_TEXT do EU4).
+func _known_or_enemy(tag: String, pid: int) -> bool:
+	if discovery == null or discovery.knows(tag, pid):
+		return true
+	var o: String = map.provinces[pid]["owner"]
+	return o != "" and war != null and war.hostile(tag, o)
 
 
 ## Caminho de `from` até `to` (sem a origem); vazio se não houver.
@@ -410,8 +420,10 @@ func find_path(tag: String, from: int, to: int) -> Array:
 		return []
 	var ok := allowed_owners(tag)
 	var off := []
+	var known := discovery.known_of(tag) if discovery and discovery.available() else PackedByteArray()
 	for id in _astar.get_point_ids():
-		if id != from and not ok.has(map.provinces[id]["owner"]):
+		if id != from and (not ok.has(map.provinces[id]["owner"])
+				or (not known.is_empty() and known[id] == 0 and not _known_or_enemy(tag, id))):
 			_astar.set_point_disabled(id, true)
 			off.append(id)
 	var path := _astar.get_id_path(from, to)
@@ -473,6 +485,8 @@ func _on_day() -> void:
 		a["days"] = int(a["days"]) + 1
 		if int(a["days"]) >= int(a["need"]):
 			a["loc"] = int(a["path"].pop_front())
+			if discovery:
+				discovery.discover(a["tag"], int(a["loc"]))
 			a["days"] = 0
 			a["since"] = _day
 			if a["path"].is_empty():

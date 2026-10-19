@@ -140,8 +140,9 @@ func _rel(p: String) -> String:
 	var rel := p.substr(best) if best >= 0 else ""
 	if rel == "" and p.get_file() in MAP_FILES:
 		rel = "map/" + p.get_file()        # arquivo solto (ex.: um .zip só com provinces.bmp)
-	if rel.begins_with("map/terrain/") and rel.get_file().to_lower().begins_with("colormap_") \
-			and rel.get_extension().to_lower() == "dds":
+	if rel.begins_with("map/terrain/") and rel.get_extension().to_lower() == "dds" \
+			and (rel.get_file().to_lower().begins_with("colormap_")
+			or rel.get_file().to_lower() in ["map_overlay_tile.dds", "fogofwar.dds"]):
 		return "map/terrain/" + rel.get_file().to_lower()
 	if rel.begins_with("map/"):
 		# os arquivos do mapa usados e todos os .txt/.map da pasta (posições, ventos, estações...)
@@ -1405,14 +1406,16 @@ func _river_walk(a: int, b: int, nb: Dictionary, val: Dictionary, done: Dictiona
 
 # ------------------------------------------------------------------ texturas do mapa
 ## Texturas do mapa gravadas ao lado do province_ids.png (mesma saída do tools/import_eu4.py).
-const MAP_TEXTURES := ["normal.png", "height.png", "terrain_idx.png", "colormap.png", "colormap_water.png"]
+const MAP_TEXTURES := ["normal.png", "height.png", "terrain_idx.png", "colormap.png", "colormap_water.png",
+		"terra_incognita.png", "fow_noise.png"]
 const COLORMAPS := ["colormap_summer", "colormap_spring", "colormap_autumn", "colormap_winter"]
 
 
 ## normal.png (map/world_normal.bmp, relevo para a luz), height.png (map/heightmap.bmp a cada 2 px,
 ## profundidade do mar), terrain_idx.png (índice do map/terrain.bmp a cada 2 px; cores da paleta
 ## em terrain_palette) e, se houver, colormap.png (map/terrain/colormap_summer.dds ou outra
-## estação) e colormap_water.png. Devolve {"terrain_palette": [[r, g, b] × 256]}.
+## estação), colormap_water.png, terra_incognita.png (map_overlay_tile.dds) e fow_noise.png
+## (fogofwar.dds, canal R). Devolve {"terrain_palette": [[r, g, b] × 256]}.
 func _map_textures(w: int, h: int) -> Dictionary:
 	var info := {}
 	for f in MAP_TEXTURES:
@@ -1447,12 +1450,23 @@ func _map_textures(w: int, h: int) -> Dictionary:
 	for c in COLORMAPS:
 		pairs.append([c, "colormap.png"])
 	pairs.append(["colormap_water", "colormap_water.png"])
+	# map_overlay_tile.dds = Terra Incognita (TITexture dos shaders, repetida a cada 1876×2048 px);
+	# fogofwar.dds = ruído animado da névoa de guerra (FoWDiffuse, canal vermelho)
+	pairs.append(["map_overlay_tile", "terra_incognita.png"])
+	pairs.append(["fogofwar", "fow_noise.png"])
 	for pr in pairs:
 		var rel: String = "map/terrain/" + pr[0] + ".dds"
 		if _index.has(rel) and not FileAccess.file_exists(OUT_DIR + "/" + pr[1]):
 			var im := _dds(_bytes(rel))
 			if im:
 				im.convert(Image.FORMAT_RGB8)
+				if pr[1] == "fow_noise.png":
+					var rgb := im.get_data()
+					var r := PackedByteArray()
+					r.resize(rgb.size() / 3)
+					for i in r.size():
+						r[i] = rgb[i * 3]
+					im = Image.create_from_data(im.get_width(), im.get_height(), false, Image.FORMAT_L8, r)
 				im.save_png(OUT_DIR + "/" + pr[1])
 	return info
 

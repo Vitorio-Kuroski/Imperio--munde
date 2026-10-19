@@ -46,6 +46,8 @@ const DIPLO_NAMES_EN := {"self": "the country", "subject": "subject", "overlord"
 		"marriage": "royal marriage", "guarantee": "guarantee", "same_bloc": "subject of the same overlord",
 		"war": "at war", "recent_enemy": "recent enemy"}
 
+signal owner_changed(pid: int, old: String, new: String)   # set_owner_of (Discovery)
+
 var map_w: int
 var map_h: int
 var provinces: Array = []
@@ -112,6 +114,8 @@ var river_lines: Array = []         # rios em linhas ([largura, x0, y0, ...], ve
 var has_terrain_textures := false   # modo terreno com as texturas do EU4 (terrain.bmp ou colormap)
 var gui_dir := ""                  # pasta das telas do EU4 (Eu4Gui)
 var source := ""                   # de onde veio o mapa (caminho do map.json)
+var map_dir := ""                  # pasta do province_ids.png e das texturas do mapa
+var discovery: Discovery           # main.gd define (Terra Incógnita do jogador)
 
 
 func load_map(map_scale: float) -> void:
@@ -215,7 +219,8 @@ func load_map(map_scale: float) -> void:
 		ids_tex = load(ids_path) as Texture2D
 		id_image = ids_tex.get_image()
 
-	palette_image = Image.create(provinces.size(), 5, false, Image.FORMAT_RGBA8)
+	# linhas 0-4 = províncias, linha 5 = paleta do terrain.bmp (por isso largura ≥ 256)
+	palette_image = Image.create(maxi(provinces.size(), 256), 6, false, Image.FORMAT_RGBA8)
 	for p in provinces:
 		_write_palette(int(p["id"]))
 	palette_tex = ImageTexture.create_from_image(palette_image)
@@ -252,7 +257,8 @@ func load_map(map_scale: float) -> void:
 	elif ResourceLoader.exists(icons_path):
 		_icons_tex = load(icons_path) as Texture2D
 	mat.set_shader_parameter("palette", palette_tex)
-	_load_map_textures(ids_path.get_base_dir(), data.get("map_textures", {}))
+	map_dir = ids_path.get_base_dir()
+	_load_map_textures(data.get("map_textures", {}))
 	mat.set_shader_parameter("map_size", Vector2(map_w, map_h))
 	mat.set_shader_parameter("selected_id", -1)
 	material = mat
@@ -548,10 +554,12 @@ func _write_palette(pid: int) -> void:
 
 
 func set_owner_of(pid: int, tag: String) -> void:
+	var old: String = provinces[pid]["owner"]
 	provinces[pid]["owner"] = tag
 	owner_version += 1
 	_write_palette(pid)
 	palette_tex.update(palette_image)
+	owner_changed.emit(pid, old, tag)
 
 
 ## Muda a religião da província (conversão) e atualiza a paleta (modo religião).
@@ -590,12 +598,9 @@ func set_map_mode(mode: MapMode) -> void:
 ## Texturas do mapa do EU4 (ver Eu4Importer._map_textures): relevo (normal.png) para a luz,
 ## altitude (height.png) para a profundidade do mar, terreno (terrain_idx.png + paleta do
 ## terrain.bmp) e colormaps (colormap.png, colormap_water.png) se a instalação tinha.
-func _load_map_textures(dir: String, info: Dictionary) -> void:
+func _load_map_textures(info: Dictionary) -> void:
 	var ld := func(name: String) -> Texture2D:
-		var path := dir + "/" + name
-		if path.begins_with("user://"):
-			return ImageTexture.create_from_image(Image.load_from_file(path)) if FileAccess.file_exists(path) else null
-		return load(path) as Texture2D if ResourceLoader.exists(path) else null
+		return map_texture(name)
 	for pr in [["normal.png", "normal_map", "has_normal"], ["height.png", "height_map", "has_height"],
 			["colormap.png", "colormap", "has_colormap"], ["colormap_water.png", "water_colormap", "has_water_colormap"]]:
 		var t: Texture2D = ld.call(pr[0])
@@ -607,11 +612,10 @@ func _load_map_textures(dir: String, info: Dictionary) -> void:
 	var ti: Texture2D = ld.call("terrain_idx.png")
 	var pal: Array = info.get("terrain_palette", [])
 	if ti and pal.size() == 256:
-		var img := Image.create(256, 1, false, Image.FORMAT_RGB8)
-		for i in 256:
-			img.set_pixel(i, 0, Color8(int(pal[i][0]), int(pal[i][1]), int(pal[i][2])))
+		for i in 256:                  # linha 5 da paleta (o celular só aceita 8 texturas no shader)
+			palette_image.set_pixel(i, 5, Color8(int(pal[i][0]), int(pal[i][1]), int(pal[i][2])))
+		palette_tex.update(palette_image)
 		mat.set_shader_parameter("terrain_idx", ti)
-		mat.set_shader_parameter("terrain_pal", ImageTexture.create_from_image(img))
 		has_terrain_textures = true
 	# luz do EU4 (NGraphics LIGHT_DIRECTION: para onde a luz vai, x leste, y cima, z norte) em
 	# coordenadas da imagem (x direita, y baixo, z para fora): vetor que aponta para a luz
@@ -619,6 +623,19 @@ func _load_map_textures(dir: String, info: Dictionary) -> void:
 	var ly := float(Eu4Data.define("NGraphics", "LIGHT_DIRECTION_Y", -1.0))
 	var lz := float(Eu4Data.define("NGraphics", "LIGHT_DIRECTION_Z", 0.5))
 	mat.set_shader_parameter("light_dir", Vector3(-lx, lz, -ly).normalized())
+
+
+## Textura ao lado do province_ids.png ("terra_incognita.png"...), ou null.
+func map_texture(name: String) -> Texture2D:
+	var path := map_dir + "/" + name
+	if path.begins_with("user://"):
+		return ImageTexture.create_from_image(Image.load_from_file(path)) if FileAccess.file_exists(path) else null
+	return load(path) as Texture2D if ResourceLoader.exists(path) else null
+
+
+## Província em Terra Incógnita para o jogador (não se seleciona nem mostra nada dela).
+func hidden(pid: int) -> bool:
+	return discovery != null and discovery.enabled and pid >= 0 and not discovery.knows(discovery.power.player, pid)
 
 
 func select(pid: int) -> void:

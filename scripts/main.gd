@@ -24,12 +24,14 @@ var siege := Siege.new()
 var war_ai := WarAI.new()
 var cbs := CasusBelli.new()
 var coalition := Coalition.new()
+var discovery := Discovery.new()      # Terra Incógnita e névoa de guerra
 var peace := Peace.new()
 var peace_view: Eu4PeaceView        # tela de paz do EU4
 var frontend: Eu4Frontend
 var map_names: MapNames            # nomes dos países e províncias no mapa
 var eu4_gui: Eu4Gui          # tela de escolha de país do EU4 (frontend.gui)
 var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
+var fog_layer: FogLayer            # Terra Incógnita e névoa de guerra
 var unit_panel: Eu4UnitPanel       # painel do exército selecionado (telas do EU4)
 var selected_army := -1
 var _press_pos := Vector2.ZERO     # onde o botão/dedo desceu (ordem de marcha só num toque, não ao arrastar)
@@ -127,12 +129,19 @@ func _ready() -> void:
 			country_view.refresh()
 		if map.map_mode == MapView.MapMode.DIPLOMACIA:
 			map.refresh_colors())
+	discovery.setup(map, clock, power, diplomacy, prestige)
+	discovery.army = army
+	discovery.war = war
+	army.discovery = discovery
+	map.discovery = discovery
 	army_layer = ArmyLayer.new()
 	map.add_child(army_layer)
 	army_layer.setup(map, army)
 	army_layer.war = war
 	army_layer.combat = combat
 	army_layer.siege = siege
+	army_layer.discovery = discovery
+	discovery.view_changed.connect(army_layer.queue_redraw)
 
 	camera = MapCamera.new()           # zoom do EU4 (altura da câmera, em direção ao ponteiro)
 	add_child(camera)
@@ -150,6 +159,10 @@ func _ready() -> void:
 	map.add_child(map_names)
 	map.move_child(map_names, army_layer.get_index())
 	map_names.setup(map, camera, eu4_gui)
+	fog_layer = FogLayer.new()          # Terra Incógnita e névoa: sobre rios e nomes, sob os exércitos
+	map.add_child(fog_layer)
+	map.move_child(fog_layer, army_layer.get_index())
+	fog_layer.setup(map, discovery)
 	_apply_eu4_theme()
 	clock.changed.connect(_refresh_top_bar)
 	clock.month_passed.connect(_on_month_passed)
@@ -661,6 +674,8 @@ func _start_game(tag: String) -> void:
 	if eu4_hud:
 		eu4_hud.show()
 	army_layer.show()
+	if discovery.available():
+		discovery.start()
 	var cap: int = int(map.countries[tag]["capital"])
 	camera.focus(map.province_center(cap), float(Eu4Data.define("NGui", "PROVINCE_FOCUS_ZOOM_HEIGHT", 0.25)))
 	map.select(cap)
@@ -1049,6 +1064,8 @@ func _unhandled_input(event: InputEvent) -> void:
 						frontend.select(map.provinces[fp]["owner"], false)
 				if player_tag != "":
 					var pid := map.province_at_mouse()
+					if map.hidden(pid):
+						pid = -1                   # Terra Incógnita não se seleciona
 					map.select(pid)
 					_show_province(pid)
 					var owner: String = map.provinces[pid]["owner"] if pid >= 0 else ""

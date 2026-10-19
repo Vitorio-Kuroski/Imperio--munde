@@ -18,6 +18,7 @@ var army: Army
 var war: War
 var combat: Combat
 var siege: Siege
+var discovery: Discovery           # névoa de guerra: exércitos de fora escondidos
 var selected := -1
 var _zoom := -1.0
 var _font: Font
@@ -78,7 +79,10 @@ func _draw() -> void:
 	var view := Rect2(cam.get_screen_center_position() - vis.size * 0.5 * s, vis.size * s).grow(box.x) if cam else Rect2()
 	# empilha por província
 	var stacks := {}
+	var share := discovery.sharers(army.power.player) if discovery and discovery.enabled and army.power else {}
 	for a in army.armies.values():
+		if not share.is_empty() and not share.has(a["tag"]) and not discovery.visible_to_player(int(a["loc"])) 				and (a["path"].is_empty() or not discovery.visible_to_player(int(a["path"][0]))):
+			continue                  # sob a névoa de guerra
 		var key := int(a["loc"]) if a["path"].is_empty() else -int(a["id"])
 		if not stacks.has(key):
 			stacks[key] = []

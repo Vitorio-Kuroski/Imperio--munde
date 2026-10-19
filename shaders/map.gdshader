@@ -1,17 +1,20 @@
 shader_type canvas_item;
 // Pinta o mapa político a partir de:
 //  - ids:     imagem com o id da província em R (byte baixo) e G (byte alto)
-//  - palette: textura N x 5. Linha 0 = cor da província.
+//  - palette: textura N x 6 (N ≥ 256). Linha 0 = cor da província.
 //             Linha 1 = R: índice do país dono (byte baixo; 0 = nenhum), G+B: índice da
 //             cultura (byte baixo/alto, 0 = nenhuma), A: 1.0 se for mar.
 //             Linha 2 = R: byte alto do índice do país dono (até 65535 países),
 //             G+B: índice da religião (byte baixo/alto, 0 = nenhuma).
 //             Linha 3 = R+G: índice do produto, B+A: índice do nó de comércio (byte baixo/alto, 0 = nenhum).
 //             Linha 4 = R+G: índice da área, B+A: índice da região.
+//             Linha 5 = cores da paleta do terrain.bmp (x = índice 0..255; a textura tem largura ≥ 256).
+//             No renderizador de compatibilidade (celular) só cabem 8 texturas próprias por shader:
+//             por isso a paleta do terreno vive aqui e não numa textura separada.
 //  - rivers:  índice da paleta do rivers.bmp do EU4 (< 254 = rio), opcional.
 //  - texturas do mapa do EU4 (opcionais, ver MapView._load_map_textures): normal_map (world_normal.bmp,
 //    metade da resolução) ilumina o relevo com a luz do EU4 (light_dir); height_map (heightmap.bmp)
-//    escurece o mar fundo; terrain_idx + terrain_pal (terrain.bmp) ou colormap pintam o modo terreno
+//    escurece o mar fundo; terrain_idx + linha 5 da paleta (terrain.bmp) ou colormap pintam o modo terreno
 //    (terrain_view); water_colormap pinta o mar.
 // Trocar o dono de uma província = mudar 5 pixels da paleta (sem loops em GDScript).
 
@@ -27,7 +30,6 @@ uniform bool has_normal = false;
 uniform sampler2D height_map : filter_linear, repeat_disable;
 uniform bool has_height = false;
 uniform sampler2D terrain_idx : filter_nearest, repeat_disable;
-uniform sampler2D terrain_pal : filter_nearest, repeat_disable;
 uniform sampler2D colormap : filter_linear, repeat_disable;
 uniform bool has_colormap = false;
 uniform sampler2D water_colormap : filter_linear, repeat_disable;
@@ -130,7 +132,7 @@ float edge_between(int id, vec4 inf, int nid) {
 vec3 terrain_pal_at(ivec2 p) {
 	p = clamp(p, ivec2(0), textureSize(terrain_idx, 0) - ivec2(1));
 	int ti = int(texelFetch(terrain_idx, p, 0).r * 255.0 + 0.5);
-	return texelFetch(terrain_pal, ivec2(ti, 0), 0).rgb;
+	return texelFetch(palette, ivec2(ti, 5), 0).rgb;
 }
 
 // cor do terrain.bmp suavizada: as cores (não os índices) dos 4 pixels vizinhos misturadas
