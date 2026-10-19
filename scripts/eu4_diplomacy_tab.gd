@@ -347,6 +347,7 @@ func _fill_rival_choice(tag: String, srw: Control) -> void:
 
 ## Posição da DeclareWarDialog na aba: o fundo dela (Background em −12, −15) cobre a parte de baixo da
 ## tela do país, logo abaixo da faixa "Diplomacy", como nas capturas do EU4.
+const RED_BUTTON := preload("res://shaders/red_button.gdshader")
 const DLG_POS := Vector2(12, 0)
 
 
@@ -736,6 +737,11 @@ func _fill_actions(tag: String) -> void:
 				_category_row(top, "", Loc.t("WARTITLE" if a == "declare_war" else "PEACETITLE",
 						"Declarar guerra" if a == "declare_war" else "Pedir paz"), ACTIONS[a][2])
 				_action_row(top, a, tag, player)
+				var tb := top.find_child("button_diploaction", true, false) as CanvasItem
+				if tb and a == "declare_war":          # vermelho, como no EU4
+					var mat := ShaderMaterial.new()
+					mat.shader = RED_BUTTON
+					tb.material = mat
 	for cat in CATEGORIES:
 		var cid: String = cat[0]
 		var head := view.gui.add_item(list, "diploactionentry_category")
