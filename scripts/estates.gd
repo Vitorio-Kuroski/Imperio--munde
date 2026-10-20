@@ -316,14 +316,169 @@ func estate_effects(tag: String, id: String) -> Dictionary:
 	for p in privileges.get(tag, []):
 		if _estate_of_privilege(p) != id:
 			continue
-		for blk in ["benefits", "penalties"]:
-			var b := _mods(tget(privs[p], blk))
-			for k in b:
-				out[k] = float(out.get(k, 0.0)) + b[k]
-		var bl := _mods(tget(privs[p], "modifier_by_land_ownership"))
-		for k in bl:
-			out[k] = float(out.get(k, 0.0)) + bl[k] * land_of(tag, id) / 100.0
+		var pe := privilege_effects(tag, p)
+		for k in pe:
+			out[k] = float(out.get(k, 0.0)) + pe[k]
 	return out
+
+
+## Efeitos de um privilégio no país: benefits/penalties, conditional_modifier cujo trigger vale,
+## loyalty_/influence_scaled_conditional_modifier × lealdade/influência ÷ 100 e
+## modifier_by_land_ownership × terras do estamento ÷ 100 (como as dicas do EU4: "Scaled with
+## Estate Loyalty", "17% land ownership giving: Global Trade Power +5.7%").
+func privilege_effects(tag: String, p: String) -> Dictionary:
+	var out := {}
+	var tree: Array = privs.get(p, [])
+	var id := _estate_of_privilege(p)
+	var add := func(d: Dictionary, f: float):
+		for k in d:
+			if k != "max_absolutism":
+				out[k] = float(out.get(k, 0.0)) + d[k] * f
+	for blk in ["benefits", "penalties"]:
+		add.call(_mods(tget(tree, blk)), 1.0)
+	add.call(_mods(tget(tree, "modifier_by_land_ownership")), land_of(tag, id) / 100.0)
+	for kv in tree:
+		if not (kv[1] is Array):
+			continue
+		var f := -1.0
+		match str(kv[0]):
+			"conditional_modifier":
+				f = 1.0
+			"loyalty_scaled_conditional_modifier":
+				f = loyalty_of(tag, id) / 100.0
+			"influence_scaled_conditional_modifier":
+				f = influence(tag, id) / 100.0
+		if f < 0.0:
+			continue
+		var trig = tget(kv[1], "trigger")
+		if trig == null or (trig is Array and cbs.check(trig, tag, tag) == true):
+			add.call(_mods(tget(kv[1], "modifier")), f)
+	return out
+
+
+# ------------------------------------------------------------------ privilégios
+var eu4_effects: Eu4Effects         # main.gd define (on_granted/on_revoked)
+var granted_at := {}                # "tag|privilégio" -> data em que foi concedido (AAAAMMDD)
+
+
+## Privilégios do estamento que podem aparecer na janela (is_valid não falso), na ordem do arquivo.
+func grantable(tag: String, id: String) -> Array:
+	var out := []
+	for p in privs:
+		if _estate_of_privilege(p) != id:
+			continue
+		var v = tget(privs[p], "is_valid")
+		if v is Array and cbs.check(v, tag, tag) == false:
+			continue
+		out.append(p)
+	return out
+
+
+func max_privileges(_tag: String) -> int:
+	return int(Eu4Data.define("NCountry", "ESTATE_PRIVILEGES_MAX_CONCURRENT", 6))
+
+
+func why_not_grant(tag: String, p: String) -> String:
+	var id := _estate_of_privilege(p)
+	if p in privileges.get(tag, []):
+		return Loc.s("Já concedido", "Already granted")
+	if privileges_of(tag, id).size() >= max_privileges(tag):
+		return Loc.s("O estamento já tem o máximo de privilégios", "The estate already has the maximum number of privileges")
+	var cs = tget(privs[p], "can_select")
+	if cs is Array and not cs.is_empty() and cbs.check(cs, tag, tag) == false:
+		return Loc.s("As condições do privilégio não são cumpridas", "The privilege's requirements are not met")
+	var share := _num(privs[p], "land_share", 0.0)
+	if share > 0.0 and crown_land(tag) < share:
+		return Loc.s("Não há terra da coroa suficiente", "Not enough crown land")
+	return ""
+
+
+## Concede: o estamento ganha a terra (land_share, tirada da coroa) e roda o on_granted.
+func grant(tag: String, p: String) -> bool:
+	if why_not_grant(tag, p) != "":
+		return false
+	var id := _estate_of_privilege(p)
+	privileges[tag].append(p)
+	granted_at["%s|%s" % [tag, p]] = clock.year * 10000 + clock.month * 100 + clock.day
+	land[tag][id] = land_of(tag, id) + minf(_num(privs[p], "land_share", 0.0), crown_land(tag))
+	var og = tget(privs[p], "on_granted")
+	if eu4_effects and og is Array:
+		eu4_effects.run(og, tag, tag)
+	_refresh(tag)
+	return true
+
+
+## Data até a qual o privilégio não pode ser revogado (cooldown_years depois de concedido; "" se pode).
+func locked_until(tag: String, p: String) -> String:
+	var years := int(_num(privs.get(p, []), "cooldown_years", 0.0))
+	if years <= 0:
+		return ""
+	var at := int(granted_at.get("%s|%s" % [tag, p], clock.year * 10000 + clock.month * 100 + clock.day))
+	var y := at / 10000 + years
+	var m := (at / 100) % 100
+	var d := at % 100
+	if y * 10000 + m * 100 + d <= clock.year * 10000 + clock.month * 100 + clock.day:
+		return ""
+	return "%d.%d.%d" % [y, m, d]
+
+
+func why_not_revoke(tag: String, p: String) -> String:
+	var id := _estate_of_privilege(p)
+	if not (p in privileges.get(tag, [])):
+		return "?"
+	if locked_until(tag, p) != "":
+		return Loc.s("Não pode ser revogado até %s", "Can't be revoked until %s") % locked_until(tag, p)
+	if loyalty_of(tag, id) <= influence(tag, id):
+		return Loc.f("ESTATE_LOYALTY_VS_INFLUENCE_NOT_GREATER_THAN", {"ESTATE": name_of(id)},
+				Loc.s("A lealdade do estamento é menor que a influência", "The estate's loyalty is lower than its influence"))
+	var cr = tget(privs[p], "can_revoke")
+	if cr is Array and not cr.is_empty() and cbs.check(cr, tag, tag) == false:
+		return Loc.s("As condições para revogar não são cumpridas", "The requirements to revoke are not met")
+	return ""
+
+
+## Revoga: o estamento perde ESTATE_DROP_LOYALTY_IF_LOST_PRIVILEDGE (20) de lealdade e roda o
+## on_revoked (a terra concedida não volta, como no EU4).
+func revoke(tag: String, p: String) -> bool:
+	if why_not_revoke(tag, p) != "":
+		return false
+	var id := _estate_of_privilege(p)
+	privileges[tag].erase(p)
+	granted_at.erase("%s|%s" % [tag, p])
+	loyalty[tag][id] = clampf(loyalty_of(tag, id) + 100.0 * float(Eu4Data.define("NCountry",
+			"ESTATE_DROP_LOYALTY_IF_LOST_PRIVILEDGE", -0.2)), 0.0, 100.0)
+	var orv = tget(privs[p], "on_revoked")
+	if eu4_effects and orv is Array:
+		eu4_effects.run(orv, tag, tag)
+	_refresh(tag)
+	return true
+
+
+func _refresh(tag: String) -> void:
+	for id in of.get(tag, []):
+		_base_cache.erase("%s|%s" % [tag, id])
+		_eq_cache.erase("%s|%s" % [tag, id])
+	_eff[tag] = _compute(tag)
+	power.invalidate(tag)
+	if tag == power.player:
+		changed.emit(tag)
+
+
+## Nome do estamento (localização do EU4).
+func name_of(id: String) -> String:
+	return Loc.t(id, short(id).capitalize())
+
+
+## Texto da localização do EU4 com [Root.Get<Estamento>Name] e $ESTATE_NAME$ trocados pelo nome
+## do estamento e os outros [Root.*] pelo nome do país.
+func text(key: String, tag: String, id: String, fallback := "") -> String:
+	var t := Loc.t(key, fallback)
+	var en := name_of(id)
+	t = t.replace("$ESTATE_NAME$", en)
+	var re := RegEx.create_from_string("\\[Root\\.Get(\\w+?)Name\\]")
+	t = re.sub(t, en, true)
+	t = RegEx.create_from_string("\\[Root\\.\\w+\\]").sub(t, str(map.countries.get(tag, {}).get("name", tag)), true)
+	return t
 
 
 func _compute(tag: String) -> Dictionary:

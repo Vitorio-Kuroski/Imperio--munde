@@ -135,6 +135,7 @@ func _ready() -> void:
 	cbs.diplo = diplo
 	cbs.estates = estates
 	power.estates = estates
+	estates.eu4_effects = effects
 	estates.setup(map, clock, power, cbs, economy)
 	cbs.coalition = coalition
 	diplo.coalition = coalition

@@ -71,7 +71,9 @@ func tech(tag: String, cat: String) -> int:
 ## Ganho mensal: base + nota do governante + nível do conselheiro (adm/dip/mil).
 func gain(tag: String, cat: String) -> int:
 	var m: Dictionary = map.countries.get(tag, {}).get("monarch", {})
-	return BASE_GAIN + int(m.get(cat, 0)) + (advisors.skill(tag, cat) if advisors else 0)
+	# + country_admin/diplomatic/military_power (privilégios, reformas, eventos), como no EU4
+	var key: String = {"adm": "country_admin_power", "dip": "country_diplomatic_power", "mil": "country_military_power"}.get(cat, "")
+	return BASE_GAIN + int(m.get(cat, 0)) + (advisors.skill(tag, cat) if advisors else 0) + int(roundf(modifier(tag, key))) if key != "" 			else BASE_GAIN + int(m.get(cat, 0)) + (advisors.skill(tag, cat) if advisors else 0)
 
 
 ## Esquece a soma de efeitos guardada (ideias ou conselheiros mudaram).
