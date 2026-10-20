@@ -22,6 +22,7 @@ extends RefCounted
 
 const ROW_HEIGHT := 130                       # slotsize do estate_items_gridbox
 const ROW_WIDTH := 500                        # largura do estates_listbox
+const ROW_SHIFT := -28                        # position.x da janela estate_item
 const CROWN_COLOR := Color(0.92, 0.88, 0.80)  # a coroa na pizza
 const GOOD := Color(0.35, 0.85, 0.35)
 const BAD := Color(0.95, 0.3, 0.25)
@@ -220,6 +221,7 @@ func fill(tag: String) -> void:
 		var holder := row.get_parent() as Control
 		if holder:                      # slot do estate_items_gridbox: 500 × 130 (a janela tem 600 × 200)
 			holder.custom_minimum_size = Vector2(ROW_WIDTH, ROW_HEIGHT)
+		row.position.x = ROW_SHIFT       # a janela estate_item fica em x −28 no .gui
 		var ic := row.find_child("icon", true, false) as Eu4Gui.Icon
 		if ic:
 			ic.set_frame(int(Estates._num(e.defs[id], "icon", 1)) - 1)
@@ -251,7 +253,7 @@ func _mod_slots(parent: Control, prefix: String, mods: Dictionary, n: int, none:
 	var keys := mods.keys().filter(func(k): return absf(float(mods[k])) > 0.0001 and not str(k).begins_with("rr_"))
 	keys.sort_custom(func(a, b): return absf(float(mods[a])) > absf(float(mods[b])))
 	for i in n:
-		var icon := parent.find_child("%s_icon_%d" % [prefix, i + 1], true, false) as TextureRect
+		var icon := _mod_icon(parent, "%s_icon_%d" % [prefix, i + 1])
 		var desc := parent.find_child("%s_desc_%d" % [prefix, i + 1], true, false) as Label
 		if i < keys.size():
 			var k: String = keys[i]
@@ -280,6 +282,25 @@ func _mod_slots(parent: Control, prefix: String, mods: Dictionary, n: int, none:
 					view._txt(parent, "%s_desc_%d" % [prefix, i + 1], none, Loc.t("CROWN_LAND_NO_EFFECT_TOOLTIP", ""))
 
 
+## Ícone de um efeito (modifier_icon_N / crown_land_modifier_icon_N). O .gui usa
+## GFX_event_bg_transparency (o EU4 troca pelo ícone do modificador), que não é importado: o
+## elemento não existe e é criado aqui, na posição do .gui.
+func _mod_icon(parent: Control, n: String) -> TextureRect:
+	var ic := parent.find_child(n, true, false) as TextureRect
+	if ic:
+		return ic
+	var win := "estate_item" if n.begins_with("modifier_") else "countryestatesview"
+	var it := _find_item(view.gui.find_window(win), n)
+	if it.is_empty():
+		return null
+	ic = TextureRect.new()
+	ic.name = n
+	ic.position = Eu4Gui._vec(it, "position")
+	var desc := parent.find_child(n.replace("_icon_", "_desc_"), true, false) as Control
+	(desc.get_parent() if desc else parent).add_child(ic)
+	return ic
+
+
 ## Fileira de privilégios: os concedidos e uma vaga vazia que abre a janela; "N / 6".
 func _privileges(row: Control, tag: String, id: String) -> void:
 	var e := _est()
@@ -287,6 +308,9 @@ func _privileges(row: Control, tag: String, id: String) -> void:
 	var maxp := e.max_privileges(tag)
 	view._txt(row, "privileges_count", "%d / %d" % [mine.size(), maxp], Loc.s("Privilégios concedidos", "Granted privileges"))
 	var list := row.find_child("privileges_list", true, false) as Control
+	var sb := row.find_child("privileges_scrollbar", true, false) as Control
+	if sb:                              # a fileira cabe sem rolar (até 6 + a vaga): o EU4 não mostra a barra
+		sb.hide()
 	if list == null:
 		return
 	var holder := Control.new()            # a lista do EU4 é horizontal: ícones lado a lado
@@ -412,16 +436,21 @@ func _fill_window() -> void:
 func _set_icon(row: Control, n: String, spr: String) -> void:
 	if not view.gui.sprites.has(spr):
 		return
-	var ic := row.find_child(n, true, false) as Eu4Gui.Icon
-	if ic:
-		ic.set_sprite(view.gui, spr, 0)
-		return
+	var nic := row.find_child(n, true, false) as TextureRect
+	if nic is Eu4Gui.Icon:
+		(nic as Eu4Gui.Icon).set_sprite(view.gui, spr, 0)
 	var box := row.find_child(n.replace("_icon", "_entry"), true, false) as Control
-	if box:
-		var nic: Eu4Gui.Icon = view.gui._icon(spr, 0, Vector2.ZERO)
+	if nic == null and box:
+		nic = view.gui._icon(spr, 0, Vector2.ZERO) as TextureRect
 		nic.name = n
 		box.add_child(nic)
-		nic.position = Vector2(0, -2)
+	if nic:
+		nic.scale = Vector2.ONE
+		nic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		nic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		nic.custom_minimum_size = Vector2(24, 24)    # como o EU4 desenha (o elemento do .gui é menor)
+		nic.size = Vector2(24, 24)
+		nic.position = Vector2(4, 1)
 
 
 ## Valor da coluna em verde (bom), vermelho (ruim) ou amarelo (influência), como o EU4.

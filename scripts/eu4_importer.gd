@@ -1842,6 +1842,13 @@ func _icon_sources(trade_goods: Array, religions: Array, institutions: Array, ad
 			var m: Dictionary = idea["modifiers"]
 			if not m.is_empty() and not (m.keys()[0] in mods):
 				mods.append(m.keys()[0])
+	# todos os ícones de modificador do EU4 (gfx/interface/ideas_EU4/<modificador>.dds): as telas
+	# mostram o ícone de qualquer efeito (estamentos, terra da coroa...), não só o das ideias
+	for k in _list("gfx/interface/ideas_eu4/"):
+		var f := (k as String).get_file()
+		var mm := f.get_basename().to_lower()
+		if f.to_lower().ends_with(".dds") and not (mm in mods):
+			mods.append(mm)
 	for m in mods:
 		src.append(["mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % (m as String).to_lower(), -1, 0])
 	return src

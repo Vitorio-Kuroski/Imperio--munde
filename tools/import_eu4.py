@@ -1173,6 +1173,15 @@ def icon_sources(root, trade_goods, religions, institutions, advisor_types, buil
             first = next(iter(idea["modifiers"]), "")
             if first and first not in mods:
                 mods.append(first)
+    # todos os icones de modificador do EU4 (gfx/interface/ideas_EU4/<modificador>.dds): as telas
+    # mostram o icone de qualquer efeito (estamentos, terra da coroa...), nao so o das ideias
+    idir = next((os.path.join(root, "gfx", "interface", d) for d in (os.listdir(os.path.join(root, "gfx", "interface"))
+                 if os.path.isdir(os.path.join(root, "gfx", "interface")) else []) if d.lower() == "ideas_eu4"), "")
+    if idir:
+        for f in sorted(os.listdir(idir)):
+            m = os.path.splitext(f)[0].lower()
+            if f.lower().endswith(".dds") and m not in mods:
+                mods.append(m)
     for m in mods:
         src.append(("mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % m.lower(), -1, 0))
     return src
