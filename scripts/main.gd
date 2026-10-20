@@ -23,6 +23,7 @@ var combat := Combat.new()
 var siege := Siege.new()
 var war_ai := WarAI.new()
 var cbs := CasusBelli.new()
+var estates := Estates.new()      # estamentos do EU4 (clero, nobreza, burgueses...)
 var coalition := Coalition.new()
 var discovery := Discovery.new()      # Terra Incógnita e névoa de guerra
 var rivals := Rivals.new()            # rivais (aba Diplomacia)
@@ -132,6 +133,9 @@ func _ready() -> void:
 	peace.offered.connect(_on_peace_offered)
 	coalition.setup(map, clock, power, diplomacy, war, diplo, army, economy, cbs, peace)
 	cbs.diplo = diplo
+	cbs.estates = estates
+	power.estates = estates
+	estates.setup(map, clock, power, cbs, economy)
 	cbs.coalition = coalition
 	diplo.coalition = coalition
 	peace.coalition = coalition

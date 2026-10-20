@@ -36,6 +36,7 @@ var economy: Economy             # falência encarece tecnologias, ideias e cons
 var prestige: Prestige           # efeitos do prestígio (fora do cache: mudam todo mês) e do imperador
 var stability: Stability         # efeitos da estabilidade (fora do cache)
 var legitimacy: Legitimacy       # efeitos da legitimidade (fora do cache)
+var estates: Estates             # efeitos dos estamentos (fora do cache, mudam todo mês)
 var effects: Eu4Effects          # modificadores de país dos efeitos do EU4 (decisões)
 
 
@@ -190,6 +191,8 @@ func modifier(tag: String, key: String) -> float:
 	var v := float(_mods_cache[tag].get(key, 0.0))
 	if prestige:
 		v += prestige.effect(tag, key)
+	if estates:
+		v += estates.effect(tag, key)
 	if stability:
 		v += stability.effect(tag, key)
 	if legitimacy:
@@ -200,10 +203,10 @@ func modifier(tag: String, key: String) -> float:
 func all_modifiers(tag: String) -> Dictionary:
 	if not _mods_cache.has(tag):
 		_mods_cache[tag] = _sum_mods(tag)
-	if prestige == null and stability == null and legitimacy == null:
+	if prestige == null and stability == null and legitimacy == null and estates == null:
 		return _mods_cache[tag]
 	var out: Dictionary = _mods_cache[tag].duplicate()
-	for sys in [prestige, stability, legitimacy]:
+	for sys in [prestige, stability, legitimacy, estates]:
 		if sys:
 			var pe: Dictionary = sys.effects(tag)
 			for k in pe:
@@ -246,6 +249,23 @@ func _sum_mods(tag: String) -> Dictionary:
 		add.call(prestige.static_modifiers(tag))
 	if effects:
 		add.call(effects.modifiers(tag))
+	add.call(reform_modifiers(tag))
+	return out
+
+
+## Modificadores das reformas de governo do país e da reforma básica do governo (monarchy_mechanic...).
+func reform_modifiers(tag: String) -> Dictionary:
+	var c: Dictionary = map.countries.get(tag, {})
+	var reforms: Array = (c.get("reforms", []) as Array).duplicate()
+	var basic = Estates.tget(Eu4Data.merged("common/governments").get(str(c.get("government", "")), []), "basic_reform")
+	if basic != null:
+		reforms.append(str(basic))
+	var out := {}
+	var all := Eu4Data.merged("common/government_reforms")
+	for r in reforms:
+		var m := Estates._mods(Estates.tget(all.get(str(r), []), "modifiers"))
+		for k in m:
+			out[k] = float(out.get(k, 0.0)) + m[k]
 	return out
 
 

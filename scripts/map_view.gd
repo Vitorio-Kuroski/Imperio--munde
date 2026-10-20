@@ -687,8 +687,17 @@ func province_center(pid: int) -> Vector2:
 
 
 func provinces_of(tag: String) -> Array:
-	var out := []
-	for p in provinces:
-		if p["owner"] == tag:
-			out.append(p)
-	return out
+	if _owned_version != owner_version:         # refeito quando um dono muda (antes varria tudo a cada chamada)
+		_owned.clear()
+		for p in provinces:
+			var t: String = p["owner"]
+			if t != "":
+				if not _owned.has(t):
+					_owned[t] = []
+				_owned[t].append(p)
+		_owned_version = owner_version
+	return (_owned.get(tag, []) as Array).duplicate()
+
+
+var _owned := {}                    # tag -> províncias (cache de provinces_of)
+var _owned_version := -1

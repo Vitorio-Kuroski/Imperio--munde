@@ -202,6 +202,7 @@ func recompute() -> void:
 		_static()
 	var cmod := {}
 	var owned := {}                     # tag -> [províncias] (alcance comercial)
+	var nodes_of := {}                  # tag -> [nós onde tem províncias]
 	dev.clear()
 	for k in _pids.size():
 		var pid := _pids[k]
@@ -218,7 +219,12 @@ func recompute() -> void:
 		owned[owner].append(pid)
 		# local (costa, construções) e do país (mercantilismo, ideias) somam no mesmo modificador, como no EU4
 		prov_power[pid] = _pbase[k] * maxf(0.0, _pmul[k] + cmod[owner])
-		provincial[i][owner] = float(provincial[i].get(owner, 0.0)) + prov_power[pid]
+		if not provincial[i].has(owner):
+			provincial[i][owner] = 0.0
+			if not nodes_of.has(owner):
+				nodes_of[owner] = []
+			nodes_of[owner].append(i)
+		provincial[i][owner] += prov_power[pid]
 	if last_value.size() != n:
 		last_value = local_value
 	# poder antes dos modificadores globais: provincial + o que vem dos nós de baixo
@@ -241,21 +247,37 @@ func recompute() -> void:
 	var base_merchants := int(_rule("base_merchants", 2))
 	var today := _today()
 	var new_arrival := {}
+	var up_of := {}
+	if _range_version != map.owner_version:
+		_range_cache.clear()
+		_range_version = map.owner_version
 	for tag in cmod:
 		var h := home(tag)
 		homes[tag] = h
 		if h < 0:
 			continue
 		var cnt := base_merchants + int(power.modifier(tag, "merchants"))
-		var steer_c := []
-		for i in n:
-			if i != h and reach[i].has(h) and _in_range(tag, i, owned[tag]):
-				steer_c.append(i)
-		steer_c.sort_custom(func(x, y): return last_value[x] > last_value[y])
+		if not up_of.has(h):            # nós rio acima da capital, do maior valor para o menor (por nó)
+			var lst := []
+			for i in n:
+				if i != h and reach[i].has(h):
+					lst.append(i)
+			lst.sort_custom(func(x, y): return last_value[x] > last_value[y])
+			up_of[h] = lst
+		var up: Array = up_of[h]
+		var rng := trade_range(tag) if not up.is_empty() else 0.0
+		var rc: Dictionary = _range_cache.get(tag, {})
+		if float(rc.get(-1, -1.0)) != rng:
+			rc = {-1: rng}
+			_range_cache[tag] = rc
 		var mine := []
-		for i in steer_c:
+		for i in up:
 			if mine.size() >= cnt:
 				break
+			if not rc.has(i):
+				rc[i] = _in_range(i, owned[tag], rng)
+			if not rc[i]:
+				continue
 			mine.append(i)
 			if _present(tag, i, today, new_arrival):
 				steering[i][tag] = true
@@ -265,8 +287,8 @@ func recompute() -> void:
 					break
 		if mine.size() < cnt:           # sem mais nós para direcionar: coleta onde tem mais poder
 			var col_c := []
-			for i in n:
-				if i != h and not (i in mine) and float(provincial[i].get(tag, 0.0)) > 0.0:
+			for i in nodes_of.get(tag, []):
+				if i != h and not (i in mine):
 					col_c.append(i)
 			col_c.sort_custom(func(x, y): return provincial[x][tag] > provincial[y][tag])
 			for i in col_c:
@@ -391,17 +413,29 @@ func _today() -> int:
 
 
 ## O nó `i` está ao alcance comercial do país (distância do centro do nó até a província mais perto)?
-func _in_range(tag: String, i: int, provs: Array) -> bool:
+func _in_range(i: int, provs: Array, r: float) -> bool:
 	var loc := int(map.trade_nodes.get(nodes[i], {}).get("location", -1))
 	if loc <= 0 or loc >= map.provinces.size():
 		return true
-	var c := map.province_center(loc)
-	var r := trade_range(tag)
+	var c := _center(loc)
 	var r2 := r * r
 	for pid in provs:
-		if map.province_center(pid).distance_squared_to(c) <= r2:
+		if _center(pid).distance_squared_to(c) <= r2:
 			return true
 	return false
+
+
+var _centers := PackedVector2Array()
+var _range_cache := {}              # tag -> {-1: alcance, nó: ao alcance} (refeito quando um dono muda)
+var _range_version := -1
+
+
+func _center(pid: int) -> Vector2:
+	if _centers.size() != map.provinces.size():
+		_centers.resize(map.provinces.size())
+		for k in map.provinces.size():
+			_centers[k] = map.province_center(k)
+	return _centers[pid]
 
 
 ## Alcance comercial: Σ trade_range das tecnologias dip × (1 + trade_range_modifier).

@@ -33,6 +33,8 @@ var war: War
 var diplo: DiploActions           # main.gd define (has_opinion_modifier)
 var coalition: Coalition          # main.gd define (coalition_target, num_of_coalition_members...)
 var economy: Economy              # main.gd define (treasury, years_of_income)
+var estates: Estates              # main.gd define (has_estate, has_estate_privilege)
+var trade_share_override := -1.0   # ≥ 0: trade_income_percentage fixo (partilha das terras na partida)
 var effects: Eu4Effects           # Eu4Effects.setup define (flags, modificadores de país, change_tag)
 var cbs := {}                     # id -> casus belli (map.casus_belli)
 var goals := {}                   # id -> objetivo de guerra (map.war_goals)
@@ -89,6 +91,23 @@ func available(a: String, b: String) -> Array:
 
 ## Avalia um bloco de condições do EU4 com ROOT = `root` e FROM = `from` (true, false ou null =
 ## desconhecido). Usado também pelas condições das ações diplomáticas e dos insultos.
+## has_government_attribute: atributo (chave = yes, também dentro de custom_attributes) de uma
+## reforma do país ou da reforma básica do governo (common/governments basic_reform).
+func _gov_attribute(tag: String, attr: String) -> bool:
+	var c: Dictionary = map.countries.get(tag, {})
+	var reforms: Array = (c.get("reforms", []) as Array).duplicate()
+	var gov = Eu4Data.merged("common/governments").get(str(c.get("government", "")), [])
+	var basic = Estates.tget(gov, "basic_reform")
+	if basic != null:
+		reforms.append(str(basic))
+	var all := Eu4Data.merged("common/government_reforms")
+	for r in reforms:
+		var tree = all.get(str(r), [])
+		if str(Estates.tget(tree, attr)) == "yes" or str(Estates.tget(Estates.tget(tree, "custom_attributes"), attr)) == "yes":
+			return true
+	return false
+
+
 func check(tree: Array, root: String, from: String) -> Variant:
 	return _test(tree, {"tag": root}, root, from)
 
@@ -271,6 +290,42 @@ func _cond(k: String, v: Variant, scope: Dictionary, root: String, from: String)
 			return not _yes(v)
 		"has_dlc":
 			return true
+		# estamentos
+		"has_estate":
+			return tag != "" and estates != null and estates.has(tag, str(v))
+		"has_estate_privilege":
+			return tag != "" and estates != null and str(v) in estates.privileges.get(tag, [])
+		"has_government_attribute":
+			return tag != "" and _gov_attribute(tag, str(v))
+		"has_enabled_estate", "has_unlocked_estate", "has_disabled_estate", "has_any_estate_disaster_active", \
+				"has_not_own_estate_disaster_active", "has_ruler_modifier", "has_absolutism_reduction_for_estate_privileges":
+			return false                # desastres, modificadores do governante, estamentos ligados por evento: não existem
+		"trade_income_percentage":
+			if tag == "" or not str(v).is_valid_float():
+				return null
+			if trade_share_override >= 0.0:
+				return trade_share_override >= float(str(v))
+			if economy == null:
+				return null
+			var inc: Dictionary = economy.income(tag)
+			var tot := float(inc.get("total", 0.0))
+			return tot > 0.0 and float(inc.get("trade", 0.0)) / tot >= float(str(v))
+		"dominant_religion":
+			if tag == "":
+				return null
+			var o := _country(str(v), root, from)
+			var want: String = str(map.countries[o].get("religion", "")) if o != "" else str(v)
+			var dev := {}
+			for p in map.provinces_of(tag):
+				var r := str(p.get("religion", ""))
+				dev[r] = float(dev.get(r, 0.0)) + float(p["development"])
+			var best := ""
+			for r in dev:
+				if best == "" or dev[r] > dev[best]:
+					best = r
+			return best == want
+		"province_has_center_of_trade_of_level":
+			return pid >= 0 and str(v).is_valid_float() and int(map.provinces[pid].get("center_of_trade", 0)) >= int(float(str(v)))
 		"cb_on_religious_enemies":
 			return _yes(v)
 		"ai":
@@ -439,6 +494,8 @@ func _country_cond(k: String, v: Variant, tag: String, root: String, from: Strin
 			return false
 		"owns":
 			return s.is_valid_int() and int(s) < map.provinces.size() and map.provinces[int(s)]["owner"] == tag
+		"capital":
+			return s.is_valid_int() and int(c.get("capital", -1)) == int(s)
 		"is_emperor":
 			return (tag == diplomacy.emperor) == _yes(v)
 		"is_emperor_of_china":
@@ -538,6 +595,10 @@ func _prov_cond(k: String, v: Variant, pid: int, root: String, from: String) -> 
 		"is_capital":
 			var c: Dictionary = map.countries.get(p["owner"], {})
 			return (int(c.get("capital", -1)) == pid) == _yes(v)
+		"development":
+			return s.is_valid_float() and float(p["development"]) >= float(s)
+		"base_tax", "base_production", "base_manpower":
+			return s.is_valid_float() and float(p.get(k, 0)) >= float(s)
 		"province_id":
 			return s.is_valid_int() and int(s) == pid
 		"has_terrain":
