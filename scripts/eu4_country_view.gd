@@ -20,12 +20,12 @@ signal message(text: String)        # aviso para o jogador (main mostra)
 
 const TABS := {"tab_court": "court", "tab_gov": "gov", "tab_economy": "economy", "tab_technology": "tech",
 		"tab_ideas": "ideas", "tab_religion": "religion", "tab_stability": "stability",
-		"tab_diplomacy": "summary", "tab_decisions": "decisions", "tab_trade": "trade"}
+		"tab_diplomacy": "summary", "tab_decisions": "decisions", "tab_trade": "trade", "tab_estates": "estates"}
 const TAB_TIPS := {"tab_court": "Corte", "tab_gov": "Governo", "tab_economy": "Economia", "tab_religion": "Religião", "tab_technology": "Tecnologia", "tab_ideas": "Ideias",
-		"tab_stability": "Estabilidade e Expansão", "tab_diplomacy": "Diplomacia", "tab_decisions": "Decisões e Políticas", "tab_trade": "Comércio"}
+		"tab_stability": "Estabilidade e Expansão", "tab_diplomacy": "Diplomacia", "tab_decisions": "Decisões e Políticas", "tab_trade": "Comércio", "tab_estates": "Estamentos"}
 const TAB_KEYS := {"tab_court": "HEADER_COURT", "tab_gov": "HEADER_GOVERNMENT", "tab_economy": "HEADER_ECONOMY",
 		"tab_religion": "HEADER_RELIGION", "tab_technology": "HEADER_TECHNOLOGY", "tab_ideas": "HEADER_IDEAS",
-		"tab_stability": "HEADER_STABILITY_EXPANSION", "tab_diplomacy": "HEADER_DIPLOMACY", "tab_decisions": "HEADER_DECISIONS", "tab_trade": "HEADER_TRADE"}
+		"tab_stability": "HEADER_STABILITY_EXPANSION", "tab_diplomacy": "HEADER_DIPLOMACY", "tab_decisions": "HEADER_DECISIONS", "tab_trade": "HEADER_TRADE", "tab_estates": "ESTATES_TITLE"}
 const POWER_ICONS := {"adm": "GFX_icon_powers_administrative", "dip": "GFX_icon_powers_diplomatic",
 		"mil": "GFX_icon_powers_military"}
 const COURT_HIDE := ["abdicate_ruler_button", "extend_regency_button", "election_info", "monarch_heir_claim",
@@ -65,6 +65,8 @@ var diplomacy_tab: Eu4DiplomacyTab
 var stability_tab: Eu4StabilityTab
 var decisions_tab: Eu4DecisionsTab
 var trade_tab: Eu4TradeTab
+var estates_tab: Eu4EstatesTab
+var estates: Estates                # main.gd define (aba Estamentos)
 var policies: Policies              # main.gd define (aba Decisões e Políticas)
 var effects: Eu4Effects             # main.gd define (tomar decisões)
 var diplomacy: Diplomacy            # main.gd define (relações)
@@ -109,6 +111,9 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 	trade_tab = Eu4TradeTab.new()
 	if not trade_tab.setup(self):
 		trade_tab = null
+	estates_tab = Eu4EstatesTab.new()
+	if not estates_tab.setup(self):
+		estates_tab = null
 	ideas_tab = Eu4IdeasTab.new()
 	if ideas_tab.setup(self):
 		ideas_tab.choose_group_requested.connect(func(t: String): ideas_requested.emit(t))
@@ -138,6 +143,8 @@ func setup(g: Eu4Gui, m: MapView, c: GameClock) -> bool:
 		pages.append(decisions_tab.root)
 	if trade_tab:
 		pages.append(trade_tab.root)
+	if estates_tab:
+		pages.append(estates_tab.root)
 	for v in pages:
 		var close := v.find_child("close_button", true, false) as BaseButton
 		if close:
@@ -284,6 +291,10 @@ func _on_tab(t: String) -> void:
 			if trade_tab and economy:
 				tab = t
 				refresh()
+		"estates":
+			if estates_tab and estates:
+				tab = t
+				refresh()
 		"tech":
 			if tech_tab:
 				tab = t
@@ -337,10 +348,12 @@ func refresh() -> void:
 		decisions_tab.root.visible = tab == "decisions"
 	if trade_tab:
 		trade_tab.root.visible = tab == "trade"
+	if estates_tab:
+		estates_tab.root.visible = tab == "estates"
 	for pg in [decisions_tab.root if decisions_tab else null, _court, _gov, tech_tab.root if tech_tab else null, ideas_tab.root if ideas_tab else null,
 			economy_tab.root if economy_tab else null, religion_tab.root if religion_tab else null,
 			diplomacy_tab.root if diplomacy_tab else null, stability_tab.root if stability_tab else null,
-			trade_tab.root if trade_tab else null]:
+			trade_tab.root if trade_tab else null, estates_tab.root if estates_tab else null]:
 		if pg and pg.visible:
 			_fit_scale(pg)
 	var tw := _tabs.find_child("countryview_tabs", true, false)
@@ -371,6 +384,8 @@ func refresh() -> void:
 			decisions_tab.fill(tag)
 		"trade":
 			trade_tab.fill(tag)
+		"estates":
+			estates_tab.fill(tag)
 
 
 func _gov_name(c: Dictionary) -> String:

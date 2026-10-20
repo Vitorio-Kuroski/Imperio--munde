@@ -1190,7 +1190,8 @@ GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countr
              "countrygovernmentview", "countrytechnologyview", "countryideasview",
              "countryeconomyview", "countryreligionview",
              "macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
-             "unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview"]   # o _override vem antes: as janelas dele valem
+             "unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview", "countryestatesview", "estate_privileges"]   # o _override vem antes: as janelas dele valem
+GUI_EXTRA_PREFIXES = ("privilege_",)   # sprites usados pelo codigo do EU4, nao pelos .gui (privilegios)
 GUI_EXTRA_SPRITES = ["GFX_policy_icon_frame_free", "GFX_diplomacy_action_economy", "GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
@@ -1294,6 +1295,7 @@ def make_gui(root):
 
     for rel in sorted(gfx_files):
         collect(parse_script(read_text(os.path.join(root, *rel.split("/")))))
+    used.update(n for n in defs if n.startswith(GUI_EXTRA_PREFIXES))   # icones dos privilegios dos estamentos
     done = {}
 
     def texture(path):

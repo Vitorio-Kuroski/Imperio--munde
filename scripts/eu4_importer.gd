@@ -1925,7 +1925,7 @@ const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", 
 		"countrygovernmentview", "countrytechnologyview", "countryideasview",
 		"countryeconomyview", "countryreligionview",
 		"macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
-		"unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview"]   # o _override vem antes: as janelas dele valem
+		"unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview", "countryestatesview", "estate_privileges"]   # o _override vem antes: as janelas dele valem
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",
@@ -1936,6 +1936,7 @@ const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_plains", "GFX_combat_terrain_savannah", "GFX_combat_terrain_steppe",
 		"GFX_combat_terrain_woods"]
 ## Sprites usados pelo jogo além dos citados nos .gui (botões dos modos de mapa).
+const GUI_EXTRA_PREFIXES := ["privilege_"]   # sprites usados pelo código do EU4, não pelos .gui
 const GUI_EXTRA_SPRITES := ["GFX_policy_icon_frame_free", "GFX_diplomacy_action_economy", "GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
 		"GFX_mapmode_religion", "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas",
 		"GFX_mapmode_institutions", "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
@@ -2042,6 +2043,10 @@ func _make_gui() -> void:
 	for k in _list("interface/"):
 		if (k as String).to_lower().ends_with(".gfx"):
 			_collect_defs(_parse(_text(k)), defs, font_defs)
+	for n in defs:                      # ícones dos privilégios dos estamentos (usados pelo código do EU4)
+		for pre in GUI_EXTRA_PREFIXES:
+			if str(n).begins_with(pre):
+				used[n] = true
 	DirAccess.make_dir_recursive_absolute(OUT_DIR + "/gui")
 	var done := {}
 	var sprites := {}

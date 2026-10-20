@@ -284,6 +284,7 @@ func _setup_eu4_hud() -> void:
 		country_view.prestige = prestige
 		country_view.stability = stability
 		country_view.army = army
+		country_view.estates = estates
 		diplo.changed.connect(func(_t): country_view.refresh())
 		country_view.fmt_mods = ideas_window.fmt_mods
 		country_view.techs_requested.connect(func(t: String):
@@ -739,8 +740,8 @@ func _start_game(tag: String) -> void:
 	start_panel.hide()
 	if frontend:
 		frontend.hide()
-	if main_menu:
-		main_menu.hide()
+	if main_menu and main_menu.visible:
+		_show_main_menu(false)          # mapa político e nomes de volta
 	if eu4_hud:
 		eu4_hud.show()
 	army_layer.show()
