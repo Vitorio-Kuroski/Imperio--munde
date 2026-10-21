@@ -59,6 +59,7 @@ var side_panel: PanelContainer
 var info_label: Label
 var prov_icons: HFlowContainer     # ícones da província (produto, religião, construções, instituições)
 var tooltip: MapTooltip
+var eu4_tooltip: Eu4Tooltip           # dica dos controles como a do EU4 (core.gui ToolTip)
 var eu4_hud: Eu4Hud               # interface montada com os .gui do EU4 (null sem as telas importadas)
 var province_view: Eu4ProvinceView  # tela da província do EU4 (no lugar do painel de texto)
 var country_view: Eu4CountryView    # tela do país do EU4 (no lugar do painel do país; este vira o "resumo")
@@ -236,6 +237,9 @@ func _setup_eu4_hud() -> void:
 		return
 	g.res_height = int(gui_design_height)      # layout padrão em qualquer tela
 	eu4_gui = g
+	eu4_tooltip = Eu4Tooltip.new()
+	add_child(eu4_tooltip)
+	eu4_tooltip.setup(g, func(): return gui_scale)
 	eu4_hud = Eu4Hud.new()
 	eu4_hud.religion = religion
 	eu4_hud.manpower = manpower
@@ -1102,6 +1106,7 @@ func _toast(text: String) -> void:
 	_toast_label.position = Vector2(vp.x * 0.25, vp.y * 0.2)
 	_toast_label.size = Vector2(vp.x * 0.5, 60)
 	_toast_label.custom_minimum_size = Vector2(vp.x * 0.5, 0)
+	text = Loc.clean(text)              # sem os códigos de cor do EU4 (§R…§!)
 	_toast_label.text = text
 	_toast_label.show()
 	get_tree().create_timer(3.0).timeout.connect(func():

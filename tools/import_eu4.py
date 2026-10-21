@@ -1199,9 +1199,9 @@ GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countr
              "countrygovernmentview", "countrytechnologyview", "countryideasview",
              "countryeconomyview", "countryreligionview",
              "macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
-             "unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview", "countryestatesview", "estate_privileges"]   # o _override vem antes: as janelas dele valem
+             "unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview", "countryestatesview", "estate_privileges", "core"]   # o _override vem antes: as janelas dele valem
 GUI_EXTRA_PREFIXES = ("privilege_",)   # sprites usados pelo codigo do EU4, nao pelos .gui (privilegios)
-GUI_EXTRA_SPRITES = ["GFX_policy_icon_frame_free", "GFX_crownland", "GFX_sale_of_titles", "GFX_summon_the_diet", "GFX_seize_land", "GFX_estate_loyalty_L", "GFX_estate_influence_L", "GFX_estate_territory_L", "GFX_diplomacy_action_economy", "GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
+GUI_EXTRA_SPRITES = ["GFX_policy_icon_frame_free", "ToolTip", "GFX_crownland", "GFX_sale_of_titles", "GFX_summon_the_diet", "GFX_seize_land", "GFX_estate_loyalty_L", "GFX_estate_influence_L", "GFX_estate_territory_L", "GFX_diplomacy_action_economy", "GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
                      "GFX_scroll_track", "GFX_country_icon_religion",
@@ -1259,7 +1259,7 @@ def make_gui(root):
     def conv(items):
         return [["" if k is None else k, conv(v) if isinstance(v, list) else v] for k, v in items]
 
-    trees, used, used_fonts = {}, set(), {"tahoma_60"}       # tahoma_60 = fonte dos nomes no mapa (Mapfont)
+    trees, used, used_fonts = {}, set(), {"tahoma_60", "ToolTip_Font"}   # nomes no mapa (Mapfont) e dicas
 
     def refs(items):
         for k, v in items:
@@ -1288,6 +1288,17 @@ def make_gui(root):
         return d
 
     defs, font_defs = {}, {}
+    textcolors = {}
+
+    def colors(items):
+        """textcolors = { G = { 0 255 0 } ... } -> {"G": [0, 255, 0]} (letras com maiusculas: g != G)."""
+        out = {}
+        for k2, v2 in items:
+            if k2 and isinstance(v2, list):
+                rgb = [int(float(x)) for kk, x in v2 if kk is None and isinstance(x, str) and x.replace(".", "", 1).isdigit()]
+                if len(rgb) >= 3:
+                    out[k2] = rgb[:3]
+        return out
 
     def collect(items):
         for k, v in items:
@@ -1298,7 +1309,11 @@ def make_gui(root):
             if kl in SPRITE_KINDS and "name" in d:
                 defs.setdefault(d["name"], (kl, d))
             elif kl == "bitmapfont" and "name" in d:
-                font_defs.setdefault(d["name"], d)
+                tc = next((colors(x) for kk, x in v if kk and kk.lower() == "textcolors" and isinstance(x, list)), {})
+                font_defs.setdefault(d["name"], dict(d, _textcolors=tc))
+            elif kl == "textcolors":
+                if not textcolors:
+                    textcolors.update(colors(v))
             else:
                 collect(v)
 
@@ -1366,8 +1381,10 @@ def make_gui(root):
         with open(files[fnt], "rb") as fi, open(dst, "wb") as fo:
             fo.write(fi.read())
         fonts[n] = {"fnt": fnt, "page": page, "color": str(fd.get("color", "0xffffffff")).lower()}
+        if fd.get("_textcolors"):
+            fonts[n]["textcolors"] = fd["_textcolors"]
     with open(os.path.join(out, "gui.json"), "w", encoding="utf-8") as f:
-        json.dump({"files": trees, "sprites": sprites, "fonts": fonts}, f, ensure_ascii=False)
+        json.dump({"files": trees, "sprites": sprites, "fonts": fonts, "textcolors": textcolors}, f, ensure_ascii=False)
 
 
 def make_ui(root):

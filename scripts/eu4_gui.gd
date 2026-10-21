@@ -14,16 +14,35 @@ const ANCHORS := {"upper_left": Vector2(0, 0), "upper_right": Vector2(1, 0), "lo
 		"center_down": Vector2(0.5, 1), "center_left": Vector2(0, 0.5), "center_right": Vector2(1, 0.5),
 		"left": Vector2(0, 0.5), "right": Vector2(1, 0.5)}
 
-## Cores do texto do EU4 nas telas (textcolors da fonte vic_18 em interface/core.gfx: §G, §R, §Y;
-## a tabela global — G 0,255,0 / R 255,50,50 — vale só para as dicas).
+## Cores do texto do EU4 nas telas quando o gui.json é antigo (sem textcolors): os valores da fonte
+## vic_18 em interface/core.gfx. O normal é ler `text_color`.
 const TEXT_GREEN := Color8(44, 171, 50)
 const TEXT_RED := Color8(181, 61, 61)
 const TEXT_YELLOW := Color8(219, 203, 71)
 
+
+## Cores do texto (§X) da fonte `font_name` (as textcolors dela por cima da tabela global de
+## core.gfx), como Color: {"R": Color, ...}. `global_first` = a tabela global ganha (dicas).
+func text_colors(font_name := "vic_18", global_first := false) -> Dictionary:
+	var out := {}
+	var own: Dictionary = font_defs.get(font_name, {}).get("textcolors", {})
+	for src in ([own, textcolors] if global_first else [textcolors, own]):
+		for k in src:
+			var c: Array = src[k]
+			if c.size() >= 3:
+				out[k] = Color8(int(c[0]), int(c[1]), int(c[2]))
+	return out
+
+
+## Cor §X do texto das telas (fonte vic_18), com a de reserva se o gui.json não tiver as cores.
+func text_color(letter: String, fallback: Color = Color.WHITE) -> Color:
+	return text_colors().get(letter, fallback)
+
 var dir := ""
 var files := {}                     # nome do .gui -> árvore [[chave, valor]]
 var sprites := {}                   # nome -> {kind, texture, texture2?, frames?, border?, size?}
-var font_defs := {}                 # nome -> {fnt, page, color}
+var font_defs := {}                 # nome -> {fnt, page, color, textcolors?}
+var textcolors := {}                # cores do texto do EU4 (core.gfx global): {"R": [255, 50, 50], ...}
 var nodes := {}                     # nome do elemento -> Control (do último build)
 ## Altura de tela usada nos blocos if_resolution dos .gui (o EU4 escolhe fundos e listas maiores
 ## pela altura da tela; as telas daqui usam o layout padrão, de 768 px, ver main._apply_gui_scale).
@@ -46,6 +65,7 @@ static func open(gui_dir: String) -> Eu4Gui:
 	g.dir = gui_dir
 	g.files = d["files"]
 	g.sprites = d.get("sprites", {})
+	g.textcolors = d.get("textcolors", {})
 	g.font_defs = d.get("fonts", {})
 	return g
 

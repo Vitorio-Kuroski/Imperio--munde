@@ -63,7 +63,7 @@ func _color_pct(n: String, x: float) -> void:
 	view._txt(root, n, _pct(x))
 	var l := root.find_child(n, true, false) as Label
 	if l:
-		l.modulate = Eu4Gui.TEXT_GREEN if x > 0.0005 else (Eu4Gui.TEXT_RED if x < -0.0005 else Color.WHITE)
+		l.modulate = view.gui.text_color("G", Eu4Gui.TEXT_GREEN) if x > 0.0005 else (view.gui.text_color("R", Eu4Gui.TEXT_RED) if x < -0.0005 else Color.WHITE)
 
 
 func fill(tag: String) -> void:
@@ -80,7 +80,7 @@ func fill(tag: String) -> void:
 	view._txt(root, "mercantilism_value", _pct(merc / 100.0, false))
 	var ml := root.find_child("mercantilism_value", true, false) as Label
 	if ml:
-		ml.modulate = Eu4Gui.TEXT_GREEN
+		ml.modulate = view.gui.text_color("G", Eu4Gui.TEXT_GREEN)
 	_color_pct("privateer_value", pw.modifier(tag, "privateer_efficiency"))
 	var car := tr.caravan_power(tag)
 	view._txt(root, "inland_merchant_value", "+%d" % roundi(car), Loc.s(
@@ -88,7 +88,7 @@ func fill(tag: String) -> void:
 			"Caravan power: development ÷ 3 (between 2 and 50). Added to the trade capital's node when it is inland."))
 	var il := root.find_child("inland_merchant_value", true, false) as Label
 	if il:
-		il.modulate = Eu4Gui.TEXT_GREEN
+		il.modulate = view.gui.text_color("G", Eu4Gui.TEXT_GREEN)
 	_color_pct("global_tradegoods_value", pw.modifier(tag, "trade_goods_size_modifier"))
 	# promover o mercantilismo (só o jogador)
 	var pm := root.find_child("promote_mercantilism", true, false) as BaseButton

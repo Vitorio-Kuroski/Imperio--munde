@@ -26,9 +26,9 @@ const ROW_SHIFT := -28                        # position.x da janela estate_item
 const PIE_CENTER := Vector2(29.5, 25.5)       # centro do disco na textura da moldura (pixels x 9–50, y 5–46)
 const PIE_RADIUS := 20.0                      # dentro do aro escuro (raio médio 19,4)
 const CROWN_COLOR := Color(0.92, 0.88, 0.80)  # a coroa na pizza
-const YELLOW := Eu4Gui.TEXT_YELLOW          # cores do texto do EU4 (core.gfx)
-const GOOD := Eu4Gui.TEXT_GREEN
-const BAD := Eu4Gui.TEXT_RED
+var YELLOW := Eu4Gui.TEXT_YELLOW            # cores do texto do EU4 (textcolors da vic_18, `setup`)
+var GOOD := Eu4Gui.TEXT_GREEN
+var BAD := Eu4Gui.TEXT_RED
 const INTERACTIONS := [["GFX_sale_of_titles", "ESTATES_SALE_OF_TITLES_DESC", "Vender 10% da terra da coroa aos estamentos"],
 		["GFX_summon_the_diet", "ESTATES_SUMMON_THE_DIET_DESC", "Convocar a dieta para escolher uma agenda"],
 		["GFX_seize_land", "ESTATES_SEIZE_LAND_DESC", "Tomar 5% das terras dos estamentos para a coroa"]]
@@ -53,6 +53,9 @@ func setup(v: Eu4CountryView) -> bool:
 	root = v._open("countryestatesview")
 	if root == null:
 		return false
+	YELLOW = v.gui.text_color("Y", YELLOW)
+	GOOD = v.gui.text_color("G", GOOD)
+	BAD = v.gui.text_color("R", BAD)
 	for n in ["agenda_icon", "agenda_state"]:
 		Eu4CountryView._hide(root, n)
 	# pizza das terras (o sprite piechart não vira imagem: desenhada aqui, sob a moldura)

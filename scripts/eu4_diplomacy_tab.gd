@@ -480,9 +480,8 @@ func _fill_declare() -> void:
 		var why := view.diplo.why_not("declare_war", a, b)
 		view._set_button_text(agr, Loc.t("CONFIRM", "Confirmar"))
 		agr.disabled = why != ""
-		agr.tooltip_text = ("- " + why + "
-
-" if why != "" else "") + Loc.t("WARDESC", "Em guerra, suas tropas podem entrar "
+		# como a dica do EU4: o motivo em vermelho (§R), uma linha em branco e a descrição
+		agr.tooltip_text = ("§R- " + why + "§!\n\n" if why != "" else "") + Loc.rich("WARDESC", {}, "Em guerra, suas tropas podem entrar "
 				+ "nas terras do inimigo. Ocupando províncias e exigindo-as na paz você as conquista. Sem casus belli a "
 				+ "estabilidade cai muito ao declarar.")
 		agr.modulate = Color(0.6, 0.6, 0.6) if why != "" else Color.WHITE

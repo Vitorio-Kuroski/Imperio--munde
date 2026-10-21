@@ -1932,7 +1932,7 @@ const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", 
 		"countrygovernmentview", "countrytechnologyview", "countryideasview",
 		"countryeconomyview", "countryreligionview",
 		"macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
-		"unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview", "countryestatesview", "estate_privileges"]   # o _override vem antes: as janelas dele valem
+		"unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview", "countryestatesview", "estate_privileges", "core"]   # o _override vem antes: as janelas dele valem
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",
@@ -1944,7 +1944,7 @@ const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_woods"]
 ## Sprites usados pelo jogo além dos citados nos .gui (botões dos modos de mapa).
 const GUI_EXTRA_PREFIXES := ["privilege_"]   # sprites usados pelo código do EU4, não pelos .gui
-const GUI_EXTRA_SPRITES := ["GFX_policy_icon_frame_free", "GFX_crownland", "GFX_sale_of_titles", "GFX_summon_the_diet", "GFX_seize_land", "GFX_estate_loyalty_L", "GFX_estate_influence_L", "GFX_estate_territory_L", "GFX_diplomacy_action_economy", "GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
+const GUI_EXTRA_SPRITES := ["GFX_policy_icon_frame_free", "ToolTip", "GFX_crownland", "GFX_sale_of_titles", "GFX_summon_the_diet", "GFX_seize_land", "GFX_estate_loyalty_L", "GFX_estate_influence_L", "GFX_estate_territory_L", "GFX_diplomacy_action_economy", "GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
 		"GFX_mapmode_religion", "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas",
 		"GFX_mapmode_institutions", "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
 		"GFX_scroll_track", "GFX_country_icon_religion",
@@ -2007,7 +2007,7 @@ func _collect_refs(items: Array, sprites: Dictionary, fonts: Dictionary) -> void
 			fonts[kv[1]] = true
 
 
-func _collect_defs(items: Array, defs: Dictionary, font_defs: Dictionary) -> void:
+func _collect_defs(items: Array, defs: Dictionary, font_defs: Dictionary, textcolors := {}) -> void:
 	for kv in items:
 		if not (kv[1] is Array):
 			continue
@@ -2018,9 +2018,31 @@ func _collect_defs(items: Array, defs: Dictionary, font_defs: Dictionary) -> voi
 				defs[d["name"]] = [k, d]
 		elif k == "bitmapfont" and d.has("name"):
 			if not font_defs.has(d["name"]):
+				var tc := {}
+				for x in kv[1]:
+					if (x[0] as String).to_lower() == "textcolors" and x[1] is Array:
+						tc = _colors(x[1])
+				d["_textcolors"] = tc
 				font_defs[d["name"]] = d
+		elif k == "textcolors":
+			if textcolors.is_empty():
+				textcolors.merge(_colors(kv[1]))
 		else:
-			_collect_defs(kv[1], defs, font_defs)
+			_collect_defs(kv[1], defs, font_defs, textcolors)
+
+
+## textcolors = { G = { 0 255 0 } ... } -> {"G": [0, 255, 0]} (letras com maiúsculas: g ≠ G).
+static func _colors(items: Array) -> Dictionary:
+	var out := {}
+	for kv in items:
+		if kv[0] != "" and kv[1] is Array:
+			var rgb := []
+			for x in kv[1]:
+				if x[0] == "" and x[1] is String and (x[1] as String).is_valid_float():
+					rgb.append(int(float(x[1])))
+			if rgb.size() >= 3:
+				out[kv[0]] = rgb.slice(0, 3)
+	return out
 
 
 ## Telas do EU4 (GUI_FILES) em user://eu4/gui/: gui.json (árvores dos .gui já lidas, sprites e
@@ -2032,7 +2054,7 @@ func _make_gui() -> void:
 		by_low[(k as String).to_lower()] = k
 	var files := {}
 	var used := {}
-	var used_fonts := {"tahoma_60": true}           # fonte dos nomes no mapa (Mapfont)
+	var used_fonts := {"tahoma_60": true, "ToolTip_Font": true}   # nomes no mapa (Mapfont) e dicas
 	for g in GUI_FILES:
 		var rel: String = by_low.get("interface/%s.gui" % g, "")
 		if rel == "":
@@ -2047,9 +2069,10 @@ func _make_gui() -> void:
 	_set_status("Lendo as telas do EU4...")
 	var defs := {}
 	var font_defs := {}
+	var textcolors := {}
 	for k in _list("interface/"):
 		if (k as String).to_lower().ends_with(".gfx"):
-			_collect_defs(_parse(_text(k)), defs, font_defs)
+			_collect_defs(_parse(_text(k)), defs, font_defs, textcolors)
 	for n in defs:                      # ícones dos privilégios dos estamentos (usados pelo código do EU4)
 		for pre in GUI_EXTRA_PREFIXES:
 			if str(n).begins_with(pre):
@@ -2095,8 +2118,10 @@ func _make_gui() -> void:
 		f.store_buffer(_bytes(fnt))
 		f.close()
 		fonts[n] = {"fnt": fnt, "page": page, "color": str(fd.get("color", "0xffffffff")).to_lower()}
+		if not (fd.get("_textcolors", {}) as Dictionary).is_empty():
+			fonts[n]["textcolors"] = fd["_textcolors"]
 	var out := FileAccess.open(OUT_DIR + "/gui/gui.json", FileAccess.WRITE)
-	out.store_string(JSON.stringify({"files": files, "sprites": sprites, "fonts": fonts}))
+	out.store_string(JSON.stringify({"files": files, "sprites": sprites, "fonts": fonts, "textcolors": textcolors}))
 	out.close()
 
 

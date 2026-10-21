@@ -46,6 +46,56 @@ static func t(key: String, fallback := "") -> String:
 	return fallback
 
 
+## Texto da chave com os códigos de cor do EU4 (§R…§!) e $VAR|Y$ virando §Y valor§! — para as dicas
+## (`Eu4Tooltip` os pinta pelo `bbcode`; os ícones £…£ saem).
+static func rich(key: String, vars: Dictionary, fallback := "") -> String:
+	var s: String = table.get(key, "")
+	if s == "":
+		s = fallback
+	s = _icon.sub(s, "", true).replace("\\n", "\n")
+	for k in vars:
+		s = s.replace("$%s$" % k, str(vars[k]))
+		var re := RegEx.create_from_string("\\$%s\\|([^$]*)\\$" % k)
+		var m := re.search(s)
+		while m:
+			var fmt := m.get_string(1)
+			var col := ""
+			for ch in fmt:
+				if ch in "RGYBWgOTMlPVJ":
+					col = ch
+			var val := str(vars[k])
+			s = s.substr(0, m.get_start()) + (("§%s%s§!" % [col, val]) if col != "" else val) + s.substr(m.get_end())
+			m = re.search(s)
+	return s.strip_edges()
+
+
+## Texto com §X…§! (códigos de cor do EU4) em BBCode do RichTextLabel, com as cores `colors`
+## ({"R": Color...}); um § sem cor conhecida some. Os códigos não aninham: a cor anterior volta no §!.
+static func bbcode(s: String, colors: Dictionary) -> String:
+	s = s.replace("[", "[lb]")
+	var out := ""
+	var stack := 0
+	var i := 0
+	while i < s.length():
+		var ch := s[i]
+		if ch == "§" and i + 1 < s.length():
+			var c := s[i + 1]
+			if c == "!":
+				if stack > 0:
+					out += "[/color]"
+					stack -= 1
+			elif colors.has(c):
+				out += "[color=#%s]" % (colors[c] as Color).to_html(false)
+				stack += 1
+			i += 2
+			continue
+		out += ch
+		i += 1
+	for k in stack:
+		out += "[/color]"
+	return out
+
+
 ## Texto com variáveis $NOME$ trocadas.
 static func f(key: String, vars: Dictionary, fallback := "") -> String:
 	var s := t(key, "")

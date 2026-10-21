@@ -91,7 +91,7 @@ func why_not_declare(a: String, b: String) -> String:
 	if _start_unix != 0 and _today_unix() - _start_unix < wait * 86400:
 		var d := Time.get_datetime_dict_from_unix_time(_start_unix + wait * 86400)
 		var ds := Loc.date(int(d["year"]), int(d["month"]), int(d["day"]))
-		return Loc.f("CANNOT_DECLARE_WAR_FIRST_MONTH", {"DATE": ds}, "Só dá para declarar guerra a partir de %s." % ds)
+		return Loc.rich("CANNOT_DECLARE_WAR_FIRST_MONTH", {"DATE": ds}, "Só dá para declarar guerra a partir de $DATE|Y$.")
 	if map.provinces_of(b).is_empty():
 		return Loc.s("Não tem províncias", "Has no provinces")
 	if hostile(a, b):
