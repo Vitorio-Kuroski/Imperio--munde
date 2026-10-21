@@ -14,6 +14,12 @@ const ANCHORS := {"upper_left": Vector2(0, 0), "upper_right": Vector2(1, 0), "lo
 		"center_down": Vector2(0.5, 1), "center_left": Vector2(0, 0.5), "center_right": Vector2(1, 0.5),
 		"left": Vector2(0, 0.5), "right": Vector2(1, 0.5)}
 
+## Cores do texto do EU4 nas telas (textcolors da fonte vic_18 em interface/core.gfx: §G, §R, §Y;
+## a tabela global — G 0,255,0 / R 255,50,50 — vale só para as dicas).
+const TEXT_GREEN := Color8(44, 171, 50)
+const TEXT_RED := Color8(181, 61, 61)
+const TEXT_YELLOW := Color8(219, 203, 71)
+
 var dir := ""
 var files := {}                     # nome do .gui -> árvore [[chave, valor]]
 var sprites := {}                   # nome -> {kind, texture, texture2?, frames?, border?, size?}
