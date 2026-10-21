@@ -23,8 +23,8 @@ extends RefCounted
 const ROW_HEIGHT := 130                       # slotsize do estate_items_gridbox
 const ROW_WIDTH := 500                        # largura do estates_listbox
 const ROW_SHIFT := -28                        # position.x da janela estate_item
-const PIE_CENTER := Vector2(30.5, 30.0)       # centro do disco na textura da moldura
-const PIE_RADIUS := 24.5
+const PIE_CENTER := Vector2(30.0, 26.0)       # centro do disco na textura da moldura (pixels x 9–50, y 5–46)
+const PIE_RADIUS := 20.5                      # dentro do aro escuro (raio médio 19,4)
 const CROWN_COLOR := Color(0.92, 0.88, 0.80)  # a coroa na pizza
 const GOOD := Color(0.35, 0.85, 0.35)
 const BAD := Color(0.95, 0.3, 0.25)
@@ -59,8 +59,8 @@ func setup(v: Eu4CountryView) -> bool:
 	_pie = Control.new()
 	_pie.mouse_filter = Control.MOUSE_FILTER_PASS
 	_pie.draw.connect(_draw_pie)
-	if ov:                              # o disco da moldura (provinceView_chart_overlay) fica em (30,5, 30) com
-		var sc: Vector2 = ov.scale      # raio 24,5 na textura de 62 × 65; o .gui ainda aumenta a moldura (scale)
+	if ov:                              # o disco da moldura (provinceView_chart_overlay) fica em (30, 26) com
+		var sc: Vector2 = ov.scale      # raio 20,5 na textura de 62 × 65; o .gui ainda aumenta a moldura (scale)
 		var r := PIE_RADIUS * sc.x
 		_pie.position = ov.position + PIE_CENTER * sc - Vector2(r, r)
 		_pie.size = Vector2(r, r) * 2.0
