@@ -23,9 +23,10 @@ extends RefCounted
 const ROW_HEIGHT := 130                       # slotsize do estate_items_gridbox
 const ROW_WIDTH := 500                        # largura do estates_listbox
 const ROW_SHIFT := -28                        # position.x da janela estate_item
-const PIE_CENTER := Vector2(30.0, 26.0)       # centro do disco na textura da moldura (pixels x 9–50, y 5–46)
-const PIE_RADIUS := 20.5                      # dentro do aro escuro (raio médio 19,4)
+const PIE_CENTER := Vector2(29.5, 25.5)       # centro do disco na textura da moldura (pixels x 9–50, y 5–46)
+const PIE_RADIUS := 20.0                      # dentro do aro escuro (raio médio 19,4)
 const CROWN_COLOR := Color(0.92, 0.88, 0.80)  # a coroa na pizza
+const YELLOW := Color(0.98, 0.84, 0.35)
 const GOOD := Color(0.35, 0.85, 0.35)
 const BAD := Color(0.95, 0.3, 0.25)
 const INTERACTIONS := [["GFX_sale_of_titles", "ESTATES_SALE_OF_TITLES_DESC", "Vender 10% da terra da coroa aos estamentos"],
@@ -204,6 +205,9 @@ func fill(tag: String) -> void:
 				if leq != 0.0:
 					tip += "\n%s %s: %+.1f%%" % [e.name_of(id), Loc.s("Equilíbrio da lealdade", "Loyalty Equilibrium"), leq]
 			view._txt(it, "dev_share_text", _pct(cells[k][1]), tip)
+			var dl := it.find_child("dev_share_text", true, false) as Label
+			if dl:
+				dl.modulate = YELLOW          # o EU4 escreve as porcentagens em amarelo
 	# efeitos da terra da coroa
 	var cl := e.crown_land(tag)
 	var cmods := {}
@@ -489,7 +493,7 @@ func _draw_pie() -> void:
 		tot += float(s[1])
 	if tot <= 0.0:
 		return
-	var a0 := -PI / 2.0
+	var a0 := 0.0                       # como o EU4: começa às 3 horas e gira no sentido anti-horário
 	for s in _shares:
 		var frac := float(s[1]) / tot
 		if frac <= 0.0:
@@ -497,7 +501,9 @@ func _draw_pie() -> void:
 		var pts := PackedVector2Array([ctr])
 		var steps := maxi(2, ceili(64 * frac))
 		for k in steps + 1:
-			var a := a0 + TAU * frac * float(k) / float(steps)
+			var a := a0 - TAU * frac * float(k) / float(steps)
 			pts.append(ctr + Vector2(cos(a), sin(a)) * r)
 		_pie.draw_colored_polygon(pts, s[0])
-		a0 += TAU * frac
+		# divisão antisserrilhada na cor da fatia (a borda de fora fica sob o aro da moldura)
+		_pie.draw_line(ctr, pts[1], s[0], 1.0, true)
+		a0 -= TAU * frac
