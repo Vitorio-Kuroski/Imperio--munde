@@ -147,17 +147,28 @@ func _make_pool(tag: String) -> Dictionary:
 			continue
 		var t: Dictionary = types[a["type"]]
 		var adv := {"name": a["name"], "type": a["type"], "skill": clampi(int(a.get("skill", 1)), 1, 3),
-				"category": t["category"], "historical": true, "id": a.get("id", -1)}
+				"category": t["category"], "historical": true, "id": a.get("id", -1), "location": loc,
+				"age": _random_age()}
 		if out.has(t["category"]) and out[t["category"]].size() < POOL_SIZE:
 			out[t["category"]].append(adv)
-	# gerados até completar
+	# gerados até completar (nascidos numa província do país)
+	var mine := map.provinces_of(tag)
 	for cat in CATS:
 		while out[cat].size() < POOL_SIZE and not by_cat[cat].is_empty():
 			var tid: String = by_cat[cat][_rng.randi() % by_cat[cat].size()]
 			var r := _rng.randf()
 			var sk := 1 if r < 0.6 else (2 if r < 0.9 else 3)
-			out[cat].append({"name": types[tid]["name"], "type": tid, "skill": sk, "category": cat})
+			var adv := {"name": types[tid]["name"], "type": tid, "skill": sk, "category": cat, "age": _random_age()}
+			if not mine.is_empty():
+				adv["location"] = int(mine[_rng.randi() % mine.size()]["id"])
+			out[cat].append(adv)
 	return out
+
+
+## Idade de um conselheiro novo: ADVISOR_MIN/MAX_DEFAULT_AGE do EU4 (18–60), sorteada.
+func _random_age() -> int:
+	return _rng.randi_range(int(Eu4Data.define("NCountry", "ADVISOR_MIN_DEFAULT_AGE", 18)),
+			int(Eu4Data.define("NCountry", "ADVISOR_MAX_DEFAULT_AGE", 60)))
 
 
 func _on_month() -> void:

@@ -16,11 +16,14 @@ extends RefCounted
 ##    (`acceptance`: pontos a favor e contra, aceita se a soma for > 0 — uma aproximação do EU4,
 ##    com a opinião sobre nós, religião, tamanho relativo, distância e alianças que ele já tem);
 ##    as outras são unilaterais.
+##  - Coalizões (`Coalition`): entrar (com expansão agressiva ≥ 50 contra o alvo, ação form_coalition do
+##    EU4) e sair; aliança é impossível entre quem está em coalizão um contra o outro.
 ##  - A IA ainda não propõe nada nem usa diplomatas.
 
 signal changed(tag: String)
 
-const ACTIONS := ["improve", "alliance", "royal_marriage", "guarantee", "break_alliance", "break_marriage", "insult"]
+const ACTIONS := ["improve", "alliance", "royal_marriage", "guarantee", "break_alliance", "break_marriage", "insult",
+		"declare_war", "white_peace", "join_coalition", "leave_coalition"]
 const IMPROVE_BASE := 3.0
 
 var map: MapView
@@ -28,6 +31,12 @@ var clock: GameClock
 var power: MonarchPower
 var diplomacy: Diplomacy
 var economy: Economy
+var stability: Stability           # main.gd define (romper casamento custa estabilidade)
+var legitimacy: Legitimacy         # main.gd define (casar com quem tem menos prestígio/legitimidade custa)
+var war: War                       # main.gd define (declarar guerra, paz branca)
+var cbs: CasusBelli                # main.gd define (casus belli; sem motivo custa estabilidade)
+var coalition: Coalition           # main.gd define (entrar/sair de coalizões, guerra de coalizão)
+var rivals: Rivals                 # main.gd define (opinião rival/enemy, sem aliança entre rivais)
 var mods := {}                     # opinion_modifiers do EU4
 var timed := {}                    # "A>B" -> {modificador: [valor, meses restantes ou -1]} (opinião de A sobre B)
 var improving := {}                # país -> [alvos com diplomata melhorando relações]
@@ -81,6 +90,11 @@ func breakdown(a: String, b: String) -> Array:
 		out.append(["guaranteed", _mod("guaranteed", "opinion", 10)])
 	if diplomacy.enemies(a, b) == true:
 		out.append(["at_war", _mod("at_war", "opinion", -20)])
+	if rivals:                         # a escolheu b como rival / b escolheu a
+		if rivals.is_rival(a, b):
+			out.append(["rival", _mod("rival", "opinion", -100)])
+		if rivals.is_rival(b, a):
+			out.append(["enemy", _mod("enemy", "opinion", -50)])
 	for id in timed.get(a + ">" + b, {}):
 		var v: float = timed[a + ">" + b][id][0]
 		if absf(v) >= 0.5:
@@ -176,6 +190,15 @@ func acceptance(action: String, actor: String, target: String) -> Array:
 			var n := diplomacy.marriages(target).size()
 			if n >= 2:
 				out.append([Loc.s("Já tem %d casamentos", "Already has %d marriages") % n, -10 * (n - 1)])
+		"white_peace":
+			out.clear()
+			var w: Dictionary = war.war_between(actor, target) if war else {}
+			if not w.is_empty():
+				out.append([Loc.s("Aceita se não estiver ganhando", "Accepts unless winning"), 10])
+				out.append([Loc.s("Placar da guerra para eles", "Their war score"), -roundi(war.score_for(w, target))])
+				if w.get("coalition", false) and target in w["attackers"]:
+					out.append([Loc.s("Guerra de coalizão", "Coalition war"), -roundi(float(map.diplomacy_data.get(
+							"defines", {}).get("PEACE_COALITION_FACTOR", 30)))])
 	return out
 
 
@@ -186,8 +209,50 @@ func acceptance_score(action: String, actor: String, target: String) -> int:
 	return s
 
 
+## Ação do jogo -> ação do EU4 (common/diplomatic_actions), cujas condições também valem.
+const EU4_ACTION := {"improve": "improve_relation", "alliance": "allianceaction", "royal_marriage": "royal_marriage",
+		"guarantee": "guaranteeaction", "break_alliance": "break_alliance", "break_marriage": "break_marriage",
+		"insult": "insultaction", "declare_war": "declarewar", "white_peace": "requestpeace",
+		"join_coalition": "form_coalition"}
+
+
+## Condições da ação no EU4: cada `condition` cujo `potential` vale e cujo `allow` dá falso bloqueia,
+## com a dica do EU4. Condições desconhecidas não bloqueiam.
+func eu4_why_not(action: String, actor: String, target: String) -> String:
+	if cbs == null:
+		return ""
+	var a: Dictionary = map.diplomacy_data.get("actions", {}).get(EU4_ACTION.get(action, ""), {})
+	for c in a.get("conditions", []):
+		var pot: Variant = cbs.check(c["potential"], actor, target) if not c["potential"].is_empty() else true
+		if pot != true:
+			continue
+		if cbs.check(c["allow"], actor, target) == false:
+			return Loc.t(c["tooltip"], Loc.s("Não permitido (regra do EU4: %s)", "Not allowed (EU4 rule: %s)") % c["tooltip"]) \
+					if c["tooltip"] != "" else Loc.s("Não permitido pelas regras do EU4", "Not allowed by the EU4 rules")
+	return ""
+
+
+## Texto de um insulto do EU4 (common/insults) cuja condição vale, com os nomes no lugar.
+func insult_text(actor: String, target: String) -> String:
+	var ok := []
+	for i in map.diplomacy_data.get("insults", []):
+		if cbs == null or i["trigger"].is_empty() or cbs.check(i["trigger"], actor, target) == true:
+			ok.append(i["id"])
+	if ok.is_empty() or not Loc.active():
+		return ""
+	var t := Loc.t(ok[randi() % ok.size()], "")
+	t = RegEx.create_from_string("(?i)\\[From\\.[^\\]]*\\]").sub(t, map.countries[target]["name"], true)
+	t = RegEx.create_from_string("(?i)\\[Root\\.[^\\]]*\\]").sub(t, map.countries[actor]["name"], true)
+	return RegEx.create_from_string("\\[[^\\]]*\\]").sub(t, "", true)
+
+
 ## "" se `actor` pode fazer a ação com `target`, senão o motivo.
 func why_not(action: String, actor: String, target: String) -> String:
+	var own := _why_not(action, actor, target)
+	return own if own != "" else eu4_why_not(action, actor, target)
+
+
+func _why_not(action: String, actor: String, target: String) -> String:
 	if actor == target or not map.countries.has(target):
 		return "?"
 	var allied: bool = target in diplomacy.allies(actor)
@@ -202,6 +267,10 @@ func why_not(action: String, actor: String, target: String) -> String:
 			if cur >= _mod("improved_relation", "max", 100):
 				return Loc.s("Relações já no máximo", "Relations already at maximum")
 		"alliance":
+			if rivals and rivals.is_rival(actor, target):
+				return Loc.t("THEY_ARE_OUR_RIVAL", "Não há aliança com um rival")
+			if rivals and rivals.is_rival(target, actor):
+				return Loc.t("THEY_RIVAL_US", "Eles nos têm como rival")
 			if allied:
 				return Loc.s("Já são aliados", "Already allied")
 			var lim := int(_rules.get("min_relations_to_ally", -25))
@@ -209,6 +278,8 @@ func why_not(action: String, actor: String, target: String) -> String:
 				return Loc.s("Opinião abaixo de %d", "Opinion below %d") % lim
 			if diplomacy.overlord(target).size() > 0:
 				return Loc.s("É súdito de outro país", "Is a subject")
+			if coalition and (coalition.target_of(target) == actor or coalition.target_of(actor) == target):
+				return Loc.s("Coalizão entre vocês", "In a coalition against each other")
 		"royal_marriage":
 			if married:
 				return Loc.s("Já há casamento real", "Already married")
@@ -228,7 +299,35 @@ func why_not(action: String, actor: String, target: String) -> String:
 		"insult":
 			if timed.get(target + ">" + actor, {}).has("insulted"):
 				return Loc.s("Já foi insultado", "Already insulted")
+		"declare_war":
+			return war.why_not_declare(actor, target) if war else "?"
+		"white_peace":
+			if war == null or war.war_between(actor, target).is_empty():
+				return Loc.s("Não estão em guerra", "Not at war")
+		"join_coalition":
+			return coalition.why_not_join(actor, target) if coalition else "?"
+		"leave_coalition":
+			if coalition == null or coalition.target_of(actor) != target:
+				return Loc.s("Não está na coalizão", "Not in the coalition")
 	return ""
+
+
+## Declarar guerra pela janela do EU4: com o casus belli escolhido ("" = sem casus belli, −2 de
+## estabilidade) e só os aliados marcados.
+func declare_war_with(actor: String, target: String, cb: String, called: Array) -> String:
+	var why := why_not("declare_war", actor, target)
+	if why != "":
+		return why
+	var co: Array = coalition.members_against(target) if coalition and cb == Coalition.COALITION_CB else []
+	var w := war.declare(actor, target, cb, cbs.war_goal_of(cb) if cbs and cb != "" else "", co, called)
+	var msg := Loc.s("Guerra declarada a %s (%d contra %d países)", "War declared on %s (%d against %d countries)") % [
+			map.countries[target]["name"], w.get("attackers", []).size(), w.get("defenders", []).size()]
+	if cb != "":
+		msg += " — " + CasusBelli.name_of(cb)
+	elif stability:
+		stability.add(actor, CasusBelli.NO_CB_STABILITY)
+		msg += Loc.s(" — sem casus belli: %d de estabilidade", " — no casus belli: %d stability") % CasusBelli.NO_CB_STABILITY
+	return msg
 
 
 ## Faz a ação; devolve a mensagem do resultado (aceito/recusado).
@@ -251,6 +350,8 @@ func act(action: String, actor: String, target: String) -> String:
 		"alliance", "royal_marriage":
 			if acceptance_score(action, actor, target) > 0:
 				diplomacy.add_relation(action, actor, target)
+				if action == "royal_marriage" and legitimacy:
+					legitimacy.on_marriage(actor, target)
 				msg = Loc.s("%s aceitou", "%s accepted") % name
 			else:
 				msg = Loc.s("%s recusou", "%s declined") % name
@@ -264,10 +365,40 @@ func act(action: String, actor: String, target: String) -> String:
 		"break_marriage":
 			diplomacy.remove_relation("royal_marriage", actor, target)
 			_add_timed(target, actor, "break_marriage")
+			if stability:
+				stability.on_break_marriage(actor)
 			msg = Loc.s("Casamento com %s rompido", "Marriage with %s broken") % name
 		"insult":
 			_add_timed(target, actor, "insulted")
 			msg = Loc.s("%s foi insultado", "%s was insulted") % name
+			var it := insult_text(actor, target)
+			if it != "":
+				msg += ": \"" + it + "\""
+		"declare_war":
+			var cb: String = cbs.best(actor, target) if cbs else ""
+			# casus belli de coalizão: todos os membros entram
+			var co: Array = coalition.members_against(target) if coalition and cb == Coalition.COALITION_CB else []
+			var w := war.declare(actor, target, cb, cbs.war_goal_of(cb) if cbs and cb != "" else "", co)
+			msg = Loc.s("Guerra declarada a %s (%d contra %d países)", "War declared on %s (%d against %d countries)") % [
+					name, w.get("attackers", []).size(), w.get("defenders", []).size()]
+			if cb != "":
+				msg += " — " + CasusBelli.name_of(cb)
+			elif stability:
+				stability.add(actor, CasusBelli.NO_CB_STABILITY)
+				msg += Loc.s(" — sem casus belli: %d de estabilidade", " — no casus belli: %d stability") % CasusBelli.NO_CB_STABILITY
+		"white_peace":
+			var w := war.war_between(actor, target)
+			if acceptance_score("white_peace", actor, target) > 0:
+				war.white_peace(int(w["id"]))
+				msg = Loc.s("%s aceitou a paz branca", "%s accepted a white peace") % name
+			else:
+				msg = Loc.s("%s recusou a paz", "%s refused peace") % name
+		"join_coalition":
+			coalition.join(actor, target)
+			msg = Loc.s("Você entrou na coalizão contra %s", "You joined the coalition against %s") % name
+		"leave_coalition":
+			coalition.leave(actor, target)
+			msg = Loc.s("Você saiu da coalizão contra %s", "You left the coalition against %s") % name
 	_changed(actor)
 	return msg
 

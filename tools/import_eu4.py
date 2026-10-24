@@ -50,6 +50,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import sys
 
 import numpy as np
@@ -189,6 +190,378 @@ def state_at(items, cutoff):
                 else:
                     st[k2] = v2
     return st
+
+
+def core_claims(items, cutoff):
+    """Nucleos e reivindicacoes da provincia no dia de inicio (add_core/remove_core/add_claim/remove_claim
+    no topo e nos blocos datados ate a data, em ordem), a autonomia local (add/set_local_autonomy, 0-100) e
+    os modificadores de provincia (add_permanent_province_modifier/add_province_modifier, nomes de
+    common/event_modifiers). -> (nucleos, reivindicacoes ordenados, autonomia, modificadores)."""
+    seq = [(k, v) for k, v in items if k and not (DATE_RE.match(k) and isinstance(v, list))]
+    dated = sorted(((tuple(int(x) for x in k.split(".")), v) for k, v in items
+                    if k and DATE_RE.match(k) and isinstance(v, list)), key=lambda t: t[0])
+    for d, v in dated:
+        if d <= cutoff:
+            seq += [(k, x) for k, x in v if k]
+    cores, claims = [], []
+    autonomy = 0.0
+    mods = []
+    for k, v in seq:
+        if k in ("add_permanent_province_modifier", "add_province_modifier") and isinstance(v, list):
+            name = next((x for kk, x in v if kk == "name" and isinstance(x, str)), "")
+            if name and name not in mods:
+                mods.append(name)
+            continue
+        if k == "remove_province_modifier" and isinstance(v, str) and v in mods:
+            mods.remove(v)
+            continue
+        if not isinstance(v, str):
+            continue
+        if k in ("add_local_autonomy", "set_local_autonomy") and to_num(v) is not None:
+            autonomy = (autonomy if k == "add_local_autonomy" else 0.0) + to_num(v)
+            autonomy = min(100.0, max(0.0, autonomy))
+        if k == "add_core" and v not in cores:
+            cores.append(v)
+        elif k == "remove_core" and v in cores:
+            cores.remove(v)
+        elif k == "add_claim" and v not in claims:
+            claims.append(v)
+        elif k == "remove_claim" and v in claims:
+            claims.remove(v)
+    return sorted(cores), sorted(claims), autonomy, mods
+
+
+def script_tree(items):
+    """Arvore do script do EU4 em listas [chave, valor] (chave "" para itens soltos), para o JSON."""
+    return [[k or "", script_tree(v) if isinstance(v, list) else v] for k, v in items]
+
+
+def eu4_casus_belli(root):
+    """Casus belli (common/cb_types) e objetivos de guerra (common/wargoal_types), com as condicoes
+    (prerequisites) e os blocos de paz em arvore; o jogo avalia um subconjunto das condicoes."""
+    cbs, wgs = [], []
+    seen = set()
+    for f in sorted(glob.glob(os.path.join(root, "common", "cb_types", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list) or name in seen:
+                continue
+            seen.add(name)
+            cb = {"id": name, "triggered": False, "months": 0, "valid_for_subject": True, "exclusive": False,
+                  "independence": False, "prerequisites_self": [], "prerequisites": [], "war_goal": ""}
+            for k, v in val:
+                if k == "is_triggered_only" and isinstance(v, str):
+                    cb["triggered"] = v == "yes"
+                elif k in ("valid_for_subject", "exclusive", "independence") and isinstance(v, str):
+                    cb[k] = v == "yes"
+                elif k == "months" and to_num(v) is not None:
+                    cb["months"] = to_num(v)
+                elif k in ("prerequisites_self", "prerequisites") and isinstance(v, list):
+                    cb[k] = script_tree(v)
+                elif k == "war_goal" and isinstance(v, str):
+                    cb["war_goal"] = v
+            cbs.append(cb)
+    seen = set()
+    for f in sorted(glob.glob(os.path.join(root, "common", "wargoal_types", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list) or name in seen:
+                continue
+            seen.add(name)
+            wg = {"id": name, "type": "", "attacker": [], "defender": [], "war_name": ""}
+            for k, v in val:
+                if k in ("type", "war_name") and isinstance(v, str):
+                    wg[k] = v
+                elif k in ("attacker", "defender") and isinstance(v, list):
+                    wg[k] = script_tree(v)
+            wgs.append(wg)
+    return cbs, wgs
+
+
+def script_value(v):
+    """Valor simples do script do EU4: numero, yes/no -> bool, ou o texto."""
+    if v in ("yes", "no"):
+        return v == "yes"
+    n = to_num(v)
+    return n if n is not None else v
+
+
+def eu4_diplomacy_data(root):
+    """Tudo de diplomacia do EU4 que o jogo ainda nao tinha: condicoes e efeitos das acoes
+    (common/diplomatic_actions), acoes por script (common/new_diplomatic_actions; static_actions =
+    icone/dica das acoes fixas), tipos de suditos resolvidos (common/subject_types, copy_from),
+    tratados de paz por script (common/peace_treaties), insultos (common/insults) e as constantes
+    NDiplomacy do common/defines.lua. Condicoes e efeitos ficam em arvore [chave, valor]."""
+    out = {"actions": {}, "scripted_actions": {}, "static_actions": {}, "subject_types": {},
+           "peace_treaties": {}, "insults": [], "defines": {}}
+    for f in sorted(glob.glob(os.path.join(root, "common", "diplomatic_actions", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list) or name in out["actions"]:
+                continue
+            a = {"conditions": [], "effect": []}
+            for k, v in val:
+                if k == "condition" and isinstance(v, list):
+                    c = {"tooltip": "", "potential": [], "allow": []}
+                    for kk, vv in v:
+                        if kk == "tooltip" and isinstance(vv, str):
+                            c["tooltip"] = vv
+                        elif kk in ("potential", "allow") and isinstance(vv, list):
+                            c[kk] = script_tree(vv)
+                    a["conditions"].append(c)
+                elif k == "effect" and isinstance(v, list):
+                    a["effect"] = script_tree(v)
+            out["actions"][name] = a
+    for f in sorted(glob.glob(os.path.join(root, "common", "new_diplomatic_actions", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list):
+                continue
+            if name == "static_actions":
+                for k, v in val:
+                    if k and isinstance(v, list) and k not in out["static_actions"]:
+                        out["static_actions"][k] = {kk: script_value(vv) for kk, vv in v if kk and isinstance(vv, str)}
+            elif name not in out["scripted_actions"]:
+                out["scripted_actions"][name] = script_tree(val)
+    raw = {}
+    order = []
+    for f in sorted(glob.glob(os.path.join(root, "common", "subject_types", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if not name or not isinstance(val, list):
+                continue
+            if name not in raw:
+                raw[name] = []
+                order.append(name)
+            raw[name] += val
+    done = {}
+
+    def resolve(name, depth=0):
+        if name in done:
+            return done[name]
+        own = {}
+        base = {}
+        for k, v in raw.get(name, []):
+            if k == "copy_from" and isinstance(v, str) and v in raw and depth < 10:
+                base = {kk: vv for kk, vv in resolve(v, depth + 1).items() if kk != "count"}
+            elif k and isinstance(v, str):
+                own[k] = script_value(v)
+        res = dict(base)
+        res.update(own)
+        done[name] = res
+        return res
+    for name in order:
+        if name != "default":
+            out["subject_types"][name] = resolve(name)
+    for f in sorted(glob.glob(os.path.join(root, "common", "peace_treaties", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if name and isinstance(val, list) and name not in out["peace_treaties"]:
+                out["peace_treaties"][name] = script_tree(val)
+    seen = set()
+    for f in sorted(glob.glob(os.path.join(root, "common", "insults", "*.txt"))):
+        for name, val in parse_script(read_text(f)):
+            if name and isinstance(val, list) and name not in seen:
+                seen.add(name)
+                trig = next((v for k, v in val if k == "trigger" and isinstance(v, list)), [])
+                out["insults"].append({"id": name, "trigger": script_tree(trig)})
+    dl = os.path.join(root, "common", "defines.lua")
+    if os.path.isfile(dl):
+        m = re.search(r"NDiplomacy\s*=\s*\{(.*?)\n\}", read_text(dl), re.S)
+        if m:
+            for mm in re.finditer(r"\b([A-Z][A-Z0-9_]*)\s*=\s*(-?[0-9.]+)", re.sub(r"--[^\n]*", "", m.group(1))):
+                if to_num(mm.group(2)) is not None and mm.group(1) not in out["defines"]:
+                    out["defines"][mm.group(1)] = to_num(mm.group(2))
+    return out
+
+
+# pastas de script do EU4 gravadas inteiras (em arvore) em data/eu4/eu4data/ (Eu4Data no jogo)
+SCRIPT_TOPS = ["common", "history", "events", "decisions", "missions"]
+
+
+def lua_defines(text):
+    """Constantes de um .lua do EU4: blocos NX = { CHAVE = valor } -> {NX: {CHAVE: valor}} e
+    sobrescritas NDefines.NX.CHAVE = valor -> {"NX.CHAVE": valor}. Numeros viram numero, textos ficam."""
+    text = re.sub(r"--[^\n]*", "", text)
+    blocks = {}
+    for m in re.finditer(r"\b(?!NDefines\b)(N[A-Za-z]+)\s*=\s*\{(.*?)\n\}", text, re.S):
+        d = blocks.setdefault(m.group(1), {})
+        for mm in re.finditer(r'\b([A-Za-z_][A-Za-z0-9_]*)\s*=\s*("[^"]*"|-?[0-9.]+)', m.group(2)):
+            v = mm.group(2)
+            d.setdefault(mm.group(1), v.strip('"') if v.startswith('"') else to_num(v))
+    over = {}
+    for mm in re.finditer(r'\bNDefines\.(N[A-Za-z]+)\.([A-Za-z_][A-Za-z0-9_]*)\s*=\s*("[^"]*"|-?[0-9.]+)', text):
+        v = mm.group(3)
+        over.setdefault(mm.group(1) + "." + mm.group(2), v.strip('"') if v.startswith('"') else to_num(v))
+    return blocks, over
+
+
+def eu4_all_data(root, out):
+    """Todos os scripts do EU4 em arvore [chave, valor], um JSON por pasta, para o jogo usar as regras
+    originais: eu4data/<pasta>.json = {arquivo sem .txt: arvore} (common/<x>, history/<x>, events,
+    decisions, missions; os .txt soltos de common/ em common/_files.json), eu4data/map.json = os
+    .txt/.map da pasta map, eu4data/defines.json = todas as constantes dos .lua (blocos + overrides
+    por arquivo de common/defines/) e eu4data/index.json = pasta -> numero de arquivos."""
+    out = os.path.join(out, "eu4data")
+    if os.path.isdir(out):
+        shutil.rmtree(out)
+    os.makedirs(out)
+    groups = {}                                  # pasta relativa -> [arquivos]
+    for top in SCRIPT_TOPS:
+        base = os.path.join(root, top)
+        if not os.path.isdir(base):
+            continue
+        for dirpath, _dirs, files in os.walk(base):
+            rel = os.path.relpath(dirpath, root).replace(os.sep, "/")
+            for fn in files:
+                if not fn.lower().endswith(".txt"):
+                    continue
+                key = rel
+                if rel == "common":
+                    key = "common/_files"
+                elif rel.count("/") > 1:                 # subpastas ficam com a pasta de cima
+                    key = "/".join(rel.split("/")[:2])
+                groups.setdefault(key, []).append(os.path.join(dirpath, fn))
+    mdir = os.path.join(root, "map")
+    if os.path.isdir(mdir):
+        groups["map"] = [os.path.join(mdir, f) for f in os.listdir(mdir)
+                         if f.lower().endswith((".txt", ".map")) and os.path.isfile(os.path.join(mdir, f))]
+    index = {}
+    for key in sorted(groups):
+        files = sorted(groups[key], key=lambda f: os.path.relpath(f, root).replace(os.sep, "/"))
+        data = {}
+        for f in files:
+            name = os.path.relpath(f, root).replace(os.sep, "/")
+            name = name[len(key) + 1:] if name.startswith(key + "/") else os.path.basename(name)
+            data.setdefault(re.sub(r"\.(txt|map)$", "", name, flags=re.I), script_tree(parse_script(read_text(f))))
+        path = os.path.join(out, key + ".json")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fo:
+            json.dump(data, fo, ensure_ascii=False, separators=(",", ":"))
+        index[key] = len(data)
+    defines = {"overrides": {}}
+    luas = [os.path.join(root, "common", "defines.lua")] + \
+        sorted(glob.glob(os.path.join(root, "common", "defines", "*.lua")))
+    for f in luas:
+        if os.path.isfile(f):
+            blocks, over = lua_defines(read_text(f))
+            for b, d in blocks.items():
+                tgt = defines.setdefault(b, {})
+                for k, v in d.items():
+                    tgt.setdefault(k, v)
+            if over:
+                defines["overrides"][os.path.splitext(os.path.basename(f))[0]] = over
+    with open(os.path.join(out, "defines.json"), "w", encoding="utf-8") as fo:
+        json.dump(defines, fo, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(out, "index.json"), "w", encoding="utf-8") as fo:
+        json.dump(index, fo, ensure_ascii=False, separators=(",", ":"))
+    return index
+
+
+# texturas do mapa do EU4 gravadas ao lado do province_ids.png (o shader do mapa usa)
+MAP_TEXTURES = ["normal.png", "height.png", "terrain_idx.png", "colormap.png", "colormap_water.png",
+                "terra_incognita.png", "fow_noise.png"]
+COLORMAPS = ["colormap_summer", "colormap_spring", "colormap_autumn", "colormap_winter"]
+
+
+def map_textures(root, W, H, out_dir):
+    """Texturas do mapa do EU4: normal.png (map/world_normal.bmp, relevo para a luz), height.png
+    (map/heightmap.bmp a cada 2 px, profundidade do mar), terrain_idx.png (indice do
+    map/terrain.bmp a cada 2 px; as cores da paleta vao em terrain_palette) e, se a instalacao tem,
+    colormap.png (map/terrain/colormap_summer.dds ou outra estacao), colormap_water.png,
+    terra_incognita.png (map_overlay_tile.dds) e fow_noise.png (Fogofwar.dds, canal R).
+    Devolve {"terrain_palette": [[r, g, b] x 256]} (vazio sem o terrain.bmp)."""
+    info = {}
+    for f in MAP_TEXTURES:
+        if os.path.isfile(os.path.join(out_dir, f)):
+            os.remove(os.path.join(out_dir, f))
+    mdir = os.path.join(root, "map")
+    p = os.path.join(mdir, "world_normal.bmp")
+    if os.path.isfile(p):
+        Image.open(p).convert("RGB").save(os.path.join(out_dir, "normal.png"), optimize=True)
+    p = os.path.join(mdir, "heightmap.bmp")
+    if os.path.isfile(p):
+        hm = Image.open(p).convert("L")
+        if hm.size == (W, H):
+            Image.fromarray(np.ascontiguousarray(np.asarray(hm, dtype=np.uint8)[::2, ::2]), "L").save(
+                os.path.join(out_dir, "height.png"), optimize=True)
+    p = os.path.join(mdir, "terrain.bmp")
+    if os.path.isfile(p):
+        tb = Image.open(p)
+        if tb.mode == "P" and tb.size == (W, H):
+            Image.fromarray(np.ascontiguousarray(np.asarray(tb, dtype=np.uint8)[::2, ::2]), "L").save(
+                os.path.join(out_dir, "terrain_idx.png"), optimize=True)
+            pal = (tb.getpalette() or []) + [0] * 768
+            info["terrain_palette"] = [pal[i * 3:i * 3 + 3] for i in range(256)]
+    tdir = os.path.join(mdir, "terrain")
+    files = {f.lower(): f for f in os.listdir(tdir)} if os.path.isdir(tdir) else {}
+    # map_overlay_tile.dds = Terra Incognita (TITexture dos shaders, repetida a cada 1876x2048 px);
+    # Fogofwar.dds = ruido animado da nevoa de guerra (FoWDiffuse, canal vermelho)
+    for name, dst in [(c, "colormap.png") for c in COLORMAPS] + [("colormap_water", "colormap_water.png"),
+                                                                  ("map_overlay_tile", "terra_incognita.png"),
+                                                                  ("fogofwar", "fow_noise.png")]:
+        if name + ".dds" not in files:
+            continue
+        p = os.path.join(tdir, files[name + ".dds"])
+        if not os.path.isfile(os.path.join(out_dir, dst)):
+            im = load_rgba(p, False)
+            if im is not None:
+                im = im.getchannel("R") if dst == "fow_noise.png" else im.convert("RGB")
+                im.save(os.path.join(out_dir, dst), optimize=True)
+    return info
+
+
+def river_lines(riv):
+    """Rios do rivers.bmp em linhas (o EU4 desenha curvas a partir dos pixels): pixels com indice
+    < 254; vizinhos nas 4 direcoes, e na diagonal so quando nenhum dos dois pixels entre eles e rio.
+    As linhas vao de uma ponta/juncao (grau != 2) ate outra (os lacos fechados depois), na ordem dos
+    pixels (y, x). Cada linha = [largura, x0, y0, x1, y1, ...]; largura = maior indice >= 3 dela
+    (3 = mais fino ... 11 = mais largo; 0-2 sao marcadores de nascente/afluente/divisao)."""
+    H, W = riv.shape
+    ys, xs = np.nonzero(riv < 254)
+    val = {int(y) * W + int(x): int(riv[y, x]) for y, x in zip(ys, xs)}
+    keys = sorted(val)
+    orth = ((1, 0), (0, 1), (-1, 0), (0, -1))
+    diag = ((1, 1), (-1, 1), (-1, -1), (1, -1))
+    nb = {}
+    for k in keys:
+        y, x = divmod(k, W)
+        out = []
+        for dx, dy in orth:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < W and 0 <= ny < H and ny * W + nx in val:
+                out.append(ny * W + nx)
+        for dx, dy in diag:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < W and 0 <= ny < H and ny * W + nx in val \
+                    and (y * W + nx) not in val and (ny * W + x) not in val:
+                out.append(ny * W + nx)
+        nb[k] = out
+    done = set()
+    lines = []
+
+    def walk(a, b):
+        pts = [a, b]
+        done.add((min(a, b), max(a, b)))
+        prev, cur = a, b
+        while len(nb[cur]) == 2 and cur != a:
+            nxt = nb[cur][0] if nb[cur][0] != prev else nb[cur][1]
+            e = (min(cur, nxt), max(cur, nxt))
+            if e in done:
+                break
+            done.add(e)
+            pts.append(nxt)
+            prev, cur = cur, nxt
+        wv = max([val[q] for q in pts if val[q] >= 3] or [3])
+        line = [wv]
+        for q in pts:
+            line += [q % W, q // W]
+        lines.append(line)
+
+    for k in keys:
+        if len(nb[k]) != 2:
+            for n in nb[k]:
+                if (min(k, n), max(k, n)) not in done:
+                    walk(k, n)
+    for k in keys:
+        for n in nb[k]:
+            if (min(k, n), max(k, n)) not in done:
+                walk(k, n)
+    return lines
 
 
 def to_num(v):
@@ -375,7 +748,18 @@ def eu4_ideas(root, countries, culture_group_of, religion_group_of, loc=None):
 TRADE_DEFINES = ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCHANT_PRESENT", "TRADE_ADDED_VALUE_MODIFER",
                  "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
                  "MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST",
-                 "BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER"]
+                 "BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER",
+                 "PS_BOOST_STABILITY", "BREAK_MARRIAGE_STABILITY_PENALTY",
+                 "FORM_MARRIAGE_HIGHER_PRESTIGE", "FORM_MARRIAGE_HIGHER_LEGITIMACY",
+                 "INFANTRY_COST", "CAVALRY_COST", "ARTILLERY_COST", "INFANTRY_TIME", "CAVALRY_TIME", "ARTILLERY_TIME",
+                 "INFANTRY_SPEED", "LAND_MAINTENANCE_FACTOR", "LAND_TECH_MAINTENANCE_IMPACT",
+                 "LAND_FORCELIMIT_EXTRA_COST_FACTOR", "MONTHLY_REINFORCE", "STARTING_ARMY_SIZE",
+                 "INF_REGIMENT_MANPOWER_COST", "MIN_ARMY_MAINTENANCE",
+                 "BASE_COMBAT_WIDTH", "MAX_COMBAT_WIDTH", "DAYS_PER_PHASE", "COMBAT_DICE_SIDE", "WAR_LENGTH_DAMAGE_MODIFIER",
+                 "BATTLE_DAILY_MORALE_DAMAGE", "OVERRUN_FACTOR", "PRESTIGE_FROM_LAND", "MORALE_RECOVERY_SPEED",
+                 "MORALE_RECOVERY_SPEED_OWN_TERRITORY", "GARRISON_SIZE", "SIEGE_FORCE_NEEDED_MULTIPLIER", "DAYS_PER_SIEGE_PHASE",
+                 "SIEGE_WIN", "SIEGE_MEMORY", "SIEGE_ATTRITION", "SUPPLYLIMIT_BASE_MULTIPLIER", "WARSCORE_MAX_FROM_BATTLES",
+                 "SIEGE_BONUS_SUPPLIES_SHORTAGE", "SIEGE_BONUS_FOOD_SHORTAGE", "SIEGE_BONUS_WATER_SHORTAGE", "SIEGE_BONUS_DEFENDERS_DESERT"]
 # modificadores estaticos usados no comercio: (bloco, efeito, chave no map.json)
 TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power"),
                 ("development", "local_missionary_strength", "dev_missionary_strength"),
@@ -384,7 +768,9 @@ TRADE_STATIC = [("development", "province_trade_power_value", "dev_trade_power")
                 ("base_values", "merchants", "base_merchants"),
                 ("core", "local_manpower_modifier", "core_manpower")]
 # blocos inteiros de modificadores estaticos guardados em trade_rules["statics"] (efeitos numericos)
-STATIC_BLOCKS = ["prestige", "emperor"]
+STATIC_BLOCKS = ["prestige", "emperor", "stability", "positive_stability", "negative_stability",
+                 "legitimacy", "num_of_marriages", "republican_tradition",
+                 "inverse_republican_tradition", "devotion", "development", "capital_city"]
 
 
 def eu4_trade(root, loc):
@@ -787,6 +1173,15 @@ def icon_sources(root, trade_goods, religions, institutions, advisor_types, buil
             first = next(iter(idea["modifiers"]), "")
             if first and first not in mods:
                 mods.append(first)
+    # todos os icones de modificador do EU4 (gfx/interface/ideas_EU4/<modificador>.dds): as telas
+    # mostram o icone de qualquer efeito (estamentos, terra da coroa...), nao so o das ideias
+    idir = next((os.path.join(root, "gfx", "interface", d) for d in (os.listdir(os.path.join(root, "gfx", "interface"))
+                 if os.path.isdir(os.path.join(root, "gfx", "interface")) else []) if d.lower() == "ideas_eu4"), "")
+    if idir:
+        for f in sorted(os.listdir(idir)):
+            m = os.path.splitext(f)[0].lower()
+            if f.lower().endswith(".dds") and m not in mods:
+                mods.append(m)
     for m in mods:
         src.append(("mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % m.lower(), -1, 0))
     return src
@@ -803,8 +1198,10 @@ UI_TEXTURES = [("panel", "gfx/interface/tiles_dialog.dds", 0), ("panel_small", "
 GUI_FILES = ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
              "countrygovernmentview", "countrytechnologyview", "countryideasview",
              "countryeconomyview", "countryreligionview",
-             "macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview"]   # o _override vem antes: as janelas dele valem
-GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
+             "macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
+             "unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview", "countryestatesview", "estate_privileges", "core"]   # o _override vem antes: as janelas dele valem
+GUI_EXTRA_PREFIXES = ("privilege_",)   # sprites usados pelo codigo do EU4, nao pelos .gui (privilegios)
+GUI_EXTRA_SPRITES = ["GFX_policy_icon_frame_free", "ToolTip", "GFX_crownland", "GFX_sale_of_titles", "GFX_summon_the_diet", "GFX_seize_land", "GFX_estate_loyalty_L", "GFX_estate_influence_L", "GFX_estate_territory_L", "GFX_diplomacy_action_economy", "GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture", "GFX_mapmode_religion",
                      "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas", "GFX_mapmode_institutions",
                      "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
                      "GFX_scroll_track", "GFX_country_icon_religion",
@@ -812,8 +1209,8 @@ GUI_EXTRA_SPRITES = ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmod
                      "GFX_diplomacy_amvassal", "GFX_diplomacy_leadunions", "GFX_diplomacy_inunion",
                      "GFX_diplomacy_guaranteed", "GFX_diplomacy_guaranting", "GFX_diplomacy_we_increase_relation",
                      "GFX_diplomacy_they_increase_relation", "GFX_diplomacy_war", "GFX_diplomacy_leadmarch",
-                     "GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance",
-                     "GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence"]
+                     "GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance", "GFX_diplomacy_action_requestpeace",
+                     "GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence", "GFX_diplomacy_coalitions"]
 # icones de terreno da tela da provincia (GFX_combat_terrain_<terreno do EU4>)
 COMBAT_TERRAINS = ["GFX_combat_terrain_" + t for t in (
     "coastal_desert", "coastline", "desert", "desert_mountain", "drylands", "farmlands", "forest", "glacier",
@@ -862,7 +1259,7 @@ def make_gui(root):
     def conv(items):
         return [["" if k is None else k, conv(v) if isinstance(v, list) else v] for k, v in items]
 
-    trees, used, used_fonts = {}, set(), set()
+    trees, used, used_fonts = {}, set(), {"tahoma_60", "ToolTip_Font"}   # nomes no mapa (Mapfont) e dicas
 
     def refs(items):
         for k, v in items:
@@ -891,6 +1288,17 @@ def make_gui(root):
         return d
 
     defs, font_defs = {}, {}
+    textcolors = {}
+
+    def colors(items):
+        """textcolors = { G = { 0 255 0 } ... } -> {"G": [0, 255, 0]} (letras com maiusculas: g != G)."""
+        out = {}
+        for k2, v2 in items:
+            if k2 and isinstance(v2, list):
+                rgb = [int(float(x)) for kk, x in v2 if kk is None and isinstance(x, str) and x.replace(".", "", 1).isdigit()]
+                if len(rgb) >= 3:
+                    out[k2] = rgb[:3]
+        return out
 
     def collect(items):
         for k, v in items:
@@ -901,12 +1309,17 @@ def make_gui(root):
             if kl in SPRITE_KINDS and "name" in d:
                 defs.setdefault(d["name"], (kl, d))
             elif kl == "bitmapfont" and "name" in d:
-                font_defs.setdefault(d["name"], d)
+                tc = next((colors(x) for kk, x in v if kk and kk.lower() == "textcolors" and isinstance(x, list)), {})
+                font_defs.setdefault(d["name"], dict(d, _textcolors=tc))
+            elif kl == "textcolors":
+                if not textcolors:
+                    textcolors.update(colors(v))
             else:
                 collect(v)
 
     for rel in sorted(gfx_files):
         collect(parse_script(read_text(os.path.join(root, *rel.split("/")))))
+    used.update(n for n in defs if n.startswith(GUI_EXTRA_PREFIXES))   # icones dos privilegios dos estamentos
     done = {}
 
     def texture(path):
@@ -968,8 +1381,10 @@ def make_gui(root):
         with open(files[fnt], "rb") as fi, open(dst, "wb") as fo:
             fo.write(fi.read())
         fonts[n] = {"fnt": fnt, "page": page, "color": str(fd.get("color", "0xffffffff")).lower()}
+        if fd.get("_textcolors"):
+            fonts[n]["textcolors"] = fd["_textcolors"]
     with open(os.path.join(out, "gui.json"), "w", encoding="utf-8") as f:
-        json.dump({"files": trees, "sprites": sprites, "fonts": fonts}, f, ensure_ascii=False)
+        json.dump({"files": trees, "sprites": sprites, "fonts": fonts, "textcolors": textcolors}, f, ensure_ascii=False)
 
 
 def make_ui(root):
@@ -1261,7 +1676,8 @@ def main():
     print(f"  {len(defs)} provincias (id maximo {max_id})")
 
     dmap = read_text(os.path.join(root, "map", "default.map"))
-    sea_ids = ids_in_block(dmap, "sea_starts") | ids_in_block(dmap, "lakes")
+    lake_ids = ids_in_block(dmap, "lakes")
+    sea_ids = ids_in_block(dmap, "sea_starts") | lake_ids
     climates = {}
     clim = os.path.join(root, "map", "climate.txt")
     if os.path.isfile(clim):
@@ -1354,12 +1770,17 @@ def main():
         del hm
     terrain_of, terrains = eu4_terrain(root, ids, n_prov)
     rp = os.path.join(root, "map", "rivers.bmp")
+    river_vec = []
     if os.path.isfile(rp):
         riv = Image.open(rp)
         if riv.mode == "P" and riv.size == (W, H):
             # indice da paleta do rivers.bmp (< 254 = rio; 254 = terra, 255 = mar), o shader le direto
             Image.fromarray(np.asarray(riv, dtype=np.uint8), "L").save("assets/eu4/rivers.png", optimize=True)
+            print("Rios em linhas...", flush=True)
+            river_vec = river_lines(np.asarray(riv, dtype=np.uint8))
     del ids
+    print("Texturas do mapa (relevo, altitude, terreno)...", flush=True)
+    map_tex = map_textures(root, W, H, "assets/eu4")
 
     # ---------------------------------------------------------- construcoes (common/buildings)
     with open("data/construcoes_pt.json", encoding="utf-8") as f:
@@ -1387,6 +1808,10 @@ def main():
     cot = {}            # centro de comercio (nivel)
     culture = {}
     religion = {}
+    cores = {}              # pid -> nucleos (quando ha algum de outro pais que nao o dono)
+    claims = {}             # pid -> reivindicacoes
+    autonomy = {}           # pid -> autonomia local em 1444 (add_local_autonomy do historico)
+    prov_mods = {}          # pid -> modificadores permanentes (estuarios, sound_toll...)
     for f in glob.glob(os.path.join(root, "history", "provinces", "*.txt")):
         m = re.match(r"\s*(\d+)", os.path.basename(f))
         if not m:
@@ -1394,7 +1819,17 @@ def main():
         pid = int(m.group(1))
         if pid not in defs:
             continue
-        st = state_at(parse_script(read_text(f)), cutoff)
+        items = parse_script(read_text(f))
+        st = state_at(items, cutoff)
+        co, cl, au, pm = core_claims(items, cutoff)
+        if au > 0:
+            autonomy[pid] = au
+        if pm:
+            prov_mods[pid] = pm
+        if co:
+            cores[pid] = co
+        if cl:
+            claims[pid] = cl
         o = st.get("owner")
         if isinstance(o, str) and o:
             owner[pid] = o
@@ -1634,6 +2069,8 @@ def main():
     advisor_types, advisors = eu4_advisors(root, defs)
     centers_of_trade, trade_rules = eu4_trade(root, loc)
     opinion_modifiers = eu4_opinions(root)
+    casus_belli, war_goals = eu4_casus_belli(root)
+    diplomacy_data = eu4_diplomacy_data(root)
     inst_raw = eu4_institutions(root, cutoff)
     diplomacy, emperor, celestial = eu4_diplomacy(root, cutoff)
     wars = eu4_wars(root, cutoff)
@@ -1682,8 +2119,17 @@ def main():
                 prov["center_of_trade"] = cot[pid]
             if pid in hre:
                 prov["hre"] = True
+            if any(t != owner.get(pid) for t in cores.get(pid, [])):
+                prov["cores"] = cores[pid]
+            if pid in claims:
+                prov["claims"] = claims[pid]
+            if pid in autonomy:
+                prov["local_autonomy"] = autonomy[pid]
+            if pid in prov_mods:
+                prov["modifiers"] = prov_mods[pid]
             prov["base_tax"], prov["base_production"], prov["base_manpower"] = dev_parts.get(pid, (0, 0, 0))
-            prov["coastal"] = any(q in sea_ids for q in neigh[pid])
+            # costeira = vizinha de mar (os lagos não contam, como no EU4)
+            prov["coastal"] = any(q in sea_ids and q not in lake_ids for q in neigh[pid])
             prov["base_development"] = prov["development"]
         if pid in node_of:
             prov["trade_node"] = node_of[pid]
@@ -1710,10 +2156,15 @@ def main():
                    "idea_groups": idea_groups, "national_ideas": national_ideas,
                    "advisor_types": advisor_types, "advisors": advisors,
                    "centers_of_trade": centers_of_trade, "trade_rules": trade_rules,
-                   "opinion_modifiers": opinion_modifiers,
+                   "opinion_modifiers": opinion_modifiers, "casus_belli": casus_belli, "war_goals": war_goals,
+                   "diplomacy_data": diplomacy_data, "map_textures": map_tex, "rivers": river_vec,
                    "institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
                    "celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces},
                   f, ensure_ascii=False, separators=(",", ":"))
+
+    print("Gravando todos os scripts do EU4 (data/eu4/eu4data)...", flush=True)
+    index = eu4_all_data(root, "data/eu4")
+    print("  %d pastas, %d arquivos" % (len(index), sum(index.values())), flush=True)
 
     n_own = sum(1 for p in provinces if p["owner"])
     print(f"\nOK: mapa {W}x{H}, {len(defs)} provincias ({len(sea_ids)} de mar/lagos), "

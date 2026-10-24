@@ -25,6 +25,7 @@ var _guarantors := {}            # garantido -> [garantidores]
 var wars: Array = []             # guerras ativas e dos últimos 10 anos (name, start, end, attackers, defenders, battles)
 var _wars_of := {}               # tag -> [guerras]
 var _battles_at := {}            # província -> [batalhas]
+var war: War                     # main.gd define (guerras durante o jogo)
 
 const CB_NAMES := {"cb_conquest": "conquista", "cb_border_war": "guerra de fronteira", "cb_core": "reconquista",
 		"cb_claim_throne": "reivindicação do trono", "cb_independence_war": "independência", "cb_insult": "insulto",
@@ -76,6 +77,9 @@ func add_relation(type: String, a: String, b: String) -> void:
 		"guarantee":
 			_add(_guarantees, a, b)
 			_add(_guarantors, b, a)
+		"vassal":
+			_overlord[b] = [a, "vassal"]
+			_add(_subjects, a, [b, "vassal"])
 	_changed()
 
 
@@ -93,6 +97,18 @@ func remove_relation(type: String, a: String, b: String) -> void:
 		"guarantee":
 			_guarantees.get(a, []).erase(b)
 			_guarantors.get(b, []).erase(a)
+	_changed()
+
+
+## `sub` deixa de ser súdito (independência ganha na guerra).
+func release(sub: String) -> void:
+	if not _overlord.has(sub):
+		return
+	var ov: String = _overlord[sub][0]
+	_overlord.erase(sub)
+	_subjects[ov] = _subjects.get(ov, []).filter(func(x): return x[0] != sub)
+	relations = relations.filter(func(r): return not (r["second"] == sub and r["first"] == ov
+			and not (r["type"] in ["alliance", "royal_marriage", "guarantee"])))
 	_changed()
 
 
@@ -177,8 +193,21 @@ func guarantors(tag: String) -> Array:
 	return _guarantors.get(tag, [])
 
 
+## Tipo de súdito do EU4 (common/subject_types) de uma relação: "union" é personal_union.
+static func subject_type_id(kind: String) -> String:
+	return "personal_union" if kind == "union" else kind
+
+
+## Atributos do tipo de súdito (joins_overlords_wars, pays_overlord, base_liberty_desire...); vazio
+## sem os dados importados.
+func subject_type(kind: String) -> Dictionary:
+	return map.diplomacy_data.get("subject_types", {}).get(subject_type_id(kind), {})
+
+
 func subject_name(kind: String) -> String:
-	return SUBJECT_NAMES.get(kind, Eu4Importer.pretty_key(kind).to_lower())
+	var id := subject_type_id(kind)
+	var pt: String = SUBJECT_NAMES.get(kind, Eu4Importer.pretty_key(kind).to_lower())
+	return Loc.t(id + "_title", Loc.t(id, pt)) if Loc.active() else pt
 
 
 func in_hre(tag: String) -> bool:
@@ -210,6 +239,8 @@ func relation(focus: String, other: String) -> String:
 		return "guarantee"
 	if overlord(focus).size() > 0 and top_overlord(other) == top_overlord(focus):
 		return "same_bloc"          # outro súdito do mesmo suserano
+	if war and war.hostile(focus, other):
+		return "war"
 	var e = enemies(focus, other)
 	if e != null:
 		return "war" if e else "recent_enemy"

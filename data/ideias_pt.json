@@ -246,6 +246,21 @@
   "army_tradition_from_battle",
   "allowed_marine_fraction",
   "monthly_reform_progress",
-  "cav_to_inf_ratio"
+  "cav_to_inf_ratio",
+  "governing_capacity",
+  "adm_power",
+  "dip_power",
+  "mil_power",
+  "monthly_heir_claim_increase",
+  "global_manpower",
+  "global_sailors",
+  "land_forcelimit",
+  "naval_forcelimit",
+  "max_states",
+  "yearly_harmony",
+  "church_power",
+  "country_admin_power",
+  "country_diplomatic_power",
+  "country_military_power"
  ]
 }

@@ -1,0 +1,481 @@
+class_name Eu4UnitPanel
+extends Control
+## Painel do exército selecionado, com as telas do EU4: single_unitpanel (unitpanel_main.gui) e o
+## cartão `unitpanel` (unitpanel_card.gui) por cima, com a lista dos regimentos (subunit_entry,
+## unitpanel_sub.gui).
+##  - Cartão: nome (army_names do EU4), homens de cada tipo e o total por extenso ("7,371"), barra
+##    de moral (vertical) e a de treino (vazia: treino não existe), "No Leader" (generais não
+##    existem; botão apagado), "Go to" (select_army_button: centraliza o mapa no exército), onde
+##    está ou para onde vai, atrito, dividir ao meio (newunitbutton02) e dispensar (disbandbutton).
+##  - Topo: infantaria/cavalaria/artilharia com o número de regimentos e os homens; o "+" recruta
+##    um regimento daquele tipo na província onde o exército está (se for do jogador).
+##  - Regimentos com o nome do EU4 (REGIMENT_NAME: "Dalaskogen's 1st Regiment"), tipo e homens.
+##  - Coluna de botões da direita como o EU4 atual mostra um exército, nas posições do .gui:
+##    allow_attach | goto_siege_button (y 69), attach_unit_button | reorganize (113), detach_marines |
+##    consolidate (157), barra de supressão de rebeldes (rebel_suppression_icon/_text, ~201: −0,25 por
+##    regimento, INF/CAV/ART_SUPPRESSION), marcha forçada | atacar nativos (237), terra arrasada |
+##    queimar colônia (281), caçar rebeldes | tomar colônia (325), guarnição | depósito (369), treino |
+##    cerco em tapete (413). Funcionam juntar (outro exército do país parado ali), ir ao cerco
+##    (cercando) e próximo/anterior exército (next/prev_unit_button); os outros ficam apagados com a
+##    dica "Ainda não existe neste jogo". home_at_war, detach_unit e exércitos estrangeiros não
+##    aparecem (o EU4 também não os mostra aqui); missões, transporte e frota escondidos.
+## Só os exércitos do jogador têm botões; os de outros países só mostram.
+
+signal closed
+signal goto(pid: int)              # centralizar o mapa nesta província (main move a câmera)
+signal selected_changed(id: int)   # próximo/anterior exército (main marca no mapa)
+
+## Botões da coluna da direita que ainda não fazem nada (aparecem apagados, como no EU4 sem a opção).
+const TODO_BUTTONS := ["allow_attach", "reorganize_units_button", "detach_marines_button", "consolidate_button",
+		"enable_force_march_button", "attacknatives_button", "scorch_button", "burncolony_button",
+		"enable_rebel_button", "seizecolony_button", "refill_garrison_button", "supply_depot_button",
+		"army_drill_button", "enable_carpet_siege"]
+const MAIN_KEEP := ["regiment_bg", "lu_unit_type_1", "lu_unit_type_1_count", "lu_unit_type_1_value",
+		"lu_build_unit_1_button", "lu_unit_type_2", "lu_unit_type_2_count", "lu_unit_type_2_value",
+		"lu_build_unit_2_button", "lu_unit_type_3", "lu_unit_type_3_count", "lu_unit_type_3_value",
+		"lu_build_unit_3_button", "subunitlist", "attach_unit_button", "goto_siege_button",
+		"next_unit_button", "prev_unit_button", "rebel_suppression_icon", "rebel_suppression"] + TODO_BUTTONS
+const CARD_KEEP := ["unitpanel_bg_pc", "land_units", "unit1_type", "unit1_count", "unit2_type", "unit2_count",
+		"unit3_type", "unit3_count", "unitstrength_land", "unitlocation", "unit_destination", "disbandbutton",
+		"newunitbutton02", "unitattrition", "unit_attrition_icon", "unit_morale_bar_bg", "unit_morale",
+		"unit_morale_frame", "unit_drill", "unit_drill_frame", "leader_button", "unitleader", "select_army_button",
+		"army_professionalism_level", "remove_unit_from_selection_button", "detach_siege_button", "attach_to_transport_button",
+		"conform_to_template_button", "loot_capability_icon", "loot_capability", "siege_capability_icon",
+		"siege_capability"]
+## Faixa de cima ("1 Armies") do multi_unitpanel: o EU4 a mostra também com um exército só.
+const MULTI_KEEP := ["multiselect_bg", "desc", "mergebutton", "deselect_all", "reorganizebutton"]
+## Botões do cartão que o jogo ainda não tem (apagados).
+const CARD_TODO := ["detach_siege_button", "attach_to_transport_button", "conform_to_template_button"]
+const SUB_KEEP := ["band_regiment", "icon_type", "subunit_amount", "subunit_type", "RegName"]
+const FRAMES := {"infantry": 0, "cavalry": 1, "artillery": 2}
+
+var gui: Eu4Gui
+var map: MapView
+var army: Army
+var player := ""
+var id := -1
+var _main: Control
+var _card: Control
+var _multi: Control                # faixa "1 Armies" (multi_unitpanel)
+var _name: Label
+var _rows: Array = []              # linhas da lista de regimentos (reaproveitadas)
+
+
+func setup(g: Eu4Gui, m: MapView, a: Army) -> bool:
+	gui = g
+	map = m
+	army = a
+	if gui.find_window("single_unitpanel").is_empty() or gui.find_window("unitpanel").is_empty():
+		return false
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_main = gui.build("single_unitpanel")
+	_card = gui.build("unitpanel")
+	if _main == null or _card == null:
+		return false
+	var w := gui.find_window("single_unitpanel")
+	var sp := Eu4Gui._vec(gui._resolve(w), "show_position")    # dentro de if_resolution
+	_main.position = sp
+	add_child(_main)
+	_card.position = sp + Vector2(0, -74)     # o fundo do cartão (99 px, em y = 35) termina sobre o topo do regiment_bg
+	add_child(_card)
+	_keep(_main, MAIN_KEEP)
+	_keep(_card, CARD_KEEP)
+	_multi = gui.build("multi_unitpanel")
+	if _multi:
+		var mw := gui.find_window("multi_unitpanel")
+		_multi.position = Eu4Gui._vec(gui._resolve(mw), "show_position")
+		add_child(_multi)                # por cima do cartão, como no EU4
+		_keep(_multi, MULTI_KEEP)
+		var ul := _find(_multi, "unitlist")
+		if ul:
+			ul.hide()
+		_button(_multi, "deselect_all", func(): close(), Loc.t("DESELECT_ALL", "Fechar todos"))
+		for n in ["mergebutton", "reorganizebutton"]:
+			var b := _find(_multi, n) as BaseButton
+			if b:
+				_set_enabled(b, false)
+				b.tooltip_text = Loc.t("MERGE_UNITS" if n == "mergebutton" else "REORGANIZE_UNITS", "") + "\n" \
+						+ Loc.s("Só com mais de um exército selecionado (ainda não existe neste jogo)",
+						"Needs more than one selected army (not in this game yet)")
+	_button(_card, "remove_unit_from_selection_button", func(): close(), Loc.t("DESELECT_UNIT", "Tirar da seleção"))
+	for n in CARD_TODO:
+		var b := _find(_card, n) as BaseButton
+		if b:
+			_set_enabled(b, false)
+			b.tooltip_text = Loc.t("CONFORM_TO_TEMPLATE", "") + "\n" if n == "conform_to_template_button" else ""
+			b.tooltip_text += Loc.s("Ainda não existe neste jogo", "Not in this game yet")
+	_name = Label.new()            # unitname é um editBoxType (o Eu4Gui não monta)
+	gui.style_label(_name, "vic_18")
+	_name.position = Vector2(52, 49)
+	_name.size = Vector2(170, 22)
+	_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_find(_card, "unitpanel_bg_pc").get_parent().add_child(_name)
+	for i in 3:
+		var ty: String = Army.TYPES[i]
+		var ic := _find(_main, "lu_unit_type_%d" % (i + 1)) as Eu4Gui.Icon
+		if ic:
+			ic.set_frame(FRAMES[ty])
+		var ci := _find(_card, "unit%d_type" % (i + 1)) as Eu4Gui.Button2
+		if ci:
+			ci.set_frame(FRAMES[ty])
+		var b := _find(_main, "lu_build_unit_%d_button" % (i + 1)) as BaseButton
+		if b:
+			b.pressed.connect(_recruit.bind(ty))
+			if ic and b.get_parent() == ic.get_parent():     # no .gui o "+" fica fora do lugar
+				b.position = ic.position + Vector2(66, -12)
+	_button(_card, "newunitbutton02", func(): _split(), Loc.t("UNIT_SPLIT", Loc.s("Dividir ao meio", "Split in half")))
+	_button(_card, "disbandbutton", func(): _disband(), Loc.s("Dispensar o exército", "Disband the army"))
+	_button(_main, "attach_unit_button", func():
+		army.merge_here(id)
+		refresh(), Loc.s("Juntar os outros exércitos parados aqui", "Merge the other armies standing here"))
+	_button(_main, "next_unit_button", func(): _cycle(1), Loc.s("Próximo exército", "Next army"))
+	_button(_main, "prev_unit_button", func(): _cycle(-1), Loc.s("Exército anterior", "Previous army"))
+	_button(_main, "goto_siege_button", func(): _goto(), Loc.s("Ir ao cerco", "Go to the siege"))
+	_button(_card, "select_army_button", func(): _goto(), "")
+	var sel := _find(_card, "select_army_button")
+	if sel and sel.get_node_or_null("Text") == null:     # "Go to" (o .gui não traz o texto)
+		var l := Label.new()
+		l.name = "Text"
+		l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		gui.style_label(l, "vic_18")
+		l.text = Loc.t("GOTO", "Ir para")
+		sel.add_child(l)
+	var off := Loc.s("Ainda não existe neste jogo", "Not in this game yet")
+	for n in TODO_BUTTONS + ["leader_button"]:
+		var b := _find(_main, n) as BaseButton
+		if b == null:
+			b = _find(_card, n) as BaseButton
+		if b:
+			_set_enabled(b, false)
+			b.tooltip_text = off
+	for n in ["unit_morale", "unit_drill"]:
+		var pb := _find(_card, n)
+		if pb is Eu4Gui.Progress:
+			(pb as Eu4Gui.Progress).vertical = true
+			(pb as Eu4Gui.Progress).set_value(0.0)
+	# a lista não pode crescer com as linhas (a barra de rolagem iria para cima dos botões)
+	var list := _find(_main, "subunitlist") as ScrollContainer
+	if list:
+		list.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	army.changed.connect(func(_t): _queue())
+	army.moved.connect(_queue)
+	hide()
+	return true
+
+
+var _pending := false
+
+
+## Várias mudanças no mesmo quadro (vários dias na velocidade máxima) viram uma atualização só.
+func _queue() -> void:
+	if _pending or not visible:
+		return
+	_pending = true
+	(func():
+		_pending = false
+		refresh()).call_deferred()
+
+
+func _find(root: Control, n: String) -> Control:
+	return root.find_child(n, true, false) as Control
+
+
+func _button(root: Control, n: String, f: Callable, tip: String) -> void:
+	var b := _find(root, n) as BaseButton
+	if b:
+		b.pressed.connect(f)
+		b.tooltip_text = tip
+
+
+## Esconde tudo que não está em `keep` (nem contém algo de `keep`).
+func _keep(root: Control, keep: Array) -> void:
+	var need := {}
+	for n in keep:
+		var c := _find(root, n)
+		while c and c != root:
+			need[c] = true
+			c = c.get_parent() as Control
+	for c in root.find_children("*", "Control", true, false):
+		if not need.has(c) and String(c.name) != "Items" and not _inside_kept(c, root, keep):
+			c.hide()
+
+
+func _inside_kept(c: Node, root: Control, keep: Array) -> bool:
+	var p := c.get_parent()
+	while p and p != root:
+		if String(p.name) in keep:
+			return true
+		p = p.get_parent()
+	return false
+
+
+func show_army(a_id: int) -> void:
+	id = a_id
+	if not army.armies.has(id):
+		hide()
+		return
+	show()
+	refresh()
+
+
+func close() -> void:
+	id = -1
+	hide()
+	closed.emit()
+
+
+func refresh() -> void:
+	if not visible:
+		return
+	var a: Dictionary = army.armies.get(id, {})
+	if a.is_empty():
+		close()
+		return
+	var tag: String = a["tag"]
+	var mine := tag == player
+	var c: Dictionary = map.countries.get(tag, {})
+	_name.text = str(a["name"]) + ("" if mine else " (%s)" % c.get("name", tag))
+	Eu4Gui.fit_label(_name)
+	var mor := _find(_card, "unit_morale")
+	if mor is Eu4Gui.Progress:
+		var mx := army.max_morale(tag)
+		(mor as Eu4Gui.Progress).set_value(army.morale(a) / mx if mx > 0.0 else 0.0)
+		mor.tooltip_text = Loc.s("Moral: %s / %s", "Morale: %s / %s") % [_n(army.morale(a)), _n(mx)]
+	_txt(_card, "unitleader", Loc.t("NO_LEADER", "Sem general"))
+	if _multi:
+		_txt(_multi, "desc", "1 " + Loc.t("ARMIES", "Exércitos"))
+	# saque (INF/CAV/ART_LOOT ducados/mês por regimento) e o maior forte que dá para cercar
+	# (homens ÷ (SIEGE_FORCE_NEEDED_MULTIPLIER × guarnição de 1000 por nível))
+	var loot := 0.0
+	for r in a["regs"]:
+		var k: String = {"infantry": "INF", "cavalry": "CAV", "artillery": "ART"}.get(r["type"], "INF")
+		loot += float(Eu4Data.define("NMilitary", k + "_LOOT", 0.1)) * float(r["str"])
+	_txt(_card, "loot_capability", ("%.1f" % loot).replace(".", Loc.dec), Loc.t("LOOT_CAPABILITY", "Saque máximo por mês") + "\n" \
+			+ Loc.t("LOOT_CAPABILITY_DESC", ""))
+	var need := float(Eu4Data.define("NMilitary", "SIEGE_FORCE_NEEDED_MULTIPLIER", 3)) * float(Eu4Data.define("NMilitary", "GARRISON_SIZE", 1000))
+	_txt(_card, "siege_capability", str(int(army.strength(a) * 1000.0 / need)) if need > 0 else "0",
+			Loc.t("SIEGE_CAPABILITY", "Maior forte que dá para cercar") + "\n" + Loc.t("SIEGE_CAPABILITY_DESC", ""))
+	for n in ["loot_capability", "siege_capability"]:
+		var l := _find(_card, n) as Label
+		if l:
+			l.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	_txt(_card, "unitstrength_land", Loc.num(army.strength(a) * 1000.0),
+			Loc.s("Moral %s de %s · manutenção %s ducados/mês (todos os regimentos do país)",
+			"Morale %s of %s · maintenance %s ducats/month (all of the country's regiments)") % [
+			_n(army.morale(a)), _n(army.max_morale(tag)), _n(army.maintenance(tag))])
+	var pid := int(a["loc"])
+	var att := army.attrition_at(pid, tag)
+	_txt(_card, "unitattrition", ("%.1f%%" % att).replace(".", Loc.dec), Loc.s("Atrito por mês: %s regimentos na província, limite de suprimento %s",
+			"Attrition per month: %s regiments in the province, supply limit %s") % [
+			str(army.armies_at(pid).reduce(func(s, b): return s + b["regs"].size(), 0)), _n(army.supply_limit(pid, tag))])
+	var here: String = map.provinces[pid]["name"]
+	var status := ""
+	if army.combat and army.combat.in_battle(id):
+		var b: Dictionary = army.combat.battles[pid]
+		status = Loc.s("Em batalha (dia %d, %s; dados %d × %d)", "In battle (day %d, %s; dice %d × %d)") % [int(b["day"]),
+				Loc.s("fogo", "fire") if b["phase"] == "fire" else Loc.s("choque", "shock"), int(b["rolls"][0]), int(b["rolls"][1])]
+	elif a.get("retreat", false):
+		status = Loc.s("Em retirada", "Retreating")
+	elif army.siege and army.siege.sieges.has(pid) and army.siege.sieges[pid]["tag"] == tag:
+		var s: Dictionary = army.siege.sieges[pid]
+		status = Loc.s("Cercando: forte %d, situação +%d, %d dias (último dado %d; precisa de 20)",
+				"Sieging: fort %d, status +%d, %d days (last roll %d; needs 20)") % [int(s["level"]), int(s["status"]),
+				int(s["days"]), int(s["last_roll"])]
+	here += (" — " + status) if status != "" else ""
+	var dest := _find(_card, "unit_destination")
+	if a["path"].is_empty():
+		_txt(_card, "unitlocation", map.provinces[pid]["name"], here)
+		if dest:
+			dest.hide()
+	else:
+		var to: String = map.provinces[int(a["path"][a["path"].size() - 1])]["name"]
+		_txt(_card, "unitlocation", map.provinces[pid]["name"], here + "\n" + Loc.s("Indo para %s: %d dias", "Moving to %s: %d days") % [to, army.eta(a)])
+		if dest:
+			dest.show()
+			dest.tooltip_text = Loc.s("Indo para %s: %d dias", "Moving to %s: %d days") % [to, army.eta(a)]
+	for i in 3:
+		var ty: String = Army.TYPES[i]
+		var n := army.count(a, ty)
+		var men := 0.0
+		for r in a["regs"]:
+			if r["type"] == ty:
+				men += float(r["str"])
+		_txt(_card, "unit%d_count" % (i + 1), Loc.num(men * 1000.0))
+		_txt(_main, "lu_unit_type_%d_count" % (i + 1), str(n))
+		_txt(_main, "lu_unit_type_%d_value" % (i + 1), Loc.num(men * 1000.0))
+		var u: Dictionary = army.units(tag).get(ty, {})
+		var ic := _find(_main, "lu_unit_type_%d" % (i + 1))
+		if ic:
+			ic.tooltip_text = str(u.get("name", ty))
+		var b := _find(_main, "lu_build_unit_%d_button" % (i + 1)) as BaseButton
+		if b:
+			b.visible = mine
+			var why := army.why_not(tag, int(a["loc"]), ty) if a["path"].is_empty() \
+					else Loc.s("O exército está em marcha", "The army is moving")
+			b.disabled = why != ""
+			b.modulate = Color(0.45, 0.45, 0.45) if b.disabled else Color.WHITE
+			b.tooltip_text = Loc.s("Recrutar %s aqui: %d ducados, 1000 homens, %d dias", "Recruit %s here: %d ducats, 1000 men, %d days") % [
+					u.get("name", ty), ceili(army.reg_cost(tag, ty)), army.reg_days(tag, ty)] + ("\n" + why if why != "" else "") \
+					+ _queue_text(int(a["loc"]), tag)
+	for n in ["newunitbutton02", "disbandbutton", "remove_unit_from_selection_button"] + CARD_TODO:
+		var x := _find(_card, n)
+		if x:
+			x.visible = mine
+	var at := _find(_main, "attach_unit_button")
+	var others := 0
+	for b in army.armies_at(int(a["loc"])):
+		if b["id"] != id and b["tag"] == tag and b["path"].is_empty():
+			others += 1
+	if at:
+		at.visible = mine
+		_set_enabled(at as BaseButton, others > 0)
+	var sieging: bool = army.siege != null and army.siege.sieges.has(pid) and army.siege.sieges[pid]["tag"] == tag
+	var gs := _find(_main, "goto_siege_button")
+	if gs:
+		gs.visible = mine
+		_set_enabled(gs as BaseButton, sieging)
+	for n in TODO_BUTTONS + ["next_unit_button", "prev_unit_button"]:
+		if _find(_main, n):
+			_find(_main, n).visible = mine
+	# supressão de rebeldes: −(INF/CAV/ART_SUPPRESSION por regimento) (o jogo ainda não tem agitação)
+	var sup := 0.0
+	for r in a["regs"]:
+		var k: String = {"infantry": "INF", "cavalry": "CAV", "artillery": "ART"}.get(r["type"], "INF")
+		sup += float(Eu4Data.define("NMilitary", k + "_SUPPRESSION", 0.25))
+	_txt(_main, "rebel_suppression", "-" + _n(sup), Loc.t("RR_SUPPRESSION_CAPABILITY", "Redução de agitação") + "\n"
+			+ Loc.f("RR_SUPPRESSION_CAPABILITY_DESC", {"BASE": _n(sup),
+			"MAX_UNREST_REDUCTION": _n(float(Eu4Data.define("NMilitary", "MAX_REBEL_SUPPRESSION", 5.0)))},
+			"Redução de agitação deste exército na província: %s." % _n(sup)))
+	var rl := _find(_main, "rebel_suppression") as Label
+	if rl:
+		rl.add_theme_color_override("font_color", Color(0.2, 0.85, 0.2))
+	var sel := _find(_card, "select_army_button")
+	if sel:
+		sel.tooltip_text = Loc.f("GOTO_PROVINCE", {"PROV": map.provinces[pid]["name"]}, "Ir para %s." % map.provinces[pid]["name"])
+	# regimentos: as linhas só são refeitas quando o número muda (montar uma é caro)
+	var list := _find(_main, "subunitlist")
+	var regs: Array = a["regs"].duplicate()          # infantaria, cavalaria, artilharia
+	regs.sort_custom(func(x, y): return Army.TYPES.find(x["type"]) < Army.TYPES.find(y["type"]))
+	var n: int = regs.size()
+	if _rows.size() != n or (n > 0 and not is_instance_valid(_rows[0])):
+		_rows = gui.fill_list(list, "subunit_entry", n)
+		for row in _rows:
+			_keep(row, SUB_KEEP)
+	for i in mini(_rows.size(), n):
+		_reg_row(_rows[i], regs[i])
+
+
+func _queue_text(pid: int, tag: String) -> String:
+	var q: Array = army.queue.get(pid, [])
+	var parts := []
+	for it in q:
+		if it["tag"] == tag:
+			parts.append("%s (%d)" % [_type_name(it["type"]), int(it["left"])])
+	return ("\n" + Loc.s("Recrutando: ", "Recruiting: ") + ", ".join(parts)) if not parts.is_empty() else ""
+
+
+static func _type_name(ty: String) -> String:
+	return Loc.t(ty.to_upper(), {"infantry": "Infantaria", "cavalry": "Cavalaria", "artillery": "Artilharia"}.get(ty, ty))
+
+
+func _reg_row(row: Control, r: Dictionary) -> void:
+	var ic := _find(row, "icon_type") as Eu4Gui.Icon
+	if ic:
+		ic.set_frame(FRAMES.get(r["type"], 0))
+	var u: Dictionary = map.units.get(r["unit"], {})
+	var nm := row.get_node_or_null("RegName") as Label
+	if nm == null:                     # subunit_name é um editBoxType
+		nm = Label.new()
+		nm.name = "RegName"
+		gui.style_label(nm, "vic_18")
+		nm.position = Vector2(34, 6)
+		nm.size = Vector2(190, 20)
+		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(nm)
+	var rn := army.reg_name(r)
+	nm.text = rn if rn != "" else _type_name(r["type"])
+	Eu4Gui.fit_label(nm)
+	_txt(row, "subunit_type", str(u.get("name", r["unit"])))
+	_txt(row, "subunit_amount", Loc.num(float(r["str"]) * 1000.0))
+
+
+func _txt(root: Control, n: String, t: String, tip := "") -> void:
+	var l := _find(root, n) as Label
+	if l:
+		l.text = t
+		Eu4Gui.fit_label(l)
+		l.tooltip_text = tip
+		if tip != "":
+			l.mouse_filter = Control.MOUSE_FILTER_PASS
+
+
+static func _n(v: float) -> String:
+	return ("%.2f" % v).replace(".", Loc.dec)
+
+
+func _recruit(ty: String) -> void:
+	var a: Dictionary = army.armies.get(id, {})
+	if not a.is_empty() and a["tag"] == player:
+		army.recruit(player, int(a["loc"]), ty)
+		refresh()
+
+
+## Botão do EU4 ativo ou apagado (quadro "desativado" do sprite; sem ele, cinza como o EU4).
+static func _set_enabled(b: BaseButton, on: bool) -> void:
+	b.disabled = not on
+	b.mouse_filter = Control.MOUSE_FILTER_PASS
+	var has_frame := b is TextureButton and (b as TextureButton).texture_disabled != null
+	b.modulate = Color.WHITE
+	b.self_modulate = Color.WHITE
+	if not on and not has_frame:
+		b.material = _grey_mat()
+	else:
+		b.material = null
+
+
+static var _grey: ShaderMaterial
+
+
+## Tons de cinza como o PixelShaderGreyed do EU4 (gfx/FX/buttonstate.shader).
+static func _grey_mat() -> ShaderMaterial:
+	if _grey == null:
+		var sh := Shader.new()
+		sh.code = "shader_type canvas_item;\nvoid fragment() {\n\tvec4 c = COLOR;\n\tfloat g = dot(c.rgb, vec3(0.212671, 0.715160, 0.072169));\n\tCOLOR = vec4(vec3(g), c.a);\n}\n"
+		_grey = ShaderMaterial.new()
+		_grey.shader = sh
+	return _grey
+
+
+## Próximo/anterior exército do jogador (next/prev_unit_button).
+func _cycle(step: int) -> void:
+	var ids := []
+	for a in army.armies.values():
+		if a["tag"] == player:
+			ids.append(int(a["id"]))
+	if ids.size() < 2:
+		return
+	ids.sort()
+	var i := ids.find(id)
+	show_army(ids[(i + step + ids.size()) % ids.size()])
+	_goto()
+	selected_changed.emit(id)
+
+
+func _goto() -> void:
+	var a: Dictionary = army.armies.get(id, {})
+	if not a.is_empty():
+		goto.emit(int(a["loc"]))
+
+
+func _split() -> void:
+	var b := army.split(id)
+	refresh()
+
+
+func _disband() -> void:
+	army.disband(id)
+	close()

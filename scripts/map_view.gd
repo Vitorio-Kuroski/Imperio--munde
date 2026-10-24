@@ -46,6 +46,8 @@ const DIPLO_NAMES_EN := {"self": "the country", "subject": "subject", "overlord"
 		"marriage": "royal marriage", "guarantee": "guarantee", "same_bloc": "subject of the same overlord",
 		"war": "at war", "recent_enemy": "recent enemy"}
 
+signal owner_changed(pid: int, old: String, new: String)   # set_owner_of (Discovery)
+
 var map_w: int
 var map_h: int
 var provinces: Array = []
@@ -57,6 +59,7 @@ var religions: Dictionary = {}     # id -> dict (name, group, color); vazio se o
 var religion_index: Dictionary = {} # id -> 1..N (0 = nenhuma)
 var trade_goods: Dictionary = {}   # id -> dict (name, color, price); vazio se o mapa não tiver produtos
 var trade_good_index: Dictionary = {} # id -> 1..N (0 = nenhum)
+var _event_mods := {}                # nome -> efeitos (common/event_modifiers), cache de province_modifier
 var trade_nodes: Dictionary = {}   # id -> dict (name, color, location, inland, end, outgoing)
 var centers_of_trade: Array = []   # [{id, name, level, type coastal/inland, trade_power}]
 var trade_rules: Dictionary = {}   # regras do comércio (modificadores estáticos e defines do EU4)
@@ -76,6 +79,11 @@ var technologies: Dictionary = {}  # "adm"/"dip"/"mil" -> [{level, year, modifie
 var tech_groups: Dictionary = {}   # id -> {start_level, cost_modifier}
 var idea_groups: Array = []        # grupos de ideias (category adm/dip/mil, bonus, ideas)
 var opinion_modifiers: Dictionary = {}  # common/opinion_modifiers do EU4 (id -> opinion, max, yearly_decay, months...)
+var casus_belli: Array = []         # common/cb_types do EU4 ({id, triggered, prerequisites...}; CasusBelli)
+var war_goals: Array = []           # common/wargoal_types do EU4 ({id, type, attacker, defender})
+## O resto da diplomacia do EU4: actions (condições/efeito das ações), scripted_actions, static_actions,
+## subject_types (atributos resolvidos), peace_treaties, insults e defines (NDiplomacy).
+var diplomacy_data: Dictionary = {}
 var national_ideas: Array = []     # ideias nacionais/de grupo/genéricas (start, bonus, ideas); países têm "ideas"
 var institutions: Array = []       # instituições (id, name, color, bonus, start_date, start_province)
 var inst_view: Institutions        # presença atual (para o modo de mapa instituições)
@@ -103,8 +111,12 @@ var icons := {}                    # chave ("good:grain", "religion:catholic", "
 var _icons_tex: Texture2D          # atlas dos ícones da interface (vazio sem gfx/interface)
 var _icon_cache := {}
 var ui_dir := ""                   # pasta das texturas de interface do EU4 (Eu4Theme), ao lado do mapa
+var river_lines: Array = []         # rios em linhas ([largura, x0, y0, ...], ver RiverLayer)
+var has_terrain_textures := false   # modo terreno com as texturas do EU4 (terrain.bmp ou colormap)
 var gui_dir := ""                  # pasta das telas do EU4 (Eu4Gui)
 var source := ""                   # de onde veio o mapa (caminho do map.json)
+var map_dir := ""                  # pasta do province_ids.png e das texturas do mapa
+var discovery: Discovery           # main.gd define (Terra Incógnita do jogador)
 
 
 func load_map(map_scale: float) -> void:
@@ -126,6 +138,8 @@ func load_map(map_scale: float) -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(json_path))
 	# localização original do EU4 (loc.txt gravado pelos importadores): nomes como no jogo
 	Loc.load_file(json_path.get_base_dir() + "/loc.txt")
+	# todos os scripts do EU4 (eu4data/, lidos sob demanda)
+	Eu4Data.set_base(json_path.get_base_dir())
 	if Loc.active():
 		_apply_loc(data)
 	map_w = int(data["width"])
@@ -184,6 +198,15 @@ func load_map(map_scale: float) -> void:
 	advisor_types = data.get("advisor_types", [])
 	institutions = data.get("institutions", [])
 	diplomacy = data.get("diplomacy", [])
+	# união pessoal: o sócio menor tem o governante (e o herdeiro) do sócio maior, como no EU4
+	# (Suécia e Noruega com Christopher III da Dinamarca em 1444)
+	for r in diplomacy:
+		if r.get("type", "") in ["union", "personal_union"] and countries.has(r["first"]) and countries.has(r["second"]):
+			var senior: Dictionary = countries[r["first"]]
+			var junior: Dictionary = countries[r["second"]]
+			for k in ["monarch", "heir"]:
+				if senior.get(k) is Dictionary and not (junior.get(k) is Dictionary and str(junior[k].get("name", "")) != ""):
+					junior[k] = (senior[k] as Dictionary).duplicate(true)
 	emperor = data.get("emperor", "")
 	celestial_emperor = data.get("celestial_emperor", "")
 	wars = data.get("wars", [])
@@ -193,6 +216,9 @@ func load_map(map_scale: float) -> void:
 	advisors = data.get("advisors", [])
 	national_ideas = data.get("national_ideas", [])
 	opinion_modifiers = data.get("opinion_modifiers", {})
+	casus_belli = data.get("casus_belli", [])
+	war_goals = data.get("war_goals", [])
+	diplomacy_data = data.get("diplomacy_data", {})
 
 	var ids_tex: Texture2D
 	if ids_path.begins_with("user://"):
@@ -203,7 +229,8 @@ func load_map(map_scale: float) -> void:
 		ids_tex = load(ids_path) as Texture2D
 		id_image = ids_tex.get_image()
 
-	palette_image = Image.create(provinces.size(), 5, false, Image.FORMAT_RGBA8)
+	# linhas 0-4 = províncias, linha 5 = paleta do terrain.bmp (por isso largura ≥ 256)
+	palette_image = Image.create(maxi(provinces.size(), 256), 6, false, Image.FORMAT_RGBA8)
 	for p in provinces:
 		_write_palette(int(p["id"]))
 	palette_tex = ImageTexture.create_from_image(palette_image)
@@ -219,7 +246,8 @@ func load_map(map_scale: float) -> void:
 			rivers_tex = ImageTexture.create_from_image(Image.load_from_file(rivers_path))
 	elif ResourceLoader.exists(rivers_path):
 		rivers_tex = load(rivers_path) as Texture2D
-	if rivers_tex:
+	river_lines = data.get("rivers", [])
+	if rivers_tex and river_lines.is_empty():      # sem as linhas (importação antiga): os pixels
 		mat.set_shader_parameter("rivers", rivers_tex)
 		mat.set_shader_parameter("has_rivers", true)
 	# bandeiras (flags.png ao lado do province_ids.png: atlas com FLAG_SIZE px por país)
@@ -239,6 +267,8 @@ func load_map(map_scale: float) -> void:
 	elif ResourceLoader.exists(icons_path):
 		_icons_tex = load(icons_path) as Texture2D
 	mat.set_shader_parameter("palette", palette_tex)
+	map_dir = ids_path.get_base_dir()
+	_load_map_textures(data.get("map_textures", {}))
 	mat.set_shader_parameter("map_size", Vector2(map_w, map_h))
 	mat.set_shader_parameter("selected_id", -1)
 	material = mat
@@ -288,12 +318,29 @@ func building_mod(p: Dictionary, key: String) -> float:
 	var s := 0.0
 	for b in p.get("buildings", []):
 		s += float(buildings.get(b, {}).get("modifiers", {}).get(key, 0.0))
+	for m in p.get("modifiers", []):        # modificadores permanentes do histórico (estuários, Sound Toll...)
+		s += float(province_modifier(str(m)).get(key, 0.0))
 	return s
 
 
-## Bens produzidos por ano: produção base × 0,2 + trade_goods_size das construções (manufaturas).
+## Efeitos numéricos de um modificador de common/event_modifiers (em cache).
+func province_modifier(name: String) -> Dictionary:
+	if not _event_mods.has(name):
+		var d := {}
+		var tree = Eu4Data.merged("common/event_modifiers").get(name, [])
+		if tree is Array:
+			for kv in tree:
+				if kv is Array and kv.size() == 2 and str(kv[1]).is_valid_float():
+					d[str(kv[0])] = float(str(kv[1]))
+		_event_mods[name] = d
+	return _event_mods[name]
+
+
+## Bens produzidos por ano: (produção base × 0,2 + trade_goods_size das construções e modificadores)
+## × (1 + trade_goods_size_modifier).
 func goods_produced(p: Dictionary) -> float:
-	return float(p.get("base_production", float(p["development"]) / 3.0)) * 0.2 + building_mod(p, "trade_goods_size")
+	return (float(p.get("base_production", float(p["development"]) / 3.0)) * 0.2 + building_mod(p, "trade_goods_size")) \
+			* maxf(0.0, 1.0 + building_mod(p, "trade_goods_size_modifier"))
 
 
 ## Nome do modo de mapa (localização do EU4, senão em português).
@@ -534,10 +581,12 @@ func _write_palette(pid: int) -> void:
 
 
 func set_owner_of(pid: int, tag: String) -> void:
+	var old: String = provinces[pid]["owner"]
 	provinces[pid]["owner"] = tag
 	owner_version += 1
 	_write_palette(pid)
 	palette_tex.update(palette_image)
+	owner_changed.emit(pid, old, tag)
 
 
 ## Muda a religião da província (conversão) e atualiza a paleta (modo religião).
@@ -567,9 +616,53 @@ func set_map_mode(mode: MapMode) -> void:
 	if trade_flows:
 		trade_flows.visible = mode == MapMode.COMERCIO
 	mat.set_shader_parameter("border_mode", bm)
+	mat.set_shader_parameter("terrain_view", mode == MapMode.TERRENO and has_terrain_textures)
 	for p in provinces:
 		_write_palette(int(p["id"]))
 	palette_tex.update(palette_image)
+
+
+## Texturas do mapa do EU4 (ver Eu4Importer._map_textures): relevo (normal.png) para a luz,
+## altitude (height.png) para a profundidade do mar, terreno (terrain_idx.png + paleta do
+## terrain.bmp) e colormaps (colormap.png, colormap_water.png) se a instalação tinha.
+func _load_map_textures(info: Dictionary) -> void:
+	var ld := func(name: String) -> Texture2D:
+		return map_texture(name)
+	for pr in [["normal.png", "normal_map", "has_normal"], ["height.png", "height_map", "has_height"],
+			["colormap.png", "colormap", "has_colormap"], ["colormap_water.png", "water_colormap", "has_water_colormap"]]:
+		var t: Texture2D = ld.call(pr[0])
+		if t:
+			mat.set_shader_parameter(pr[1], t)
+			mat.set_shader_parameter(pr[2], true)
+			if pr[0] == "colormap.png":
+				has_terrain_textures = true
+	var ti: Texture2D = ld.call("terrain_idx.png")
+	var pal: Array = info.get("terrain_palette", [])
+	if ti and pal.size() == 256:
+		for i in 256:                  # linha 5 da paleta (o celular só aceita 8 texturas no shader)
+			palette_image.set_pixel(i, 5, Color8(int(pal[i][0]), int(pal[i][1]), int(pal[i][2])))
+		palette_tex.update(palette_image)
+		mat.set_shader_parameter("terrain_idx", ti)
+		has_terrain_textures = true
+	# luz do EU4 (NGraphics LIGHT_DIRECTION: para onde a luz vai, x leste, y cima, z norte) em
+	# coordenadas da imagem (x direita, y baixo, z para fora): vetor que aponta para a luz
+	var lx := float(Eu4Data.define("NGraphics", "LIGHT_DIRECTION_X", -1.0))
+	var ly := float(Eu4Data.define("NGraphics", "LIGHT_DIRECTION_Y", -1.0))
+	var lz := float(Eu4Data.define("NGraphics", "LIGHT_DIRECTION_Z", 0.5))
+	mat.set_shader_parameter("light_dir", Vector3(-lx, lz, -ly).normalized())
+
+
+## Textura ao lado do province_ids.png ("terra_incognita.png"...), ou null.
+func map_texture(name: String) -> Texture2D:
+	var path := map_dir + "/" + name
+	if path.begins_with("user://"):
+		return ImageTexture.create_from_image(Image.load_from_file(path)) if FileAccess.file_exists(path) else null
+	return load(path) as Texture2D if ResourceLoader.exists(path) else null
+
+
+## Província em Terra Incógnita para o jogador (não se seleciona nem mostra nada dela).
+func hidden(pid: int) -> bool:
+	return discovery != null and discovery.enabled and pid >= 0 and not discovery.knows(discovery.power.player, pid)
 
 
 func select(pid: int) -> void:
@@ -594,8 +687,17 @@ func province_center(pid: int) -> Vector2:
 
 
 func provinces_of(tag: String) -> Array:
-	var out := []
-	for p in provinces:
-		if p["owner"] == tag:
-			out.append(p)
-	return out
+	if _owned_version != owner_version:         # refeito quando um dono muda (antes varria tudo a cada chamada)
+		_owned.clear()
+		for p in provinces:
+			var t: String = p["owner"]
+			if t != "":
+				if not _owned.has(t):
+					_owned[t] = []
+				_owned[t].append(p)
+		_owned_version = owner_version
+	return (_owned.get(tag, []) as Array).duplicate()
+
+
+var _owned := {}                    # tag -> províncias (cache de provinces_of)
+var _owned_version := -1

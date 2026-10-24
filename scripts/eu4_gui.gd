@@ -14,10 +14,35 @@ const ANCHORS := {"upper_left": Vector2(0, 0), "upper_right": Vector2(1, 0), "lo
 		"center_down": Vector2(0.5, 1), "center_left": Vector2(0, 0.5), "center_right": Vector2(1, 0.5),
 		"left": Vector2(0, 0.5), "right": Vector2(1, 0.5)}
 
+## Cores do texto do EU4 nas telas quando o gui.json é antigo (sem textcolors): os valores da fonte
+## vic_18 em interface/core.gfx. O normal é ler `text_color`.
+const TEXT_GREEN := Color8(44, 171, 50)
+const TEXT_RED := Color8(181, 61, 61)
+const TEXT_YELLOW := Color8(219, 203, 71)
+
+
+## Cores do texto (§X) da fonte `font_name` (as textcolors dela por cima da tabela global de
+## core.gfx), como Color: {"R": Color, ...}. `global_first` = a tabela global ganha (dicas).
+func text_colors(font_name := "vic_18", global_first := false) -> Dictionary:
+	var out := {}
+	var own: Dictionary = font_defs.get(font_name, {}).get("textcolors", {})
+	for src in ([own, textcolors] if global_first else [textcolors, own]):
+		for k in src:
+			var c: Array = src[k]
+			if c.size() >= 3:
+				out[k] = Color8(int(c[0]), int(c[1]), int(c[2]))
+	return out
+
+
+## Cor §X do texto das telas (fonte vic_18), com a de reserva se o gui.json não tiver as cores.
+func text_color(letter: String, fallback: Color = Color.WHITE) -> Color:
+	return text_colors().get(letter, fallback)
+
 var dir := ""
 var files := {}                     # nome do .gui -> árvore [[chave, valor]]
 var sprites := {}                   # nome -> {kind, texture, texture2?, frames?, border?, size?}
-var font_defs := {}                 # nome -> {fnt, page, color}
+var font_defs := {}                 # nome -> {fnt, page, color, textcolors?}
+var textcolors := {}                # cores do texto do EU4 (core.gfx global): {"R": [255, 50, 50], ...}
 var nodes := {}                     # nome do elemento -> Control (do último build)
 ## Altura de tela usada nos blocos if_resolution dos .gui (o EU4 escolhe fundos e listas maiores
 ## pela altura da tela; as telas daqui usam o layout padrão, de 768 px, ver main._apply_gui_scale).
@@ -40,6 +65,7 @@ static func open(gui_dir: String) -> Eu4Gui:
 	g.dir = gui_dir
 	g.files = d["files"]
 	g.sprites = d.get("sprites", {})
+	g.textcolors = d.get("textcolors", {})
 	g.font_defs = d.get("fonts", {})
 	return g
 
@@ -230,7 +256,7 @@ func _find(items: Array, name: String) -> Array:
 	for kv in items:
 		if kv[1] is Array:
 			var k := (kv[0] as String).to_lower()
-			if k == "windowtype" and _val(kv[1], "name") == name:
+			if (k == "windowtype" or k == "eu3dialogtype") and _val(kv[1], "name") == name:
 				return kv[1]
 			var r := _find(kv[1], name)
 			if not r.is_empty():
@@ -263,6 +289,29 @@ func build(name: String) -> Control:
 	if w.is_empty():
 		return null
 	return _element("windowtype", w)
+
+
+## Monta um elemento de qualquer tipo (botão, ícone, janela...) pelo nome, procurando em todos os
+## .gui carregados, ou só em `file` (nome do .gui sem extensão) — nomes como "shield" se repetem.
+func build_element(name: String, file := "") -> Control:
+	for f in files:
+		if file != "" and f != file:
+			continue
+		var e := _find_any(files[f], name)
+		if not e.is_empty():
+			return _element((e[0] as String).to_lower(), e[1])
+	return null
+
+
+func _find_any(items: Array, name: String) -> Array:
+	for kv in items:
+		if kv[1] is Array:
+			if _val(kv[1], "name") == name and (kv[0] as String).to_lower().ends_with("type"):
+				return kv
+			var r := _find_any(kv[1], name)
+			if not r.is_empty():
+				return r
+	return []
 
 
 ## Barra de rolagem vertical com os sprites do EU4 (setas, trilho e arrastador).
@@ -383,7 +432,7 @@ func _element(kind: String, items: Array) -> Control:
 	var name := str(_val(items, "name", ""))
 	var c: Control = null
 	match kind:
-		"windowtype", "containerwindowtype":
+		"windowtype", "containerwindowtype", "eu3dialogtype":   # eu3dialogtype = diálogo (DeclareWarDialog)
 			c = Control.new()
 			c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			if _yes(items, "fullscreen"):
@@ -412,7 +461,7 @@ func _element(kind: String, items: Array) -> Control:
 			ic.scale = Vector2(sc, sc) if sc > 0.0 else Vector2.ONE
 			c = ic
 			_place(c, items, ic.custom_minimum_size)
-		"guibuttontype", "buttontype", "checkboxtype":
+		"guibuttontype", "buttontype", "checkboxtype", "shieldtype":   # shieldtype = escudo do país (set_flag)
 			var spr := str(_val(items, "quadtexturesprite", _val(items, "spritetype", "")))
 			var b := Button2.new()
 			if sprites.has(spr):
@@ -608,17 +657,28 @@ class Progress extends Control:
 		add_child(_fill)
 		set_value(0.0)
 
+	## Barra vertical (progressbarType com horizontal = no, ex.: moral no cartão do exército):
+	## enche de baixo para cima. O .gfx guarda isso, mas os importadores não; quem usa liga.
+	var vertical := false
+
 	func set_value(r: float) -> void:
 		r = clampf(r, 0.0, 1.0)
 		if _tex == null:
 			return
 		var at := AtlasTexture.new()
 		at.atlas = _tex
-		at.region = Rect2(0, 0, maxf(1.0, _tex.get_width() * r), _tex.get_height())
+		var w := _tex.get_width()
+		var h := _tex.get_height()
+		if vertical:
+			at.region = Rect2(0, h * (1.0 - r), w, maxf(1.0, h * r))
+			_fill.position = Vector2(0, custom_minimum_size.y * (1.0 - r))
+			_fill.size = Vector2(custom_minimum_size.x, custom_minimum_size.y * r)
+		else:
+			at.region = Rect2(0, 0, maxf(1.0, w * r), h)
+			_fill.position = Vector2.ZERO
+			_fill.size = Vector2(custom_minimum_size.x * r, custom_minimum_size.y)
 		_fill.texture = at
 		_fill.visible = r > 0.0
-		_fill.position = Vector2.ZERO
-		_fill.size = Vector2(custom_minimum_size.x * r, custom_minimum_size.y)
 
 
 ## Barra deslizante do EU4 (scrollbarType horizontal): setas nas pontas, trilho e o botão na

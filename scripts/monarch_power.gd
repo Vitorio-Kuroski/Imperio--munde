@@ -31,8 +31,13 @@ var _mods_cache := {}            # tag -> modificadores somados
 var _slots_at := PackedInt32Array() # vagas de grupos de ideias por nível adm (acumulado)
 var advisors: Advisors           # conselheiros somam nível aos pontos e efeitos aos modificadores
 var institutions: Institutions   # instituições não adotadas encarecem tecnologias; adotadas dão bônus
+var policies: Policies           # efeitos das políticas adotadas
 var economy: Economy             # falência encarece tecnologias, ideias e conselheiros
 var prestige: Prestige           # efeitos do prestígio (fora do cache: mudam todo mês) e do imperador
+var stability: Stability         # efeitos da estabilidade (fora do cache)
+var legitimacy: Legitimacy       # efeitos da legitimidade (fora do cache)
+var estates: Estates             # efeitos dos estamentos (fora do cache, mudam todo mês)
+var effects: Eu4Effects          # modificadores de país dos efeitos do EU4 (decisões)
 
 
 func setup(m: MapView, c: GameClock) -> void:
@@ -66,7 +71,9 @@ func tech(tag: String, cat: String) -> int:
 ## Ganho mensal: base + nota do governante + nível do conselheiro (adm/dip/mil).
 func gain(tag: String, cat: String) -> int:
 	var m: Dictionary = map.countries.get(tag, {}).get("monarch", {})
-	return BASE_GAIN + int(m.get(cat, 0)) + (advisors.skill(tag, cat) if advisors else 0)
+	# + country_admin/diplomatic/military_power (privilégios, reformas, eventos), como no EU4
+	var key: String = {"adm": "country_admin_power", "dip": "country_diplomatic_power", "mil": "country_military_power"}.get(cat, "")
+	return BASE_GAIN + int(m.get(cat, 0)) + (advisors.skill(tag, cat) if advisors else 0) + int(roundf(modifier(tag, key))) if key != "" 			else BASE_GAIN + int(m.get(cat, 0)) + (advisors.skill(tag, cat) if advisors else 0)
 
 
 ## Esquece a soma de efeitos guardada (ideias ou conselheiros mudaram).
@@ -186,18 +193,26 @@ func modifier(tag: String, key: String) -> float:
 	var v := float(_mods_cache[tag].get(key, 0.0))
 	if prestige:
 		v += prestige.effect(tag, key)
+	if estates:
+		v += estates.effect(tag, key)
+	if stability:
+		v += stability.effect(tag, key)
+	if legitimacy:
+		v += legitimacy.effect(tag, key)
 	return v
 
 
 func all_modifiers(tag: String) -> Dictionary:
 	if not _mods_cache.has(tag):
 		_mods_cache[tag] = _sum_mods(tag)
-	if prestige == null:
+	if prestige == null and stability == null and legitimacy == null and estates == null:
 		return _mods_cache[tag]
 	var out: Dictionary = _mods_cache[tag].duplicate()
-	var pe := prestige.effects(tag)
-	for k in pe:
-		out[k] = float(out.get(k, 0.0)) + float(pe[k])
+	for sys in [prestige, stability, legitimacy, estates]:
+		if sys:
+			var pe: Dictionary = sys.effects(tag)
+			for k in pe:
+				out[k] = float(out.get(k, 0.0)) + float(pe[k])
 	return out
 
 
@@ -225,6 +240,8 @@ func _sum_mods(tag: String) -> Dictionary:
 		add.call(advisors.modifiers(tag))
 	if institutions:
 		add.call(institutions.modifiers(tag))
+	if policies:
+		add.call(policies.modifiers(tag))
 	if economy:
 		add.call(economy.modifiers(tag))
 	var rid: String = map.countries.get(tag, {}).get("religion", "")      # efeitos da religião do país
@@ -232,6 +249,25 @@ func _sum_mods(tag: String) -> Dictionary:
 		add.call(map.religions[rid].get("modifiers", {}))
 	if prestige:
 		add.call(prestige.static_modifiers(tag))
+	if effects:
+		add.call(effects.modifiers(tag))
+	add.call(reform_modifiers(tag))
+	return out
+
+
+## Modificadores das reformas de governo do país e da reforma básica do governo (monarchy_mechanic...).
+func reform_modifiers(tag: String) -> Dictionary:
+	var c: Dictionary = map.countries.get(tag, {})
+	var reforms: Array = (c.get("reforms", []) as Array).duplicate()
+	var basic = Estates.tget(Eu4Data.merged("common/governments").get(str(c.get("government", "")), []), "basic_reform")
+	if basic != null:
+		reforms.append(str(basic))
+	var out := {}
+	var all := Eu4Data.merged("common/government_reforms")
+	for r in reforms:
+		var m := Estates._mods(Estates.tget(all.get(str(r), []), "modifiers"))
+		for k in m:
+			out[k] = float(out.get(k, 0.0)) + m[k]
 	return out
 
 

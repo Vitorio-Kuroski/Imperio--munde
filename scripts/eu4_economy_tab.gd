@@ -230,7 +230,11 @@ func fill(tag: String) -> void:
 					% AdvisorsWindow._n(eco.corruption_of(tag)),
 			"missionaries": (Loc.s("%d missionário(s) convertendo (0,5 + 5%% do desenvolvimento da província por mês)",
 					"%d missionary(ies) converting (0.5 + 5%% of the province development per month)") \
-					% view.religion.missions.get(tag, {}).size()) if view.religion else ""}
+					% view.religion.missions.get(tag, {}).size()) if view.religion else "",
+			"army": (Loc.s("%d regimento(s), limite de força %s; com a barra cheia %s ducados/mês",
+					"%d regiment(s), force limit %s; %s ducats/month at full maintenance") % [view.army.regiments(tag),
+					AdvisorsWindow._n(view.army.force_limit(tag)), AdvisorsWindow._n(view.army.maintenance(tag, true))]) \
+					if view.army else ""}
 	for it in EXPENSES:
 		_line(expenses, Loc.t(it[3], it[1]), float(exp.get(it[0], 0.0)), "", BAD,
 				etips.get(it[0], Loc.s(NOT_YET[0], NOT_YET[1])))
@@ -253,6 +257,14 @@ func fill(tag: String) -> void:
 							"Missionaries: %d%% (less spending, slower conversion)") % roundi(sl.value * 100.0)
 					sl.value_changed.connect(func(v: float):
 						view.religion.set_budget(tag, v)
+						view.refresh())
+				elif sl and it[0] == "army" and view.army:
+					sl.set_value(view.army.budget_of(tag))
+					sl.editable = mine
+					sl.tooltip_text = Loc.s("Exército: %d%% (menos gasto, moral e reforço menores)",
+							"Army: %d%% (less spending, lower morale and reinforcement)") % roundi(sl.value * 100.0)
+					sl.value_changed.connect(func(v: float):
+						view.army.set_budget(tag, v)
 						view.refresh())
 				elif sl:
 					sl.tooltip_text = Loc.s("Manutenção: 100% (ainda não ajustável)", "Maintenance: 100% (not adjustable yet)")

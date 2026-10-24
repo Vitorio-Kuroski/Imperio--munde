@@ -52,6 +52,7 @@ var advisors: Advisors
 var diplomacy: Diplomacy               # main.gd define (vassalos)
 var trade: Trade                       # main.gd define (renda de comércio)
 var religion: Religion                 # main.gd define (manutenção dos missionários)
+var army: Army                         # main.gd define (manutenção do exército)
 var treasury := {}                     # tag -> ducados
 var loans := {}                        # tag -> [{amount, rate, expires (AAAAMMDD)}]
 var inflation := {}                    # tag -> %
@@ -110,7 +111,10 @@ func _recount() -> void:
 	if diplomacy:
 		for r in diplomacy.relations:
 			var kind: String = r.get("subject_type", r["type"])
-			if kind in VASSAL_TYPES:
+			if not (r["type"] in Diplomacy.SUBJECT_TYPES):
+				continue
+			var st := diplomacy.subject_type(kind)
+			if (float(st.get("pays_overlord", 0.0)) > 0.0) if not st.is_empty() else (kind in VASSAL_TYPES):
 				_overlord[r["second"]] = r["first"]
 				if not _vassals.has(r["first"]):
 					_vassals[r["first"]] = []
@@ -133,7 +137,12 @@ func _tax(tag: String) -> float:
 func vassal_fee(tag: String) -> float:
 	if not _overlord.has(tag):
 		return 0.0
-	return _tax(tag) * maxf(0.0, VASSAL_FEE + power.modifier(_overlord[tag], "vassal_income"))
+	var pays := 1.0
+	if diplomacy:                        # pays_overlord do tipo de súdito (1 = vassalo)
+		var ov := diplomacy.overlord(tag)
+		var st := diplomacy.subject_type(ov[1]) if ov.size() > 1 else {}
+		pays = float(st.get("pays_overlord", 1.0)) if not st.is_empty() else 1.0
+	return _tax(tag) * maxf(0.0, VASSAL_FEE + power.modifier(_overlord[tag], "vassal_income")) * pays
 
 
 ## Renda mensal: {"tax", "production", "trade", "gold", "vassals", "total"} (as outras linhas do EU4 são 0).
@@ -161,7 +170,7 @@ func invalidate(tag: String) -> void:
 		_inc_cache.erase(_overlord[tag])
 
 
-## Gastos mensais: {"advisors", "interest", "diplomatic", "corruption", "missionaries", "total"}.
+## Gastos mensais: {"advisors", "interest", "diplomatic", "corruption", "missionaries", "army", "total"}.
 func expenses(tag: String) -> Dictionary:
 	var adv := advisors.total_salary(tag) if advisors else 0.0     # já com a inflação
 	var interest := 0.0
@@ -170,8 +179,9 @@ func expenses(tag: String) -> Dictionary:
 	var dip := vassal_fee(tag)
 	var cor := root_out_cost(tag)
 	var mis := religion.cost(tag) if religion else 0.0
+	var arm := army.maintenance(tag) if army else 0.0
 	return {"advisors": adv, "interest": interest, "diplomatic": dip, "corruption": cor, "missionaries": mis,
-			"total": adv + interest + dip + cor + mis}
+			"army": arm, "total": adv + interest + dip + cor + mis + arm}
 
 
 func balance(tag: String) -> float:

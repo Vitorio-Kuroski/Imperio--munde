@@ -8,13 +8,15 @@ extends RefCounted
 
 const OUT_DIR := "user://eu4"
 const CUTOFF := 14441111            # 1444.11.11 como AAAAMMDD
-const TOPS := ["map/", "history/", "common/", "localisation/"]
+const TOPS := ["map/", "history/", "common/", "localisation/", "events/", "decisions/", "missions/"]
+## Pastas de script gravadas inteiras (em árvore) em eu4data/ (Eu4Data no jogo).
+const SCRIPT_TOPS := ["common", "history", "events", "decisions", "missions"]
 ## Caracteres do cp1252 que o Latin-1 não tem (0x80-0x9F -> Unicode).
 const CP1252 := {0x80: 0x20AC, 0x82: 0x201A, 0x83: 0x0192, 0x84: 0x201E, 0x85: 0x2026, 0x86: 0x2020, 0x87: 0x2021,
 		0x88: 0x02C6, 0x89: 0x2030, 0x8A: 0x0160, 0x8B: 0x2039, 0x8C: 0x0152, 0x8E: 0x017D, 0x91: 0x2018,
 		0x92: 0x2019, 0x93: 0x201C, 0x94: 0x201D, 0x95: 0x2022, 0x96: 0x2013, 0x97: 0x2014, 0x98: 0x02DC,
 		0x99: 0x2122, 0x9A: 0x0161, 0x9B: 0x203A, 0x9C: 0x0153, 0x9E: 0x017E, 0x9F: 0x0178}
-const MAP_FILES := ["provinces.bmp", "definition.csv", "default.map", "climate.txt", "heightmap.bmp", "terrain.txt",
+const MAP_FILES := ["world_normal.bmp", "provinces.bmp", "definition.csv", "default.map", "climate.txt", "heightmap.bmp", "terrain.txt",
 		"terrain.bmp", "trees.bmp", "rivers.bmp", "area.txt", "region.txt", "superregion.txt", "continent.txt",
 		"adjacencies.csv"]
 
@@ -38,13 +40,14 @@ static func has_import() -> bool:
 
 ## Apaga o mapa importado (o jogo volta ao mapa padrão).
 static func remove_import() -> void:
-	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png", "icons.png", "loc.txt"]:
+	for f in ["map.json", "province_ids.png", "rivers.png", "flags.png", "icons.png", "loc.txt"] + MAP_TEXTURES:
 		if FileAccess.file_exists(OUT_DIR + "/" + f):
 			DirAccess.remove_absolute(OUT_DIR + "/" + f)
 	for u in UI_TEXTURES:
 		if FileAccess.file_exists(OUT_DIR + "/ui/%s.png" % u[0]):
 			DirAccess.remove_absolute(OUT_DIR + "/ui/%s.png" % u[0])
 	_remove_tree(OUT_DIR + "/gui")
+	_remove_tree(OUT_DIR + "/eu4data")
 
 
 static func _remove_tree(dir: String) -> void:
@@ -90,8 +93,7 @@ func _walk(dir: String, depth: int) -> void:
 	for sub in d.get_directories():
 		var low: String = sub.to_lower()
 		# não desce em pastas grandes que não interessam
-		if low in ["sound", "music", "tutorial", "dlc", "launcher", "events", "decisions",
-				"missions", "gui", "fonts", "shaders", "assets"]:
+		if low in ["sound", "music", "dlc", "launcher", "gui", "fonts", "shaders", "assets"]:
 			continue
 		if low == "gfx":             # do gfx/ só interessam as bandeiras e os ícones da interface
 			for s2 in DirAccess.get_directories_at(dir + "/" + sub):
@@ -138,15 +140,20 @@ func _rel(p: String) -> String:
 	var rel := p.substr(best) if best >= 0 else ""
 	if rel == "" and p.get_file() in MAP_FILES:
 		rel = "map/" + p.get_file()        # arquivo solto (ex.: um .zip só com provinces.bmp)
+	if rel.begins_with("map/terrain/") and rel.get_extension().to_lower() == "dds" \
+			and (rel.get_file().to_lower().begins_with("colormap_")
+			or rel.get_file().to_lower() in ["map_overlay_tile.dds", "fogofwar.dds"]):
+		return "map/terrain/" + rel.get_file().to_lower()
 	if rel.begins_with("map/"):
-		return rel if rel.get_file() in MAP_FILES and rel.count("/") == 1 else ""
-	for keep in ["history/provinces/", "history/countries/", "common/countries/", "common/country_tags/",
-			"common/cultures/", "common/religions/", "common/tradegoods/", "common/prices/", "common/tradenodes/",
-			"common/buildings/", "common/governments/", "common/technologies/", "common/units/", "common/ideas/",
-			"common/advisortypes/", "history/advisors/", "common/institutions/", "history/diplomacy/", "history/wars/",
-			"common/centers_of_trade/", "common/static_modifiers/", "common/opinion_modifiers/"]:
-		if rel.begins_with(keep) and rel.ends_with(".txt"):
+		# os arquivos do mapa usados e todos os .txt/.map da pasta (posições, ventos, estações...)
+		var ok := rel.get_file() in MAP_FILES or rel.get_extension().to_lower() in ["txt", "map"]
+		return rel if ok and rel.count("/") == 1 else ""
+	# todos os scripts (common, history, events, decisions, missions)
+	for top in SCRIPT_TOPS:
+		if rel.begins_with(top + "/") and rel.to_lower().ends_with(".txt"):
 			return rel
+	if rel.begins_with("common/defines/") and rel.to_lower().ends_with(".lua"):
+		return rel
 	if rel.begins_with("localisation/") and rel.ends_with("_l_english.yml"):
 		return rel
 	if rel == "common/technology.txt" or rel == "common/defines.lua":
@@ -475,7 +482,8 @@ func _import() -> String:
 	var n_prov := max_id + 1
 	var dmap := _text("map/default.map")
 	var sea := _ids_in_block(dmap, "sea_starts")
-	sea.merge(_ids_in_block(dmap, "lakes"))
+	var lakes := _ids_in_block(dmap, "lakes")
+	sea.merge(lakes)
 	var climates := {}
 	if _index.has("map/climate.txt"):
 		var ct := _text("map/climate.txt")
@@ -584,12 +592,17 @@ func _import() -> String:
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
 	if FileAccess.file_exists(OUT_DIR + "/rivers.png"):
 		DirAccess.remove_absolute(OUT_DIR + "/rivers.png")
+	var river_vec := []
 	if _index.has("map/rivers.bmp"):
 		_set_status("Lendo os rios (rivers.bmp)...")
 		var rv := _bmp8("map/rivers.bmp")
 		if not rv.is_empty() and rv[0] == w and rv[1] == h:
 			# índice da paleta (< 254 = rio; 254 = terra; 255 = mar), o shader lê direto
 			Image.create_from_data(w, h, false, Image.FORMAT_L8, rv[2]).save_png(OUT_DIR + "/rivers.png")
+			_set_status("Rios em linhas...")
+			river_vec = _river_lines(rv[2], w, h)
+	_set_status("Texturas do mapa (relevo, altitude, terreno)...")
+	var map_tex := _map_textures(w, h)
 
 	_set_status("Gravando o mapa...")
 	var idimg := Image.create_from_data(w, h, false, Image.FORMAT_RGB8, out)
@@ -613,6 +626,10 @@ func _import() -> String:
 	var goods := {}
 	var prov_buildings := {}
 	var hre := {}                   # províncias do Sacro Império em 1444
+	var cores := {}                 # pid -> núcleos (gravados quando há algum de outro país que não o dono)
+	var claims := {}                # pid -> reivindicações
+	var autonomy := {}              # pid -> autonomia local em 1444 (add_local_autonomy do histórico)
+	var prov_mods := {}             # pid -> modificadores permanentes (estuários, sound_toll...)
 	var cot := {}                   # centro de comércio (nível)
 	var files := _list("history/provinces/")
 	for fi in files.size():
@@ -625,7 +642,17 @@ func _import() -> String:
 		var pid := int(m.get_string(1))
 		if not defs.has(pid):
 			continue
-		var st := _state_at(_parse(_text(f)))
+		var items := _parse(_text(f))
+		var st := _state_at(items)
+		var cc := _core_claims(items)
+		if not cc[0].is_empty():
+			cores[pid] = cc[0]
+		if not cc[1].is_empty():
+			claims[pid] = cc[1]
+		if float(cc[2]) > 0.0:
+			autonomy[pid] = float(cc[2])
+		if not (cc[3] as Array).is_empty():
+			prov_mods[pid] = cc[3]
 		if st.get("owner") is String and st["owner"] != "":
 			owner[pid] = st["owner"]
 		if st.get("culture") is String:
@@ -854,9 +881,19 @@ func _import() -> String:
 				prov["center_of_trade"] = cot[pid]
 			if hre.has(pid):
 				prov["hre"] = true
+			for t in cores.get(pid, []):
+				if t != owner.get(pid, ""):
+					prov["cores"] = cores[pid]
+					break
+			if claims.has(pid):
+				prov["claims"] = claims[pid]
+			if autonomy.has(pid):
+				prov["local_autonomy"] = autonomy[pid]
+			if prov_mods.has(pid):
+				prov["modifiers"] = prov_mods[pid]
 			var coastal := false
 			for q in neigh[pid]:
-				if sea.has(q):
+				if sea.has(q) and not lakes.has(q):      # os lagos não deixam a província costeira (EU4)
 					coastal = true
 					break
 			prov["coastal"] = coastal
@@ -883,6 +920,7 @@ func _import() -> String:
 			if not have.is_empty():
 				prov["institutions"] = have
 		provinces.append(prov)
+	var cbw := _casus_belli()
 	var f := FileAccess.open(OUT_DIR + "/map.json", FileAccess.WRITE)
 	if f == null:
 		return "Não consegui gravar " + OUT_DIR + "/map.json"
@@ -894,9 +932,13 @@ func _import() -> String:
 			"idea_groups": idea_groups, "national_ideas": national_ideas,
 			"advisor_types": advisor_types, "advisors": advisors,
 			"centers_of_trade": trade[0], "trade_rules": trade[1], "opinion_modifiers": _opinions(),
+			"casus_belli": cbw[0], "war_goals": cbw[1], "diplomacy_data": _diplomacy_data(), "map_textures": map_tex, "rivers": river_vec,
 			"institutions": institutions, "diplomacy": diplomacy, "emperor": emperor,
 			"celestial_emperor": celestial, "wars": wars, "icons": icons, "provinces": provinces}))
 	f.close()
+	var err := _all_data()
+	if err != "":
+		return err
 	_set_status("Pronto: %d províncias, %d países em 11/11/1444." % [defs.size(), countries.size()])
 	return ""
 
@@ -1003,14 +1045,26 @@ func _buildings() -> Array:
 const TRADE_DEFINES := ["TRADE_CAPITAL_POWER", "TRADE_NON_CAPITAL_OFFICE", "TRADE_MERCHANT_PRESENT",
 		"TRADE_ADDED_VALUE_MODIFER", "TRADE_PROPAGATE_DIVIDER", "TRADE_PROPAGATE_THRESHOLD", "TRADED_FRACTION_FOR_BONUS",
 		"MERCHANT_MAX_POWER_BONUS", "MIN_RELATIONS_TO_ALLY", "IMPROVE_RELATION_SPEED", "INSULT_TRUST",
-		"BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER"]
+		"BASE_MP_TO_MANPOWER", "MAX_MANPOWER", "MIN_MONTHLY_MANPOWER", "PS_BOOST_STABILITY",
+		"BREAK_MARRIAGE_STABILITY_PENALTY", "FORM_MARRIAGE_HIGHER_PRESTIGE", "FORM_MARRIAGE_HIGHER_LEGITIMACY",
+		"INFANTRY_COST", "CAVALRY_COST", "ARTILLERY_COST", "INFANTRY_TIME", "CAVALRY_TIME", "ARTILLERY_TIME",
+		"INFANTRY_SPEED", "LAND_MAINTENANCE_FACTOR", "LAND_TECH_MAINTENANCE_IMPACT",
+		"LAND_FORCELIMIT_EXTRA_COST_FACTOR", "MONTHLY_REINFORCE", "STARTING_ARMY_SIZE",
+		"INF_REGIMENT_MANPOWER_COST", "MIN_ARMY_MAINTENANCE",
+		"BASE_COMBAT_WIDTH", "MAX_COMBAT_WIDTH", "DAYS_PER_PHASE", "COMBAT_DICE_SIDE", "WAR_LENGTH_DAMAGE_MODIFIER",
+		"BATTLE_DAILY_MORALE_DAMAGE", "OVERRUN_FACTOR", "PRESTIGE_FROM_LAND", "MORALE_RECOVERY_SPEED",
+		"MORALE_RECOVERY_SPEED_OWN_TERRITORY", "GARRISON_SIZE", "SIEGE_FORCE_NEEDED_MULTIPLIER", "DAYS_PER_SIEGE_PHASE",
+		"SIEGE_WIN", "SIEGE_MEMORY", "SIEGE_ATTRITION", "SUPPLYLIMIT_BASE_MULTIPLIER", "WARSCORE_MAX_FROM_BATTLES",
+		"SIEGE_BONUS_SUPPLIES_SHORTAGE", "SIEGE_BONUS_FOOD_SHORTAGE", "SIEGE_BONUS_WATER_SHORTAGE", "SIEGE_BONUS_DEFENDERS_DESERT"]
 const TRADE_STATIC := [["development", "province_trade_power_value", "dev_trade_power"],
 		["development", "local_missionary_strength", "dev_missionary_strength"],
 		["coastal", "province_trade_power_modifier", "coastal_trade_power"],
 		["mercantilism", "global_prov_trade_power_modifier", "mercantilism_trade_power"],
 		["base_values", "merchants", "base_merchants"], ["core", "local_manpower_modifier", "core_manpower"]]
 ## Blocos inteiros de modificadores estáticos guardados em trade_rules["statics"] (efeitos numéricos).
-const STATIC_BLOCKS := ["prestige", "emperor"]
+const STATIC_BLOCKS := ["prestige", "emperor", "stability", "positive_stability", "negative_stability",
+		"legitimacy", "num_of_marriages", "republican_tradition",
+		"inverse_republican_tradition", "devotion", "development", "capital_city"]
 
 
 ## [centros de comércio, regras de comércio] (mesma saída do import_eu4.py).
@@ -1088,6 +1142,476 @@ func _opinions() -> Dictionary:
 					d[x[0]] = _int_if_whole(float(x[1]))
 			out[kv[0]] = d
 	return out
+
+
+## Núcleos e reivindicações da província no dia de início (add_core/remove_core/add_claim/
+## remove_claim no topo e nos blocos datados até a data, em ordem): [núcleos, reivindicações] ordenados.
+func _core_claims(items: Array) -> Array:
+	var seq := []
+	var dated := []
+	for kv in items:
+		if kv[0] == "":
+			continue
+		var d := _date(kv[0])
+		if d >= 0 and kv[1] is Array:
+			dated.append([d, dated.size(), kv[1]])
+		else:
+			seq.append(kv)
+	dated.sort_custom(func(a, b): return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1]))   # estável
+	for e in dated:
+		if e[0] <= CUTOFF:
+			for kv in e[2]:
+				if kv[0] != "":
+					seq.append(kv)
+	var cores := []
+	var claims := []
+	var autonomy := 0.0
+	var mods := []
+	for kv in seq:
+		if (kv[0] == "add_permanent_province_modifier" or kv[0] == "add_province_modifier") and kv[1] is Array:
+			for x in kv[1]:
+				if x[0] == "name" and x[1] is String and not (x[1] in mods):
+					mods.append(x[1])
+					break
+			continue
+		if kv[0] == "remove_province_modifier" and kv[1] is String:
+			mods.erase(kv[1])
+			continue
+		if not (kv[1] is String):
+			continue
+		if (kv[0] == "add_local_autonomy" or kv[0] == "set_local_autonomy") and (kv[1] as String).is_valid_float():
+			autonomy = clampf((autonomy if kv[0] == "add_local_autonomy" else 0.0) + (kv[1] as String).to_float(), 0.0, 100.0)
+		match kv[0]:
+			"add_core":
+				if not (kv[1] in cores):
+					cores.append(kv[1])
+			"remove_core":
+				cores.erase(kv[1])
+			"add_claim":
+				if not (kv[1] in claims):
+					claims.append(kv[1])
+			"remove_claim":
+				claims.erase(kv[1])
+	cores.sort()
+	claims.sort()
+	return [cores, claims, autonomy, mods]
+
+
+## Árvore do script do EU4 em listas [chave, valor] (chave "" para itens soltos), para o JSON.
+static func _tree(items: Array) -> Array:
+	var out := []
+	for kv in items:
+		out.append([kv[0], _tree(kv[1]) if kv[1] is Array else kv[1]])
+	return out
+
+
+## Casus belli (common/cb_types) e objetivos de guerra (common/wargoal_types), com as condições
+## (prerequisites) e os blocos de paz em árvore; o jogo avalia um subconjunto das condições.
+func _casus_belli() -> Array:
+	var cbs := []
+	var wgs := []
+	var seen := {}
+	for f in _list("common/cb_types/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array) or seen.has(kv[0]):
+				continue
+			seen[kv[0]] = true
+			var cb := {"id": kv[0], "triggered": false, "months": 0, "valid_for_subject": true, "exclusive": false,
+					"independence": false, "prerequisites_self": [], "prerequisites": [], "war_goal": ""}
+			for x in kv[1]:
+				var k: String = x[0]
+				var v = x[1]
+				if k == "is_triggered_only" and v is String:
+					cb["triggered"] = v == "yes"
+				elif k in ["valid_for_subject", "exclusive", "independence"] and v is String:
+					cb[k] = v == "yes"
+				elif k == "months" and v is String and (v as String).is_valid_float():
+					cb["months"] = _int_if_whole(float(v))
+				elif k in ["prerequisites_self", "prerequisites"] and v is Array:
+					cb[k] = _tree(v)
+				elif k == "war_goal" and v is String:
+					cb["war_goal"] = v
+			cbs.append(cb)
+	seen = {}
+	for f in _list("common/wargoal_types/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array) or seen.has(kv[0]):
+				continue
+			seen[kv[0]] = true
+			var wg := {"id": kv[0], "type": "", "attacker": [], "defender": [], "war_name": ""}
+			for x in kv[1]:
+				if x[0] in ["type", "war_name"] and x[1] is String:
+					wg[x[0]] = x[1]
+				elif x[0] in ["attacker", "defender"] and x[1] is Array:
+					wg[x[0]] = _tree(x[1])
+			wgs.append(wg)
+	return [cbs, wgs]
+
+
+## Valor simples do script do EU4: número, yes/no -> bool, ou o texto.
+func _script_value(v: String) -> Variant:
+	if v == "yes" or v == "no":
+		return v == "yes"
+	return _int_if_whole(float(v)) if v.is_valid_float() else v
+
+
+## Tudo de diplomacia do EU4 que o jogo ainda não tinha (o mesmo do import_eu4.py): condições e
+## efeitos das ações (common/diplomatic_actions), ações por script (common/new_diplomatic_actions;
+## static_actions), tipos de súditos resolvidos (common/subject_types, copy_from), tratados de paz
+## por script (common/peace_treaties), insultos (common/insults) e as constantes NDiplomacy.
+func _diplomacy_data() -> Dictionary:
+	var out := {"actions": {}, "scripted_actions": {}, "static_actions": {}, "subject_types": {},
+			"peace_treaties": {}, "insults": [], "defines": {}}
+	for f in _list("common/diplomatic_actions/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array) or out["actions"].has(kv[0]):
+				continue
+			var a := {"conditions": [], "effect": []}
+			for x in kv[1]:
+				if x[0] == "condition" and x[1] is Array:
+					var c := {"tooltip": "", "potential": [], "allow": []}
+					for y in x[1]:
+						if y[0] == "tooltip" and y[1] is String:
+							c["tooltip"] = y[1]
+						elif y[0] in ["potential", "allow"] and y[1] is Array:
+							c[y[0]] = _tree(y[1])
+					a["conditions"].append(c)
+				elif x[0] == "effect" and x[1] is Array:
+					a["effect"] = _tree(x[1])
+			out["actions"][kv[0]] = a
+	for f in _list("common/new_diplomatic_actions/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array):
+				continue
+			if kv[0] == "static_actions":
+				for x in kv[1]:
+					if x[0] != "" and x[1] is Array and not out["static_actions"].has(x[0]):
+						var d := {}
+						for y in x[1]:
+							if y[0] != "" and y[1] is String:
+								d[y[0]] = _script_value(y[1])
+						out["static_actions"][x[0]] = d
+			elif not out["scripted_actions"].has(kv[0]):
+				out["scripted_actions"][kv[0]] = _tree(kv[1])
+	var raw := {}
+	var order := []
+	for f in _list("common/subject_types/"):
+		for kv in _parse(_text(f)):
+			if kv[0] == "" or not (kv[1] is Array):
+				continue
+			if not raw.has(kv[0]):
+				raw[kv[0]] = []
+				order.append(kv[0])
+			raw[kv[0]].append_array(kv[1])
+	var done := {}
+	for name in order:
+		if name != "default":
+			out["subject_types"][name] = _resolve_subject(name, raw, done, 0)
+	for f in _list("common/peace_treaties/"):
+		for kv in _parse(_text(f)):
+			if kv[0] != "" and kv[1] is Array and not out["peace_treaties"].has(kv[0]):
+				out["peace_treaties"][kv[0]] = _tree(kv[1])
+	var seen := {}
+	for f in _list("common/insults/"):
+		for kv in _parse(_text(f)):
+			if kv[0] != "" and kv[1] is Array and not seen.has(kv[0]):
+				seen[kv[0]] = true
+				var trig := []
+				for x in kv[1]:
+					if x[0] == "trigger" and x[1] is Array:
+						trig = x[1]
+						break
+				out["insults"].append({"id": kv[0], "trigger": _tree(trig)})
+	if _index.has("common/defines.lua"):
+		var m := RegEx.create_from_string("(?s)NDiplomacy\\s*=\\s*\\{(.*?)\\n\\}").search(_text("common/defines.lua"))
+		if m:
+			var body := RegEx.create_from_string("--[^\\n]*").sub(m.get_string(1), "", true)
+			for mm in RegEx.create_from_string("\\b([A-Z][A-Z0-9_]*)\\s*=\\s*(-?[0-9.]+)").search_all(body):
+				if mm.get_string(2).is_valid_float() and not out["defines"].has(mm.get_string(1)):
+					out["defines"][mm.get_string(1)] = _int_if_whole(float(mm.get_string(2)))
+	return out
+
+
+func _resolve_subject(name: String, raw: Dictionary, done: Dictionary, depth: int) -> Dictionary:
+	if done.has(name):
+		return done[name]
+	var own := {}
+	var base := {}
+	for x in raw.get(name, []):
+		if x[0] == "copy_from" and x[1] is String and raw.has(x[1]) and depth < 10:
+			base = {}
+			var r := _resolve_subject(x[1], raw, done, depth + 1)
+			for k in r:
+				if k != "count":
+					base[k] = r[k]
+		elif x[0] != "" and x[1] is String:
+			own[x[0]] = _script_value(x[1])
+	var res := base.duplicate()
+	for k in own:
+		res[k] = own[k]
+	done[name] = res
+	return res
+
+
+## Rios do rivers.bmp em linhas (mesma regra do tools/import_eu4.py river_lines): pixels com índice
+## < 254; vizinhos nas 4 direções e na diagonal só quando nenhum dos dois pixels entre eles é rio;
+## linhas de ponta/junção (grau != 2) a ponta/junção, depois os laços, na ordem dos pixels. Cada
+## linha = [largura, x0, y0, x1, y1, ...]; largura = maior índice >= 3 (3 = mais fino ... 11).
+func _river_lines(data: PackedByteArray, w: int, h: int) -> Array:
+	var val := {}
+	var keys := PackedInt32Array()
+	for i in data.size():
+		if data[i] < 254:
+			val[i] = data[i]
+			keys.append(i)
+	var orth := [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
+	var diag := [Vector2i(1, 1), Vector2i(-1, 1), Vector2i(-1, -1), Vector2i(1, -1)]
+	var nb := {}
+	for k in keys:
+		var y := k / w
+		var x := k % w
+		var out := []
+		for d in orth:
+			var nx: int = x + d.x
+			var ny: int = y + d.y
+			if nx >= 0 and nx < w and ny >= 0 and ny < h and val.has(ny * w + nx):
+				out.append(ny * w + nx)
+		for d in diag:
+			var nx: int = x + d.x
+			var ny: int = y + d.y
+			if nx >= 0 and nx < w and ny >= 0 and ny < h and val.has(ny * w + nx) \
+					and not val.has(y * w + nx) and not val.has(ny * w + x):
+				out.append(ny * w + nx)
+		nb[k] = out
+	var done := {}
+	var lines := []
+	for k in keys:
+		if (nb[k] as Array).size() != 2:
+			for n in nb[k]:
+				if not done.has(_edge_key(k, n)):
+					lines.append(_river_walk(k, n, nb, val, done, w))
+	for k in keys:
+		for n in nb[k]:
+			if not done.has(_edge_key(k, n)):
+				lines.append(_river_walk(k, n, nb, val, done, w))
+	return lines
+
+
+static func _edge_key(a: int, b: int) -> int:
+	return mini(a, b) * 16777216 + maxi(a, b)
+
+
+func _river_walk(a: int, b: int, nb: Dictionary, val: Dictionary, done: Dictionary, w: int) -> Array:
+	var pts := [a, b]
+	done[_edge_key(a, b)] = true
+	var prev := a
+	var cur := b
+	while (nb[cur] as Array).size() == 2 and cur != a:
+		var nxt: int = nb[cur][0] if nb[cur][0] != prev else nb[cur][1]
+		var e := _edge_key(cur, nxt)
+		if done.has(e):
+			break
+		done[e] = true
+		pts.append(nxt)
+		prev = cur
+		cur = nxt
+	var wv := 3
+	var any := false
+	for q in pts:
+		if int(val[q]) >= 3:
+			wv = int(val[q]) if not any else maxi(wv, int(val[q]))
+			any = true
+	var line := [wv]
+	for q in pts:
+		line.append(q % w)
+		line.append(q / w)
+	return line
+
+
+# ------------------------------------------------------------------ texturas do mapa
+## Texturas do mapa gravadas ao lado do province_ids.png (mesma saída do tools/import_eu4.py).
+const MAP_TEXTURES := ["normal.png", "height.png", "terrain_idx.png", "colormap.png", "colormap_water.png",
+		"terra_incognita.png", "fow_noise.png"]
+const COLORMAPS := ["colormap_summer", "colormap_spring", "colormap_autumn", "colormap_winter"]
+
+
+## normal.png (map/world_normal.bmp, relevo para a luz), height.png (map/heightmap.bmp a cada 2 px,
+## profundidade do mar), terrain_idx.png (índice do map/terrain.bmp a cada 2 px; cores da paleta
+## em terrain_palette) e, se houver, colormap.png (map/terrain/colormap_summer.dds ou outra
+## estação), colormap_water.png, terra_incognita.png (map_overlay_tile.dds) e fow_noise.png
+## (fogofwar.dds, canal R). Devolve {"terrain_palette": [[r, g, b] × 256]}.
+func _map_textures(w: int, h: int) -> Dictionary:
+	var info := {}
+	for f in MAP_TEXTURES:
+		if FileAccess.file_exists(OUT_DIR + "/" + f):
+			DirAccess.remove_absolute(OUT_DIR + "/" + f)
+	if _index.has("map/world_normal.bmp"):
+		var im := Image.new()
+		if im.load_bmp_from_buffer(_bytes("map/world_normal.bmp")) == OK:
+			im.convert(Image.FORMAT_RGB8)
+			im.save_png(OUT_DIR + "/normal.png")
+	if _index.has("map/heightmap.bmp"):
+		var hm := Image.new()
+		if hm.load_bmp_from_buffer(_bytes("map/heightmap.bmp")) == OK and hm.get_width() == w and hm.get_height() == h:
+			hm.convert(Image.FORMAT_L8)
+			_half(hm.get_data(), w, h).save_png(OUT_DIR + "/height.png")
+	if _index.has("map/terrain.bmp"):
+		var tb := _bmp8("map/terrain.bmp")
+		if not tb.is_empty() and tb[0] == w and tb[1] == h:
+			_half(tb[2], w, h).save_png(OUT_DIR + "/terrain_idx.png")
+			var b := _bytes("map/terrain.bmp")
+			var n := b.decode_u32(46)
+			n = 256 if n == 0 else mini(n, 256)
+			var pal_at := 14 + b.decode_u32(14)
+			var pal := []
+			for i in 256:
+				if i < n and pal_at + i * 4 + 2 < b.size():
+					pal.append([b[pal_at + i * 4 + 2], b[pal_at + i * 4 + 1], b[pal_at + i * 4]])
+				else:
+					pal.append([0, 0, 0])
+			info["terrain_palette"] = pal
+	var pairs := []
+	for c in COLORMAPS:
+		pairs.append([c, "colormap.png"])
+	pairs.append(["colormap_water", "colormap_water.png"])
+	# map_overlay_tile.dds = Terra Incognita (TITexture dos shaders, repetida a cada 1876×2048 px);
+	# fogofwar.dds = ruído animado da névoa de guerra (FoWDiffuse, canal vermelho)
+	pairs.append(["map_overlay_tile", "terra_incognita.png"])
+	pairs.append(["fogofwar", "fow_noise.png"])
+	for pr in pairs:
+		var rel: String = "map/terrain/" + pr[0] + ".dds"
+		if _index.has(rel) and not FileAccess.file_exists(OUT_DIR + "/" + pr[1]):
+			var im := _dds(_bytes(rel))
+			if im:
+				im.convert(Image.FORMAT_RGB8)
+				if pr[1] == "fow_noise.png":
+					var rgb := im.get_data()
+					var r := PackedByteArray()
+					r.resize(rgb.size() / 3)
+					for i in r.size():
+						r[i] = rgb[i * 3]
+					im = Image.create_from_data(im.get_width(), im.get_height(), false, Image.FORMAT_L8, r)
+				im.save_png(OUT_DIR + "/" + pr[1])
+	return info
+
+
+## Imagem de 1 byte por pixel com 1 a cada 2 pixels (linhas e colunas pares).
+static func _half(data: PackedByteArray, w: int, h: int) -> Image:
+	var hw := w / 2
+	var hh := h / 2
+	var out := PackedByteArray()
+	out.resize(hw * hh)
+	for y in hh:
+		var src := y * 2 * w
+		var dst := y * hw
+		for x in hw:
+			out[dst + x] = data[src + x * 2]
+	return Image.create_from_data(hw, hh, false, Image.FORMAT_L8, out)
+
+
+# ------------------------------------------------------------------ todos os scripts do EU4
+## Todos os scripts do EU4 em árvore [chave, valor], um JSON por pasta (mesma saída do
+## tools/import_eu4.py): eu4data/<pasta>.json = {arquivo sem .txt: árvore} (common/<x>, history/<x>,
+## events, decisions, missions; os .txt soltos de common/ em common/_files.json), eu4data/map.json =
+## os .txt/.map da pasta map, eu4data/defines.json = as constantes dos .lua (blocos + overrides de
+## common/defines/) e eu4data/index.json = pasta -> número de arquivos. Grava arquivo por arquivo
+## (pouca memória, mesmo com events/ inteiro).
+func _all_data() -> String:
+	var out := OUT_DIR + "/eu4data"
+	_remove_tree(out)
+	DirAccess.make_dir_recursive_absolute(out)
+	var groups := {}
+	var keys := []
+	for rel in _list(""):
+		var r: String = rel
+		var key := ""
+		if r.begins_with("map/"):
+			if not r.get_extension().to_lower() in ["txt", "map"]:
+				continue
+			key = "map"
+		else:
+			var top := r.get_slice("/", 0)
+			if not (top in SCRIPT_TOPS) or not r.to_lower().ends_with(".txt"):
+				continue
+			key = r.get_base_dir()
+			if key == "common":
+				key = "common/_files"
+			elif key.count("/") > 1:
+				key = key.get_slice("/", 0) + "/" + key.get_slice("/", 1)
+		if not groups.has(key):
+			groups[key] = []
+			keys.append(key)
+		groups[key].append(r)
+	keys.sort()
+	var index := {}
+	var ext_re := RegEx.create_from_string("(?i)\\.(txt|map)$")
+	var done := 0
+	var total := 0
+	for k in keys:
+		total += groups[k].size()
+	for key in keys:
+		_set_status("Gravando os scripts do EU4 (%s)... %d/%d" % [key, done, total])
+		var path: String = out + "/" + key + ".json"
+		DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+		var f := FileAccess.open(path, FileAccess.WRITE)
+		if f == null:
+			return "Não consegui gravar " + path
+		f.store_string("{")
+		var seen := {}
+		for rel in groups[key]:
+			var r: String = rel
+			var name := r.substr(key.length() + 1) if r.begins_with(key + "/") else r.get_file()
+			name = ext_re.sub(name, "")
+			done += 1
+			if seen.has(name):
+				continue
+			if not seen.is_empty():
+				f.store_string(",")
+			seen[name] = true
+			f.store_string(JSON.stringify(name) + ":" + JSON.stringify(_tree(_parse(_text(r)))))
+		f.store_string("}")
+		f.close()
+		index[key] = seen.size()
+	var defines := {"overrides": {}}
+	var luas := ["common/defines.lua"]
+	for r in _list("common/defines/"):
+		if (r as String).to_lower().ends_with(".lua"):
+			luas.append(r)
+	var com := RegEx.create_from_string("--[^\\n]*")
+	var blk := RegEx.create_from_string("(?s)\\b(?!NDefines\\b)(N[A-Za-z]+)\\s*=\\s*\\{(.*?)\\n\\}")
+	var kv := RegEx.create_from_string("\\b([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(\"[^\"]*\"|-?[0-9.]+)")
+	var ov := RegEx.create_from_string("\\bNDefines\\.(N[A-Za-z]+)\\.([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(\"[^\"]*\"|-?[0-9.]+)")
+	for r in luas:
+		if not _index.has(r):
+			continue
+		var text := com.sub(_text(r), "", true)
+		for m in blk.search_all(text):
+			if not defines.has(m.get_string(1)):
+				defines[m.get_string(1)] = {}
+			var d: Dictionary = defines[m.get_string(1)]
+			for mm in kv.search_all(m.get_string(2)):
+				if not d.has(mm.get_string(1)):
+					d[mm.get_string(1)] = _lua_value(mm.get_string(2))
+		var over := {}
+		for mm in ov.search_all(text):
+			var k2 := mm.get_string(1) + "." + mm.get_string(2)
+			if not over.has(k2):
+				over[k2] = _lua_value(mm.get_string(3))
+		if not over.is_empty():
+			defines["overrides"][(r as String).get_file().get_basename()] = over
+	for pair in [["defines.json", defines], ["index.json", index]]:
+		var f := FileAccess.open(out + "/" + pair[0], FileAccess.WRITE)
+		if f == null:
+			return "Não consegui gravar " + out + "/" + pair[0]
+		f.store_string(JSON.stringify(pair[1]))
+		f.close()
+	return ""
+
+
+func _lua_value(v: String) -> Variant:
+	if v.begins_with("\""):
+		return v.trim_prefix("\"").trim_suffix("\"")
+	return _int_if_whole(float(v)) if v.is_valid_float() else null
 
 
 func _int_if_whole(x: float) -> Variant:
@@ -1318,6 +1842,13 @@ func _icon_sources(trade_goods: Array, religions: Array, institutions: Array, ad
 			var m: Dictionary = idea["modifiers"]
 			if not m.is_empty() and not (m.keys()[0] in mods):
 				mods.append(m.keys()[0])
+	# todos os ícones de modificador do EU4 (gfx/interface/ideas_EU4/<modificador>.dds): as telas
+	# mostram o ícone de qualquer efeito (estamentos, terra da coroa...), não só o das ideias
+	for k in _list("gfx/interface/ideas_eu4/"):
+		var f := (k as String).get_file()
+		var mm := f.get_basename().to_lower()
+		if f.to_lower().ends_with(".dds") and not (mm in mods):
+			mods.append(mm)
 	for m in mods:
 		src.append(["mod:" + m, "gfx/interface/ideas_eu4/%s.dds" % (m as String).to_lower(), -1, 0])
 	return src
@@ -1400,7 +1931,8 @@ func _make_ui() -> void:
 const GUI_FILES := ["topbar", "speed_controls", "minimappanel", "provinceview", "countryview", "countrycourtview",
 		"countrygovernmentview", "countrytechnologyview", "countryideasview",
 		"countryeconomyview", "countryreligionview",
-		"macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview"]   # o _override vem antes: as janelas dele valem
+		"macrobuildinterface_override", "macrobuildinterface", "countrydiplomacyview", "countrystabilityview",
+		"unitpanel_card", "unitpanel_main", "unitpanel_sub", "peaceview", "frontend", "countrydecisionsview", "countrytradeview", "countryestatesview", "estate_privileges", "core"]   # o _override vem antes: as janelas dele valem
 ## Ícones de terreno da tela da província (GFX_combat_terrain_<terreno do EU4>).
 const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_coastal_desert", "GFX_combat_terrain_coastline", "GFX_combat_terrain_desert",
@@ -1411,7 +1943,8 @@ const COMBAT_TERRAINS := [
 		"GFX_combat_terrain_plains", "GFX_combat_terrain_savannah", "GFX_combat_terrain_steppe",
 		"GFX_combat_terrain_woods"]
 ## Sprites usados pelo jogo além dos citados nos .gui (botões dos modos de mapa).
-const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
+const GUI_EXTRA_PREFIXES := ["privilege_"]   # sprites usados pelo código do EU4, não pelos .gui
+const GUI_EXTRA_SPRITES := ["GFX_policy_icon_frame_free", "ToolTip", "GFX_crownland", "GFX_sale_of_titles", "GFX_summon_the_diet", "GFX_seize_land", "GFX_estate_loyalty_L", "GFX_estate_influence_L", "GFX_estate_territory_L", "GFX_diplomacy_action_economy", "GFX_mapmode_political", "GFX_mapmode_terrain", "GFX_mapmode_culture",
 		"GFX_mapmode_religion", "GFX_mapmode_trade_goods", "GFX_mapmode_trade", "GFX_mapmode_areas",
 		"GFX_mapmode_institutions", "GFX_mapmode_diplomatic", "GFX_scroll_up", "GFX_scroll_down", "GFX_scroll_drager",
 		"GFX_scroll_track", "GFX_country_icon_religion",
@@ -1419,8 +1952,8 @@ const GUI_EXTRA_SPRITES := ["GFX_mapmode_political", "GFX_mapmode_terrain", "GFX
 		"GFX_diplomacy_amvassal", "GFX_diplomacy_leadunions", "GFX_diplomacy_inunion",
 		"GFX_diplomacy_guaranteed", "GFX_diplomacy_guaranting", "GFX_diplomacy_we_increase_relation",
 		"GFX_diplomacy_they_increase_relation", "GFX_diplomacy_war", "GFX_diplomacy_leadmarch",
-		"GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance",
-		"GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence"]
+		"GFX_diplomacy_action_relation", "GFX_diplomacy_action_alliance", "GFX_diplomacy_action_requestpeace",
+		"GFX_diplomacy_action_dynasty", "GFX_diplomacy_action_influence", "GFX_diplomacy_coalitions"]
 const SPRITE_KINDS := ["spritetype", "frameanimatedspritetype", "textspritetype", "corneredtilespritetype",
 		"maskedshieldtype", "progressbartype"]
 
@@ -1474,7 +2007,7 @@ func _collect_refs(items: Array, sprites: Dictionary, fonts: Dictionary) -> void
 			fonts[kv[1]] = true
 
 
-func _collect_defs(items: Array, defs: Dictionary, font_defs: Dictionary) -> void:
+func _collect_defs(items: Array, defs: Dictionary, font_defs: Dictionary, textcolors := {}) -> void:
 	for kv in items:
 		if not (kv[1] is Array):
 			continue
@@ -1485,9 +2018,31 @@ func _collect_defs(items: Array, defs: Dictionary, font_defs: Dictionary) -> voi
 				defs[d["name"]] = [k, d]
 		elif k == "bitmapfont" and d.has("name"):
 			if not font_defs.has(d["name"]):
+				var tc := {}
+				for x in kv[1]:
+					if (x[0] as String).to_lower() == "textcolors" and x[1] is Array:
+						tc = _colors(x[1])
+				d["_textcolors"] = tc
 				font_defs[d["name"]] = d
+		elif k == "textcolors":
+			if textcolors.is_empty():
+				textcolors.merge(_colors(kv[1]))
 		else:
-			_collect_defs(kv[1], defs, font_defs)
+			_collect_defs(kv[1], defs, font_defs, textcolors)
+
+
+## textcolors = { G = { 0 255 0 } ... } -> {"G": [0, 255, 0]} (letras com maiúsculas: g ≠ G).
+static func _colors(items: Array) -> Dictionary:
+	var out := {}
+	for kv in items:
+		if kv[0] != "" and kv[1] is Array:
+			var rgb := []
+			for x in kv[1]:
+				if x[0] == "" and x[1] is String and (x[1] as String).is_valid_float():
+					rgb.append(int(float(x[1])))
+			if rgb.size() >= 3:
+				out[kv[0]] = rgb.slice(0, 3)
+	return out
 
 
 ## Telas do EU4 (GUI_FILES) em user://eu4/gui/: gui.json (árvores dos .gui já lidas, sprites e
@@ -1499,7 +2054,7 @@ func _make_gui() -> void:
 		by_low[(k as String).to_lower()] = k
 	var files := {}
 	var used := {}
-	var used_fonts := {}
+	var used_fonts := {"tahoma_60": true, "ToolTip_Font": true}   # nomes no mapa (Mapfont) e dicas
 	for g in GUI_FILES:
 		var rel: String = by_low.get("interface/%s.gui" % g, "")
 		if rel == "":
@@ -1514,9 +2069,14 @@ func _make_gui() -> void:
 	_set_status("Lendo as telas do EU4...")
 	var defs := {}
 	var font_defs := {}
+	var textcolors := {}
 	for k in _list("interface/"):
 		if (k as String).to_lower().ends_with(".gfx"):
-			_collect_defs(_parse(_text(k)), defs, font_defs)
+			_collect_defs(_parse(_text(k)), defs, font_defs, textcolors)
+	for n in defs:                      # ícones dos privilégios dos estamentos (usados pelo código do EU4)
+		for pre in GUI_EXTRA_PREFIXES:
+			if str(n).begins_with(pre):
+				used[n] = true
 	DirAccess.make_dir_recursive_absolute(OUT_DIR + "/gui")
 	var done := {}
 	var sprites := {}
@@ -1558,8 +2118,10 @@ func _make_gui() -> void:
 		f.store_buffer(_bytes(fnt))
 		f.close()
 		fonts[n] = {"fnt": fnt, "page": page, "color": str(fd.get("color", "0xffffffff")).to_lower()}
+		if not (fd.get("_textcolors", {}) as Dictionary).is_empty():
+			fonts[n]["textcolors"] = fd["_textcolors"]
 	var out := FileAccess.open(OUT_DIR + "/gui/gui.json", FileAccess.WRITE)
-	out.store_string(JSON.stringify({"files": files, "sprites": sprites, "fonts": fonts}))
+	out.store_string(JSON.stringify({"files": files, "sprites": sprites, "fonts": fonts, "textcolors": textcolors}))
 	out.close()
 
 

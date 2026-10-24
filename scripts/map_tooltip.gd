@@ -83,6 +83,13 @@ func update_for(map: MapView, pid: int, mouse: Vector2) -> void:
 
 func _fill(map: MapView, pid: int) -> void:
 	var p: Dictionary = map.provinces[pid]
+	if map.hidden(pid):                 # Terra Incógnita: nada da província aparece
+		_title.text = Loc.t("TERRA_INCOGNITA", "Terra Incógnita")
+		_sub.text = ""
+		_flag.visible = false
+		_swatch.get_parent().visible = true
+		_swatch.color = Color(0.37, 0.35, 0.32)
+		return
 	_sub.text = p["name"]
 	var flag: Texture2D = null
 	if map.map_mode in [MapView.MapMode.POLITICO, MapView.MapMode.DIPLOMACIA] and not p["sea"]:

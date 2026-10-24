@@ -3,8 +3,6 @@ extends Node2D
 
 const MAP_SCALE := 1.0
 const CAM_SPEED := 900.0
-var zoom_min := 0.25
-const ZOOM_MAX := 8.0
 
 var map: MapView
 var clock := GameClock.new()
@@ -17,9 +15,35 @@ var religion := Religion.new()
 var construction := Construction.new()
 var manpower := Manpower.new()
 var prestige := Prestige.new()
+var stability := Stability.new()
+var legitimacy := Legitimacy.new()
+var army := Army.new()
+var war := War.new()
+var combat := Combat.new()
+var siege := Siege.new()
+var war_ai := WarAI.new()
+var cbs := CasusBelli.new()
+var estates := Estates.new()      # estamentos do EU4 (clero, nobreza, burgueses...)
+var coalition := Coalition.new()
+var discovery := Discovery.new()      # Terra Incógnita e névoa de guerra
+var rivals := Rivals.new()            # rivais (aba Diplomacia)
+var policies := Policies.new()        # políticas (aba Decisões e Políticas)
+var effects := Eu4Effects.new()       # efeitos do EU4 (decisões), flags e modificadores de país
+var peace := Peace.new()
+var peace_view: Eu4PeaceView        # tela de paz do EU4
+var frontend: Eu4Frontend
+var main_menu: Eu4MainMenu          # menu principal do EU4 (primeira tela)
+var map_names: MapNames            # nomes dos países e províncias no mapa
+var eu4_gui: Eu4Gui          # tela de escolha de país do EU4 (frontend.gui)
+var army_layer: ArmyLayer          # marcadores dos exércitos no mapa
+var fog_layer: FogLayer            # Terra Incógnita e névoa de guerra
+var unit_panel: Eu4UnitPanel       # painel do exército selecionado (telas do EU4)
+var selected_army := -1
+var _press_pos := Vector2.ZERO     # onde o botão/dedo desceu (ordem de marcha só num toque, não ao arrastar)
+var _press_army := false           # o toque começou num marcador de exército
 var diplomacy := Diplomacy.new()
 var diplo := DiploActions.new()
-var camera: Camera2D
+var camera: MapCamera
 var player_tag := ""
 
 # UI
@@ -35,6 +59,7 @@ var side_panel: PanelContainer
 var info_label: Label
 var prov_icons: HFlowContainer     # ícones da província (produto, religião, construções, instituições)
 var tooltip: MapTooltip
+var eu4_tooltip: Eu4Tooltip           # dica dos controles como a do EU4 (core.gui ToolTip)
 var eu4_hud: Eu4Hud               # interface montada com os .gui do EU4 (null sem as telas importadas)
 var province_view: Eu4ProvinceView  # tela da província do EU4 (no lugar do painel de texto)
 var country_view: Eu4CountryView    # tela do país do EU4 (no lugar do painel do país; este vira o "resumo")
@@ -44,6 +69,7 @@ var tech_window: TechWindow
 var ideas_window: IdeasWindow
 var advisors_window: AdvisorsWindow
 var start_panel: CenterContainer
+var _start_outer: VBoxContainer
 var eu4_status: Label
 var eu4_buttons: Array[Button] = []
 var importer: Eu4Importer
@@ -63,31 +89,104 @@ func _ready() -> void:
 	map.inst_view = institutions
 	diplomacy.setup(map)
 	economy.diplomacy = diplomacy
+	trade.clock = clock
 	trade.setup(map, power)
 	economy.trade = trade
 	religion.setup(map, clock, power, economy)
 	construction.setup(map, clock, power, economy)
 	manpower.setup(map, clock, power)
 	prestige.setup(map, clock, power, diplomacy)
+	stability.setup(map, clock, power)
+	legitimacy.setup(map, clock, power, diplomacy, prestige)
 	economy.religion = religion
 	trade.recompute()
 	economy._recount()
 	power.economy = economy
 	map.diplo_view = diplomacy
 	diplo.setup(map, clock, power, diplomacy, economy)
+	diplo.stability = stability
+	diplo.legitimacy = legitimacy
+	war.setup(map, clock, power, diplomacy)
+	army.war = war
+	war.army = army
+	diplomacy.war = war
+	diplo.war = war
+	cbs.setup(map, power, diplomacy, war)
+	diplo.cbs = cbs
+	rivals.setup(map, clock, power, diplomacy, war, cbs)
+	policies.setup(map, clock, power, cbs)
+	power.policies = policies
+	effects.setup(map, clock, power, cbs)
+	effects.economy = economy
+	cbs.economy = economy
+	effects.prestige = prestige
+	effects.stability = stability
+	effects.legitimacy = legitimacy
+	effects.diplomacy = diplomacy
+	effects.religion = religion
+	diplo.rivals = rivals
+	army.setup(map, clock, power, economy, manpower, diplomacy)
+	economy.army = army
+	combat.setup(map, clock, power, army, war, prestige)
+	siege.setup(map, clock, army, war)
+	war_ai.setup(map, clock, power, army, war)
+	peace.setup(map, clock, power, diplomacy, war, economy, army, prestige, cbs)
+	peace.offered.connect(_on_peace_offered)
+	coalition.setup(map, clock, power, diplomacy, war, diplo, army, economy, cbs, peace)
+	cbs.diplo = diplo
+	cbs.estates = estates
+	power.estates = estates
+	estates.eu4_effects = effects
+	estates.setup(map, clock, power, cbs, economy)
+	cbs.coalition = coalition
+	diplo.coalition = coalition
+	peace.coalition = coalition
+	coalition.notice.connect(_toast)
+	coalition.changed.connect(func():
+		if country_view:
+			country_view.refresh())
+	combat.battle_ended.connect(_on_battle_ended)
+	siege.captured.connect(_on_captured)
+	war.changed.connect(func():
+		if country_view:
+			country_view.refresh()
+		if map.map_mode == MapView.MapMode.DIPLOMACIA:
+			map.refresh_colors())
+	discovery.setup(map, clock, power, diplomacy, prestige)
+	discovery.army = army
+	discovery.war = war
+	army.discovery = discovery
+	map.discovery = discovery
+	army_layer = ArmyLayer.new()
+	map.add_child(army_layer)
+	army_layer.setup(map, army)
+	army_layer.war = war
+	army_layer.combat = combat
+	army_layer.siege = siege
+	army_layer.discovery = discovery
+	discovery.view_changed.connect(army_layer.queue_redraw)
 
-	camera = Camera2D.new()
+	camera = MapCamera.new()           # zoom do EU4 (altura da câmera, em direção ao ponteiro)
 	add_child(camera)
-	camera.position = Vector2(map.map_w, map.map_h) * MAP_SCALE * 0.5
-	# Zoom que enquadra o mapa inteiro na janela (serve para qualquer tamanho de mapa)
-	var vp := get_viewport_rect().size
-	var fit: float = minf(vp.x / (map.map_w * MAP_SCALE), vp.y / (map.map_h * MAP_SCALE))
-	zoom_min = fit * 0.9
-	camera.zoom = Vector2(fit, fit)
+	camera.setup(Vector2(map.map_w, map.map_h) * MAP_SCALE)
 	camera.make_current()
 
 	_build_ui()
 	_setup_eu4_hud()
+	if not map.river_lines.is_empty():   # rios em curvas, sob os nomes
+		var rl := RiverLayer.new()
+		map.add_child(rl)
+		map.move_child(rl, army_layer.get_index())
+		rl.setup(map, camera)
+	map_names = MapNames.new()          # sob os exércitos
+	map.add_child(map_names)
+	map.move_child(map_names, army_layer.get_index())
+	map_names.setup(map, camera, eu4_gui)
+	map_names.visible = not (main_menu and main_menu.visible)   # o menu principal mostra o mapa sem nomes
+	fog_layer = FogLayer.new()          # Terra Incógnita e névoa: sobre rios e nomes, sob os exércitos
+	map.add_child(fog_layer)
+	map.move_child(fog_layer, army_layer.get_index())
+	fog_layer.setup(map, discovery)
 	_apply_eu4_theme()
 	clock.changed.connect(_refresh_top_bar)
 	clock.month_passed.connect(_on_month_passed)
@@ -121,7 +220,7 @@ var gui_design_height := EU4_GUI_HEIGHT
 func _apply_gui_scale() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	gui_scale = clampf(vp.y / gui_design_height, 0.5, 3.0)
-	for c in [eu4_hud, province_view, country_view, macro_builder]:
+	for c in [eu4_hud, province_view, country_view, macro_builder, unit_panel, peace_view, frontend, main_menu]:
 		if c:
 			c.set_anchors_preset(Control.PRESET_TOP_LEFT)
 			c.position = Vector2.ZERO
@@ -137,10 +236,16 @@ func _setup_eu4_hud() -> void:
 	if g == null:
 		return
 	g.res_height = int(gui_design_height)      # layout padrão em qualquer tela
+	eu4_gui = g
+	eu4_tooltip = Eu4Tooltip.new()
+	add_child(eu4_tooltip)
+	eu4_tooltip.setup(g, func(): return gui_scale)
 	eu4_hud = Eu4Hud.new()
 	eu4_hud.religion = religion
 	eu4_hud.manpower = manpower
 	eu4_hud.prestige = prestige
+	eu4_hud.stability = stability
+	eu4_hud.legitimacy = legitimacy
 	ui.add_child(eu4_hud)
 	ui.move_child(eu4_hud, 0)            # atrás dos painéis e janelas
 	if not eu4_hud.setup(g, map, clock, power, economy):
@@ -158,6 +263,11 @@ func _setup_eu4_hud() -> void:
 	if province_view.setup(g, map, institutions):
 		province_view.manpower = manpower
 		province_view.terrain_tip = _terrain_info
+		province_view.army = army
+		province_view.siege = siege
+		province_view.construction = construction
+		province_view.power = power
+		province_view.diplo = diplo
 	else:
 		province_view.queue_free()
 		province_view = null
@@ -172,8 +282,14 @@ func _setup_eu4_hud() -> void:
 		country_view.religion = religion
 		country_view.diplomacy = diplomacy
 		country_view.diplo = diplo
+		country_view.policies = policies
+		country_view.effects = effects
+		effects.changed.connect(func(_t): country_view.refresh())
 		country_view.manpower = manpower
 		country_view.prestige = prestige
+		country_view.stability = stability
+		country_view.army = army
+		country_view.estates = estates
 		diplo.changed.connect(func(_t): country_view.refresh())
 		country_view.fmt_mods = ideas_window.fmt_mods
 		country_view.techs_requested.connect(func(t: String):
@@ -197,6 +313,10 @@ func _setup_eu4_hud() -> void:
 					map.refresh_colors())
 		if province_view:
 			province_view.owner_requested.connect(_show_country)
+			province_view.diplomacy_requested.connect(func(t: String):
+				_show_country(t)
+				country_view.tab = "diplomacy"
+				country_view.refresh())
 	else:
 		country_view.queue_free()
 		country_view = null
@@ -219,9 +339,36 @@ func _setup_eu4_hud() -> void:
 	else:
 		macro_builder.queue_free()
 		macro_builder = null
-	eu4_hud.zoom_requested.connect(func(f: float):
-		camera.zoom = (camera.zoom * f).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
-		_clamp_camera())
+	peace_view = Eu4PeaceView.new()
+	ui.add_child(peace_view)
+	if peace_view.setup(g, map, peace, war):
+		peace_view.message.connect(_toast)
+		if country_view:
+			country_view.message.connect(_toast)
+			country_view.peace_requested.connect(func(t: String):
+				peace_view.player = player_tag
+				for c in [country_view, province_view, macro_builder]:
+					if c:
+						c.hide()
+				_select_army(-1)
+				peace_view.open_with(t))
+	else:
+		peace_view.queue_free()
+		peace_view = null
+	_setup_frontend(g)
+	unit_panel = Eu4UnitPanel.new()
+	ui.add_child(unit_panel)
+	ui.move_child(unit_panel, 4)
+	if unit_panel.setup(g, map, army):
+		unit_panel.closed.connect(func(): _select_army(-1))
+		unit_panel.goto.connect(func(pid: int):
+			camera.position = map.province_center(pid)
+			_clamp_camera())
+		unit_panel.selected_changed.connect(_select_army)
+	else:
+		unit_panel.queue_free()
+		unit_panel = null
+	eu4_hud.zoom_requested.connect(camera.zoom_center)
 	_apply_gui_scale()
 
 
@@ -309,6 +456,7 @@ func _build_ui() -> void:
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 8)
 	box.add_child(outer)
+	_start_outer = outer
 	var title := Label.new()
 	title.text = "Imperium Mundi — escolha seu país"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -357,6 +505,8 @@ func _build_ui() -> void:
 	advisors_window.economy = economy
 	advisors_window.fmt = ideas_window.fmt_mods
 	prestige.fmt_mods = ideas_window.fmt_mods
+	stability.fmt_mods = ideas_window.fmt_mods
+	legitimacy.fmt_mods = ideas_window.fmt_mods
 	ui.add_child(advisors_window)
 	country_panel.economy = economy
 	country_panel.advisors = advisors
@@ -401,6 +551,77 @@ func _build_ui() -> void:
 
 # ------------------------------------------------------------------ mapa do EU4 (opcional)
 ## Botões da tela inicial para importar o mapa e os donos de 1444 dos arquivos do EU4 do jogador.
+## Altura da câmera (fração da máxima) na escolha de país: a região do marcador inteira.
+const FRONTEND_HEIGHT := 0.33
+
+
+## Tela de escolha de país do EU4 no lugar da lista simples (que continua em "Voltar", com a
+## importação do EU4).
+func _setup_frontend(g: Eu4Gui) -> void:
+	frontend = Eu4Frontend.new()
+	ui.add_child(frontend)
+	ui.move_child(frontend, 0)
+	frontend.siege = siege
+	if country_view:
+		frontend.gov_name = country_view._gov_name
+	frontend.focus.connect(func(pid: int, zoom: bool):
+		if pid < 0 or pid >= map.provinces.size():
+			return
+		if zoom:            # marcador: o mapa como no frontend do EU4 (a região inteira)
+			camera.focus(map.province_center(pid), FRONTEND_HEIGHT)
+		else:
+			camera.position = map.province_center(pid)
+			camera.clamp_to_map())
+	if not frontend.setup(g, map, power, diplomacy):
+		frontend.queue_free()
+		frontend = null
+		return
+	frontend.play.connect(_start_game)
+	frontend.back.connect(func():
+		frontend.hide()
+		if main_menu:
+			_show_main_menu(true)
+		else:
+			start_panel.show())
+	start_panel.hide()
+	if eu4_hud:
+		eu4_hud.hide()
+	army_layer.hide()                  # sem exércitos na escolha de país (como no EU4)
+	var again := Button.new()
+	again.text = Loc.s("Voltar à escolha de país do EU4", "Back to the EU4 nation selection")
+	again.pressed.connect(func():
+		start_panel.hide()
+		frontend.show())
+	_start_outer.add_child(again)
+	_start_outer.move_child(again, 1)
+	# menu principal do EU4 antes da escolha de país
+	main_menu = Eu4MainMenu.new()
+	ui.add_child(main_menu)
+	ui.move_child(main_menu, 1)
+	if not main_menu.setup(g):
+		main_menu.queue_free()
+		main_menu = null
+		return
+	main_menu.single_player.connect(func():
+		_show_main_menu(false)
+		frontend.show())
+	main_menu.options.connect(func():
+		_show_main_menu(false)
+		frontend.hide()
+		start_panel.show())
+	frontend.hide()
+	_show_main_menu(true)
+	_apply_gui_scale()
+
+
+## Menu principal: o mapa no modo terreno, sem nomes, como no EU4; ao sair volta ao político.
+func _show_main_menu(on: bool) -> void:
+	main_menu.visible = on
+	map.set_map_mode(MapView.MapMode.TERRENO if on and map.has_map_mode(MapView.MapMode.TERRENO) else MapView.MapMode.POLITICO)
+	if map_names:
+		map_names.visible = not on
+
+
 func _build_eu4_box(parent: VBoxContainer) -> void:
 	var using_eu4 := map.source.begins_with(Eu4Importer.OUT_DIR)
 	var box := VBoxContainer.new()
@@ -519,10 +740,21 @@ func _start_game(tag: String) -> void:
 	advisors_window.player = tag
 	if country_view:
 		country_view.player = tag
+	if unit_panel:
+		unit_panel.player = tag
 	start_panel.hide()
+	if frontend:
+		frontend.hide()
+	if main_menu and main_menu.visible:
+		_show_main_menu(false)          # mapa político e nomes de volta
+	if eu4_hud:
+		eu4_hud.show()
+	army_layer.show()
+	if discovery.available():
+		discovery.start()
+	rivals.start()                      # a IA escolhe os rivais (o jogador na aba Diplomacia)
 	var cap: int = int(map.countries[tag]["capital"])
-	camera.position = map.province_center(cap)
-	camera.zoom = Vector2(1.2, 1.2)
+	camera.focus(map.province_center(cap), float(Eu4Data.define("NGui", "PROVINCE_FOCUS_ZOOM_HEIGHT", 0.25)))
 	map.select(cap)
 	_show_province(cap)
 	if country_view == null:
@@ -771,16 +1003,147 @@ func _update_tooltip() -> void:
 
 
 func _clamp_camera() -> void:
-	var size := Vector2(map.map_w, map.map_h) * MAP_SCALE
-	camera.position = camera.position.clamp(Vector2.ZERO, size)
+	camera.clamp_to_map()
+
+
+## Seleciona o exército `id` (−1 tira a seleção): marcador em destaque e o painel do EU4 no lugar
+## das telas da província/país.
+func _select_army(id: int) -> void:
+	selected_army = id if army.armies.has(id) else -1
+	army_layer.selected = selected_army
+	army_layer.queue_redraw()
+	if selected_army >= 0:
+		for c in [province_view, country_view, macro_builder]:
+			if c:
+				c.hide()
+		if unit_panel:
+			unit_panel.show_army(selected_army)
+	elif unit_panel and unit_panel.visible:
+		unit_panel.hide()
+
+
+func _my_army_selected() -> bool:
+	return selected_army >= 0 and army.armies.has(selected_army) and army.armies[selected_army]["tag"] == player_tag
+
+
+## Ordem de marcha do exército selecionado para a província sob o mouse.
+func _order_move() -> void:
+	var pid := map.province_at_mouse()
+	if pid < 0 or map.provinces[pid]["sea"]:
+		return
+	if not army.move(selected_army, pid):
+		_toast(Loc.s("Não há caminho até %s (só por terras próprias, sem dono, de aliados e súditos)",
+				"No path to %s (only through your own, unowned, allied and subject lands)") % map.provinces[pid]["name"])
+	if unit_panel:
+		unit_panel.refresh()
+
+
+var _toast_label: Label
+
+
+## Aviso das batalhas em que o jogador ou um aliado dele lutou.
+func _on_battle_ended(info: Dictionary) -> void:
+	if player_tag == "" or not (player_tag in info["tags"] or info["winner"] in diplomacy.allies(player_tag) \
+			or info["loser"] in diplomacy.allies(player_tag)):
+		return
+	var won: bool = info["winner"] == player_tag or (info["loser"] != player_tag and war.hostile(player_tag, info["loser"]))
+	var ours := 0 if (info["tags"][0] == player_tag or not war.hostile(player_tag, info["tags"][0])) else 1
+	_toast(Loc.s("%s em %s (%d dias): perdemos %d, o inimigo %d%s", "%s at %s (%d days): we lost %d, the enemy %d%s") % [
+			Loc.s("Vitória", "Victory") if won else Loc.s("Derrota", "Defeat"), info["name"], int(info["days"]),
+			roundi(info["losses"][ours]), roundi(info["losses"][1 - ours]),
+			Loc.s(" — exército aniquilado", " — army annihilated") if info["overrun"] else ""])
+	_refresh_unit_panel()
+
+
+## Proposta de paz da IA (ela está ganhando): pergunta ao jogador.
+func _on_peace_offered(deal: Dictionary) -> void:
+	var dlg := ConfirmationDialog.new()
+	var who: String = map.countries.get(deal["receiver"], {}).get("name", deal["receiver"])
+	dlg.title = Loc.s("Proposta de paz", "Peace offer")
+	dlg.dialog_text = Loc.s("%s propõe paz e exige: %s\n(custo %d%% do placar da guerra)\nAceitar?",
+			"%s offers peace and demands: %s\n(cost %d%% of the war score)\nAccept?") % [who, peace.describe(deal),
+			roundi(peace.cost(deal))]
+	dlg.ok_button_text = Loc.s("Aceitar", "Accept")
+	dlg.cancel_button_text = Loc.s("Recusar", "Refuse")
+	dlg.confirmed.connect(func():
+		peace.sign(deal)
+		_toast(Loc.s("Paz assinada com %s", "Peace signed with %s") % who)
+		dlg.queue_free())
+	dlg.canceled.connect(dlg.queue_free)
+	ui.add_child(dlg)
+	var th := Eu4Theme.build(map.ui_dir) if map.ui_dir != "" else null
+	if th:
+		dlg.theme = th
+	dlg.popup_centered()
+	clock.paused = true
+
+
+func _on_captured(pid: int, by: String, from: String) -> void:
+	if player_tag == "" or not (by == player_tag or from == player_tag or map.provinces[pid]["owner"] == player_tag):
+		return
+	_toast(Loc.s("%s caiu para %s", "%s fell to %s") % [map.provinces[pid]["name"], map.countries.get(by, {}).get("name", by)])
+	_refresh_unit_panel()
+
+
+func _refresh_unit_panel() -> void:
+	if unit_panel and unit_panel.visible:
+		unit_panel.refresh()
+
+
+## Aviso curto no meio da tela (some depois de 3 s).
+func _toast(text: String) -> void:
+	if _toast_label == null:
+		_toast_label = Label.new()
+		_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_toast_label.add_theme_font_size_override("font_size", 20)
+		_toast_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		_toast_label.add_theme_constant_override("outline_size", 6)
+		_toast_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ui.add_child(_toast_label)
+	var vp := get_viewport().get_visible_rect().size
+	_toast_label.position = Vector2(vp.x * 0.25, vp.y * 0.2)
+	_toast_label.size = Vector2(vp.x * 0.5, 60)
+	_toast_label.custom_minimum_size = Vector2(vp.x * 0.5, 0)
+	text = Loc.clean(text)              # sem os códigos de cor do EU4 (§R…§!)
+	_toast_label.text = text
+	_toast_label.show()
+	get_tree().create_timer(3.0).timeout.connect(func():
+		if _toast_label.text == text:
+			_toast_label.hide())
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# exércitos: tocar no marcador seleciona; com um exército seu selecionado, um toque (sem
+	# arrastar) numa província manda marchar (botão direito também)
+	if event is InputEventMouseButton and player_tag != "" and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+		if event.pressed:
+			_press_pos = event.position
+			_press_army = false
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				var hit := army_layer.army_at(army_layer.get_local_mouse_position())
+				if hit >= 0:
+					_press_army = true
+					_select_army(-1 if hit == selected_army else hit)
+					return
+				if _my_army_selected():
+					return
+		else:
+			if _my_army_selected() and not _press_army and event.position.distance_to(_press_pos) < 12.0:
+				_order_move()
+			return
 	if event is InputEventMouseButton and event.pressed:
 		match event.button_index:
 			MOUSE_BUTTON_LEFT:
+				if player_tag == "" and frontend and frontend.visible:
+					var fp := map.province_at_mouse()          # escolha de país: clicar no mapa
+					if fp >= 0 and map.provinces[fp]["owner"] != "":
+						frontend.select(map.provinces[fp]["owner"], false)
 				if player_tag != "":
 					var pid := map.province_at_mouse()
+					if map.hidden(pid):
+						pid = -1                   # Terra Incógnita não se seleciona
 					map.select(pid)
 					_show_province(pid)
 					var owner: String = map.provinces[pid]["owner"] if pid >= 0 else ""
@@ -790,16 +1153,16 @@ func _unhandled_input(event: InputEvent) -> void:
 					else:
 						country_panel.show_country(map, owner if owner != "" else player_tag)
 			MOUSE_BUTTON_WHEEL_UP:
-				camera.zoom = (camera.zoom * 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
+				camera.zoom_by(MapCamera.wheel_factor(event.factor), event.position)
 			MOUSE_BUTTON_WHEEL_DOWN:
-				camera.zoom = (camera.zoom / 1.12).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
+				camera.zoom_by(1.0 / MapCamera.wheel_factor(event.factor), event.position)
 	elif event is InputEventScreenDrag and event.index == 0:
 		# celular: arrastar com um dedo move o mapa
 		camera.position -= event.relative / camera.zoom
 		_clamp_camera()
 	elif event is InputEventMagnifyGesture:
 		# celular: pinçar com dois dedos dá zoom
-		camera.zoom = (camera.zoom * event.factor).clamp(Vector2(zoom_min, zoom_min), Vector2(ZOOM_MAX, ZOOM_MAX))
+		camera.zoom_by(event.factor, event.position, false)
 	elif event is InputEventMouseMotion:
 		if event.button_mask & (MOUSE_BUTTON_MASK_RIGHT | MOUSE_BUTTON_MASK_MIDDLE):
 			camera.position -= event.relative / camera.zoom
@@ -808,6 +1171,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_T:
 				_toggle_map_mode()
+			KEY_ESCAPE:
+				_select_army(-1)
 			KEY_SPACE:
 				if player_tag != "":
 					clock.toggle_pause()

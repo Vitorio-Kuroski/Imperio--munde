@@ -19,6 +19,7 @@ extends RefCounted
 ## Ainda não há: mudar a capital comercial, escolher mercadores, navios leves, embargos, ligas.
 
 var map: MapView
+var clock: GameClock                    # main.gd define (viagem dos mercadores)
 var power: MonarchPower
 var nodes: Array = []                   # ids na ordem de processamento (de cima para baixo)
 var index := {}                         # id -> posição
@@ -28,20 +29,31 @@ var local_value: PackedFloat32Array     # valor gerado pelas províncias do nó
 var total_value: PackedFloat32Array     # local + o que chega de cima
 var outgoing_value: PackedFloat32Array  # o que desce para os nós seguintes
 var node_power: Array = []              # posição -> {tag: poder}
+var provincial: Array = []              # posição -> {tag: poder provincial (das províncias ali)}
+var in_links: Array = []                # posição -> [posições dos nós imediatamente acima]
 var collecting: Array = []              # posição -> {tag: true} quem coleta ali
 var steering: Array = []                # posição -> {tag: true} quem tem mercador puxando o valor
 var collected: Array = []               # posição -> {tag: ducados por mês}
 var prov_value: PackedFloat32Array      # por província
 var prov_power: PackedFloat32Array
 var merchants := {}                     # tag -> [posições dos nós com mercador]
+var arrival := {}                       # "tag|nó" -> dia (unix ÷ 86400) em que o mercador chega
+var dev := {}                           # tag -> desenvolvimento total (para o poder de caravana)
 var _income := {}                       # tag -> ducados por mês
 var _cot := {}                          # "coastal1" -> poder
 var _rules := {}
 var _static_version := -1               # dados fixos das províncias (refeitos quando um dono muda)
 var _pids := PackedInt32Array()         # províncias de terra com nó
 var _pnode := PackedInt32Array()
-var _pbase := PackedFloat32Array()      # poder antes dos modificadores do país
+var _pbase := PackedFloat32Array()      # poder básico da província (desenvolvimento + centro de comércio)
+var _pmul := PackedFloat32Array()       # 1 + modificadores locais (costa, construções)
 var _tech_eff := PackedFloat32Array()   # eficiência comercial somada da tecnologia dip até cada nível
+var _tech_range := PackedFloat32Array() # alcance comercial somado da tecnologia dip até cada nível
+
+const PROPAGATE_MIN := 10.0             # poder provincial mínimo para propagar rio acima (wiki do EU4)
+const AUTONOMY_TRADE_POWER := -0.5    # local_autonomy_multiplicative do EU4
+const MERCHANT_POWER := 2.0             # poder do mercador no nó (wiki do EU4)
+const MAX_STEER_BONUS_MERCHANTS := 5    # além de 5 mercadores numa rota o valor não sobe mais
 
 
 func setup(m: MapView, pw: MonarchPower) -> void:
@@ -52,9 +64,12 @@ func setup(m: MapView, pw: MonarchPower) -> void:
 		_cot["%s%d" % [c["type"], int(c["level"])]] = float(c["trade_power"])
 	_order_nodes()
 	var s := 0.0
+	var rg := 0.0
 	for t in map.technologies.get("dip", []):
 		s += float(t.get("modifiers", {}).get("trade_efficiency", 0.0))
+		rg += float(t.get("modifiers", {}).get("trade_range", 0.0))
 		_tech_eff.append(s)
+		_tech_range.append(rg)
 	map.trade_view = self
 
 
@@ -95,6 +110,9 @@ func _order_nodes() -> void:
 	for i in nodes.size():
 		index[nodes[i]] = i
 	out_links.resize(nodes.size())
+	in_links.resize(nodes.size())
+	for i in nodes.size():
+		in_links[i] = []
 	reach.resize(nodes.size())
 	for i in nodes.size():
 		var outs := []
@@ -102,6 +120,8 @@ func _order_nodes() -> void:
 			if index.has(o["to"]) and index[o["to"]] > i:
 				outs.append(index[o["to"]])
 		out_links[i] = outs
+		for j in outs:
+			in_links[j].append(i)
 	for i in range(nodes.size() - 1, -1, -1):
 		var r := {}
 		for j in out_links[i]:
@@ -132,12 +152,33 @@ func trade_efficiency(tag: String) -> float:
 	return s
 
 
-## Recalcula valores, poderes e a renda de comércio de todos (uma vez por mês).
+## Recalcula valores, poderes e a renda de comércio de todos (uma vez por mês), pelas regras do EU4
+## (wiki "Trade" e as constantes NEconomy do defines.lua):
+##  - poder provincial no nó = Σ das províncias do país ali (`_static` × mercantilismo/ideias);
+##  - quem tem ≥ PROPAGATE_MIN (10) de poder provincial num nó manda 1/TRADE_PROPAGATE_DIVIDER (20%)
+##    dele a cada nó imediatamente acima ("transfers from traders downstream"), sem os modificadores
+##    globais;
+##  - + TRADE_CAPITAL_POWER (5) no nó da capital comercial, + caravana se esse nó é do interior,
+##    + MERCHANT_POWER (2) onde há mercador; tudo × (1 + global_trade_power + TRADE_POWER_HOME_BONUS
+##    (10%) por mercador direcionando, no nó da capital, se nenhum coleta fora dela); coletar fora
+##    da capital: × (1 + TRADE_NON_CAPITAL_OFFICE) (−50%). O mercador só vale depois de chegar
+##    (`arrival`): em 11/11/1444 os do EU4 ainda estão a caminho (Suécia: Krakow 7,97 = 20% do
+##    poder provincial no Báltico, sem os +2);
+##  - em cada nó, de cima para baixo, só contam os que coletam e os que transferem para baixo
+##    (quem tem a capital rio acima fica fora): coletor leva valor × poder ÷ poder efetivo, e o
+##    valor × poder dos que transferem ÷ poder efetivo desce. Só os mercadores escolhem a saída
+##    (poder × (1 + trade_steering)); sem eles, divide igual. Cada mercador numa rota aumenta o
+##    valor nela em TRADE_ADDED_VALUE_MODIFER (5%) ÷ n (n-ésimo mercador) × (1 + trade_steering);
+##  - renda = valor coletado × (max(1 + eficiência, 1%) + TRADE_MERCHANT_PRESENT (10%) com
+##    mercador) ÷ 12;
+##  - mercadores (sozinhos, como a IA do EU4): direcionam para a capital nos nós rio acima dela ao
+##    alcance comercial, os de maior valor primeiro; os que sobram coletam onde o país tem mais poder.
 func recompute() -> void:
 	if nodes.is_empty():
 		return
 	var n := nodes.size()
 	var np := map.provinces.size()
+	var last_value := total_value          # valor do mês anterior (escolha dos mercadores)
 	local_value = PackedFloat32Array()
 	local_value.resize(n)
 	total_value = PackedFloat32Array()
@@ -147,18 +188,22 @@ func recompute() -> void:
 	prov_power = PackedFloat32Array()
 	prov_power.resize(np)
 	node_power = []
+	provincial = []
 	collecting = []
 	steering = []
 	collected = []
 	for i in n:
 		node_power.append({})
+		provincial.append({})
 		collecting.append({})
 		steering.append({})
 		collected.append({})
 	if _static_version != map.owner_version:
 		_static()
 	var cmod := {}
-	var nodes_of := {}                  # tag -> [nós onde tem poder]
+	var owned := {}                     # tag -> [províncias] (alcance comercial)
+	var nodes_of := {}                  # tag -> [nós onde tem províncias]
+	dev.clear()
 	for k in _pids.size():
 		var pid := _pids[k]
 		var i := _pnode[k]
@@ -167,95 +212,237 @@ func recompute() -> void:
 		if owner == "":
 			continue
 		if not cmod.has(owner):
-			cmod[owner] = maxf(0.0, 1.0 + _country_power_mod(owner))
-			nodes_of[owner] = []
-		prov_power[pid] = _pbase[k] * cmod[owner]
-		var d: Dictionary = node_power[i]
-		if not d.has(owner):
-			d[owner] = 0.0
+			cmod[owner] = _country_power_mod(owner)
+			owned[owner] = []
+			dev[owner] = 0.0
+		dev[owner] += float(map.provinces[pid].get("development", 0))
+		owned[owner].append(pid)
+		# local (costa, construções) e do país (mercantilismo, ideias) somam no mesmo modificador, como no EU4
+		prov_power[pid] = _pbase[k] * maxf(0.0, _pmul[k] + cmod[owner])
+		if not provincial[i].has(owner):
+			provincial[i][owner] = 0.0
+			if not nodes_of.has(owner):
+				nodes_of[owner] = []
 			nodes_of[owner].append(i)
-		d[owner] += prov_power[pid]
-	# capital comercial, poder global, mercadores
-	var cap_power := _rule("trade_capital_power", 5.0)
-	var non_cap := _rule("trade_non_capital_office", -0.5)
+		provincial[i][owner] += prov_power[pid]
+	if last_value.size() != n:
+		last_value = local_value
+	# poder antes dos modificadores globais: provincial + o que vem dos nós de baixo
+	var raw := []
+	for i in n:
+		raw.append(provincial[i].duplicate())
+	var frac := 1.0 / maxf(1.0, float(Eu4Data.define("NEconomy", "TRADE_PROPAGATE_DIVIDER", 5)))
+	for i in n:
+		for tag in provincial[i]:
+			var pv: float = provincial[i][tag]
+			if pv < PROPAGATE_MIN:
+				continue
+			for j in in_links[i]:
+				raw[j][tag] = float(raw[j].get(tag, 0.0)) + pv * frac
+	# capital comercial e mercadores
 	var homes := {}
 	merchants.clear()
+	var target := {}                    # "tag|nó" -> saída escolhida pelo mercador que direciona
+	var outside := {}                   # tag -> true se um mercador coleta fora da capital
+	var base_merchants := int(_rule("base_merchants", 2))
+	var today := _today()
+	var new_arrival := {}
+	var up_of := {}
+	if _range_version != map.owner_version:
+		_range_cache.clear()
+		_range_version = map.owner_version
 	for tag in cmod:
 		var h := home(tag)
 		homes[tag] = h
-		if h >= 0:
-			node_power[h][tag] = float(node_power[h].get(tag, 0.0)) + cap_power
-			collecting[h][tag] = true
-	var gmod := {}
-	for tag in cmod:
-		gmod[tag] = maxf(0.0, 1.0 + power.modifier(tag, "global_trade_power"))
-	for i in n:
-		for tag in node_power[i]:
-			node_power[i][tag] *= gmod[tag]
-	var base_merchants := int(_rule("base_merchants", 2))
-	var merchant_steer := _rule("trade_added_value_modifer", 0.05) * 2.0    # mercador puxando: +10% de poder
-	for tag in cmod:
-		var cand := []
-		for i in nodes_of[tag]:
-			if i != homes[tag]:
-				cand.append(i)
-		cand.sort_custom(func(a, b): return node_power[a][tag] > node_power[b][tag])
+		if h < 0:
+			continue
+		var cnt := base_merchants + int(power.modifier(tag, "merchants"))
+		if not up_of.has(h):            # nós rio acima da capital, do maior valor para o menor (por nó)
+			var lst := []
+			for i in n:
+				if i != h and reach[i].has(h):
+					lst.append(i)
+			lst.sort_custom(func(x, y): return last_value[x] > last_value[y])
+			up_of[h] = lst
+		var up: Array = up_of[h]
+		var rng := trade_range(tag) if not up.is_empty() else 0.0
+		var rc: Dictionary = _range_cache.get(tag, {})
+		if float(rc.get(-1, -1.0)) != rng:
+			rc = {-1: rng}
+			_range_cache[tag] = rc
 		var mine := []
-		var h: int = homes[tag]
-		for k in mini(base_merchants + int(power.modifier(tag, "merchants")), cand.size()):
-			var i: int = cand[k]
+		for i in up:
+			if mine.size() >= cnt:
+				break
+			if not rc.has(i):
+				rc[i] = _in_range(i, owned[tag], rng)
+			if not rc[i]:
+				continue
 			mine.append(i)
-			if h >= 0 and reach[i].has(h):
-				steering[i][tag] = true            # a capital fica rio abaixo: o mercador puxa o valor para lá
-				node_power[i][tag] *= 1.0 + merchant_steer
-			else:
-				collecting[i][tag] = true          # sem caminho até a capital: coleta ali (−50% de poder)
-				node_power[i][tag] *= maxf(0.0, 1.0 + non_cap)
+			if _present(tag, i, today, new_arrival):
+				steering[i][tag] = true
+			for j in out_links[i]:
+				if j == h or reach[j].has(h):
+					target["%s|%d" % [tag, i]] = j
+					break
+		if mine.size() < cnt:           # sem mais nós para direcionar: coleta onde tem mais poder
+			var col_c := []
+			for i in nodes_of.get(tag, []):
+				if i != h and not (i in mine):
+					col_c.append(i)
+			col_c.sort_custom(func(x, y): return provincial[x][tag] > provincial[y][tag])
+			for i in col_c:
+				if mine.size() >= cnt:
+					break
+				mine.append(i)
+				if _present(tag, i, today, new_arrival):
+					collecting[i][tag] = true
+					outside[tag] = true
 		merchants[tag] = mine
-	# de cima para baixo
+	arrival = new_arrival
+	var cap_power := float(Eu4Data.define("NEconomy", "TRADE_CAPITAL_POWER", _rule("trade_capital_power", 5.0)))
+	var non_cap := float(Eu4Data.define("NEconomy", "TRADE_NON_CAPITAL_OFFICE", _rule("trade_non_capital_office", -0.5)))
+	var home_bonus := float(Eu4Data.define("NEconomy", "TRADE_POWER_HOME_BONUS", 0.1))
+	var home_bonus_max := float(Eu4Data.define("NEconomy", "TRADE_POWER_HOME_BONUS_MAX", 1.0))
+	for tag in homes:
+		var h: int = homes[tag]
+		if h < 0:
+			continue
+		raw[h][tag] = float(raw[h].get(tag, 0.0)) + cap_power
+		if map.trade_nodes.get(nodes[h], {}).get("inland", false):
+			raw[h][tag] += caravan_power(tag)     # bônus de caravana: nó da capital do interior
+		collecting[h][tag] = true
+		for i in merchants[tag]:
+			if today >= int(arrival.get("%s|%d" % [tag, i], 0)):
+				raw[i][tag] = float(raw[i].get(tag, 0.0)) + MERCHANT_POWER
+	var gmod := {}
+	for i in n:
+		for tag in raw[i]:
+			if not gmod.has(tag):
+				gmod[tag] = power.modifier(tag, "global_trade_power")
+			var m: float = 1.0 + gmod[tag]
+			var h: int = homes.get(tag, -1)
+			if i == h and not outside.has(tag):    # +10% por mercador direcionando (já chegado)
+				var ns := 0
+				for k in merchants.get(tag, []):
+					if steering[k].has(tag):
+						ns += 1
+				m += minf(home_bonus_max, home_bonus * ns)
+			if collecting[i].has(tag) and i != h:
+				m *= 1.0 + non_cap
+			node_power[i][tag] = float(raw[i][tag]) * maxf(0.0, m)
+	# valor de cima para baixo
 	_income.clear()
-	var present := _rule("trade_merchant_present", 0.1)
+	var present := float(Eu4Data.define("NEconomy", "TRADE_MERCHANT_PRESENT", _rule("trade_merchant_present", 0.1)))
+	var added := float(Eu4Data.define("NEconomy", "TRADE_ADDED_VALUE_MODIFER", _rule("trade_added_value_modifer", 0.05)))
 	var effs := {}
+	var steer_mod := {}
 	for i in n:
 		total_value[i] += local_value[i]
-		var tot := 0.0
 		var col := 0.0
+		var trans := 0.0
 		for tag in node_power[i]:
-			tot += node_power[i][tag]
+			var p: float = node_power[i][tag]
 			if collecting[i].has(tag):
-				col += node_power[i][tag]
-		if tot <= 0.0:
+				col += p
+			else:
+				var h: int = homes.get(tag, -1)
+				if h >= 0 and reach[i].has(h):
+					trans += p           # quem tem a capital rio acima (ou sem caminho) não conta
+		var eff_total := col + trans
+		if eff_total <= 0.0:
 			continue
 		var v := total_value[i]
 		for tag in collecting[i]:
-			var share: float = v * node_power[i][tag] / tot
+			var share: float = v * node_power[i][tag] / eff_total
 			if not effs.has(tag):
 				effs[tag] = trade_efficiency(tag)
-			var eff: float = 1.0 + effs[tag] + (present if i != homes.get(tag, -1) else 0.0)
-			var inc := share * maxf(0.0, eff) / 12.0
+			var mult := maxf(1.0 + effs[tag], 0.01) + (present if i != homes.get(tag, -1) else 0.0)
+			var inc := share * mult / 12.0
 			collected[i][tag] = inc
 			_income[tag] = float(_income.get(tag, 0.0)) + inc
-		# o resto desce pelas saídas, puxado por quem transfere
 		var outs: Array = out_links[i]
-		if outs.is_empty():
+		if outs.is_empty() or trans <= 0.0:
 			continue
-		for tag in node_power[i]:
-			if collecting[i].has(tag):
+		var outgoing := v * trans / eff_total
+		outgoing_value[i] = outgoing
+		# saídas: poder dos mercadores que direcionam × (1 + trade_steering); bônus de valor por mercador
+		var pull := {}
+		var count := {}
+		var boost := {}
+		var tot_pull := 0.0
+		for tag in steering[i]:
+			var j: int = target.get("%s|%d" % [tag, i], -1)
+			if j < 0:
 				continue
-			var flow: float = v * node_power[i][tag] / tot
-			var h: int = homes.get(tag, -1)
-			var target := -1
-			if h >= 0:
-				for j in outs:
-					if j == h or reach[j].has(h):
-						target = j
-						break
-			if target >= 0:
-				total_value[target] += flow
-			else:
-				for j in outs:
-					total_value[j] += flow / outs.size()
-			outgoing_value[i] += flow
+			if not steer_mod.has(tag):
+				steer_mod[tag] = power.modifier(tag, "trade_steering")
+			var sp: float = float(node_power[i].get(tag, 0.0)) * maxf(0.0, 1.0 + steer_mod[tag])
+			pull[j] = float(pull.get(j, 0.0)) + sp
+			tot_pull += sp
+			count[j] = int(count.get(j, 0)) + 1
+			if count[j] <= MAX_STEER_BONUS_MERCHANTS:
+				boost[j] = float(boost.get(j, 0.0)) + added / float(count[j]) * maxf(0.0, 1.0 + steer_mod[tag])
+		for j in outs:
+			var part: float = outgoing * (float(pull.get(j, 0.0)) / tot_pull if tot_pull > 0.0 else 1.0 / outs.size())
+			total_value[j] += part * (1.0 + float(boost.get(j, 0.0)))
+
+
+## O mercador do país no nó `i` já chegou? Marca a chegada dos novos: distância da capital ao
+## centro do nó ÷ MERCHANT_SPEED (20 px por dia) — APROXIMAÇÃO: o EU4 não publica a fórmula.
+func _present(tag: String, i: int, today: int, new_arrival: Dictionary) -> bool:
+	var key := "%s|%d" % [tag, i]
+	if arrival.has(key):
+		new_arrival[key] = arrival[key]
+	else:
+		var cap := int(map.countries.get(tag, {}).get("capital", -1))
+		var loc := int(map.trade_nodes.get(nodes[i], {}).get("location", -1))
+		var days := 0
+		if cap > 0 and cap < map.provinces.size() and loc > 0 and loc < map.provinces.size():
+			days = ceili(map.province_center(cap).distance_to(map.province_center(loc))
+					/ maxf(1.0, float(Eu4Data.define("NEconomy", "MERCHANT_SPEED", 20.0))))
+		new_arrival[key] = today + days
+	return today >= int(new_arrival[key])
+
+
+func _today() -> int:
+	if clock == null:
+		return 1 << 30                  # sem relógio: todos já chegaram
+	return int(Time.get_unix_time_from_datetime_dict({"year": clock.year, "month": clock.month, "day": clock.day,
+			"hour": 0, "minute": 0, "second": 0}) / 86400)
+
+
+## O nó `i` está ao alcance comercial do país (distância do centro do nó até a província mais perto)?
+func _in_range(i: int, provs: Array, r: float) -> bool:
+	var loc := int(map.trade_nodes.get(nodes[i], {}).get("location", -1))
+	if loc <= 0 or loc >= map.provinces.size():
+		return true
+	var c := _center(loc)
+	var r2 := r * r
+	for pid in provs:
+		if _center(pid).distance_squared_to(c) <= r2:
+			return true
+	return false
+
+
+var _centers := PackedVector2Array()
+var _range_cache := {}              # tag -> {-1: alcance, nó: ao alcance} (refeito quando um dono muda)
+var _range_version := -1
+
+
+func _center(pid: int) -> Vector2:
+	if _centers.size() != map.provinces.size():
+		_centers.resize(map.provinces.size())
+		for k in map.provinces.size():
+			_centers[k] = map.province_center(k)
+	return _centers[pid]
+
+
+## Alcance comercial: Σ trade_range das tecnologias dip × (1 + trade_range_modifier).
+func trade_range(tag: String) -> float:
+	var lvl := TechWindow.level_of(map, tag, "dip", power)
+	var r := _tech_range[clampi(lvl, 0, _tech_range.size() - 1)] if not _tech_range.is_empty() else 0.0
+	return r * maxf(0.0, 1.0 + power.modifier(tag, "trade_range_modifier"))
 
 
 ## Dados das províncias que só mudam com o dono: nó, valor comercial e poder antes dos
@@ -267,6 +454,7 @@ func _static() -> void:
 	_pids = PackedInt32Array()
 	_pnode = PackedInt32Array()
 	_pbase = PackedFloat32Array()
+	_pmul = PackedFloat32Array()
 	prov_value = PackedFloat32Array()
 	prov_value.resize(map.provinces.size())
 	for p in map.provinces:
@@ -279,7 +467,7 @@ func _static() -> void:
 		var gid: String = p.get("trade_goods", "")
 		if gid != "gold" and map.trade_goods.has(gid):
 			prov_value[pid] = map.goods_produced(p) * float(map.trade_goods[gid]["price"])
-		var base := float(p["development"]) * dev_tp
+		var base := float(p["development"]) * dev_tp + map.building_mod(p, "province_trade_power_value")
 		var cot := int(p.get("center_of_trade", 0))
 		if cot > 0:
 			var inland: bool = map.trade_nodes.get(p.get("trade_node", ""), {}).get("inland", false) \
@@ -288,11 +476,23 @@ func _static() -> void:
 		var mult := 1.0
 		if p.get("coastal", false):
 			mult += coastal_tp
-		for bid in p.get("buildings", []):
-			mult += float(map.buildings.get(bid, {}).get("modifiers", {}).get("province_trade_power_modifier", 0.0))
+		# autonomia local (local_autonomy_multiplicative: province_trade_power_modifier −0,5 × autonomia)
+		mult += AUTONOMY_TRADE_POWER * float(p.get("local_autonomy", 0.0)) / 100.0
+		mult += map.building_mod(p, "province_trade_power_modifier")   # construções e modificadores da província
 		_pids.append(pid)
 		_pnode.append(i)
-		_pbase.append(base * mult)
+		_pbase.append(base)
+		_pmul.append(mult)
+
+
+## Poder de caravana ("Inland bonus" da aba Comércio): desenvolvimento ÷ CARAVAN_FACTOR (3), entre
+## CARAVAN_POWER_MIN (2) e MAX (50), × (1 + caravan_power). Soma ao poder no nó da capital comercial
+## quando ele é do interior.
+func caravan_power(tag: String) -> float:
+	var f := maxf(0.001, float(Eu4Data.define("NEconomy", "CARAVAN_FACTOR", 3.0)))
+	var v := clampf(float(dev.get(tag, 0.0)) / f, float(Eu4Data.define("NEconomy", "CARAVAN_POWER_MIN", 2.0)),
+			float(Eu4Data.define("NEconomy", "CARAVAN_POWER_MAX", 50.0)))
+	return v * maxf(0.0, 1.0 + power.modifier(tag, "caravan_power"))
 
 
 ## Renda de comércio do país por mês.
